@@ -1,0 +1,2049 @@
+﻿<%@ Page Title="Home Page" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Emonti_Optometrist_Website._Default" %>
+
+<asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
+    <style>
+        /* ===== HERO SECTION ===== */
+        .hero-landing {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Background Image Layer */
+        .hero-landing::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://d31g6oeq0bzej7.cloudfront.net/Assets/image/jpeg/6f53834b-a190-47e7-8ce0-d6a99ae8e1d4.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 1.0;
+            z-index: 0;
+        }
+        
+        /* Gradient Overlay */
+        .hero-landing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.7) 100%);
+            z-index: 1;
+        }
+        
+        .hero-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            position: relative;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+        
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 
+                         0 2px 4px rgba(0, 0, 0, 0.2),
+                         0 0 30px rgba(102, 126, 234, 0.5),
+                         0 0 60px rgba(167, 139, 250, 0.3);
+            animation: heroTitleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+                       textGlow 3s ease-in-out infinite alternate,
+                       gradientText 8s ease infinite;
+            letter-spacing: -0.5px;
+            position: relative;
+            background: linear-gradient(45deg, #ffffff, #a78bfa, #667eea, #ffffff, #e0e7ff);
+            background-size: 400% 400%;
+            /* Gradient text effect using background-clip */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            background-clip: text;
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        @keyframes gradientText {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+        
+        .hero-content h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            animation: underlineExpand 1s ease-out 0.8s forwards;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes heroTitleReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+                filter: blur(10px);
+                letter-spacing: 10px;
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+                letter-spacing: -1px;
+            }
+        }
+        
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 
+                             0 2px 4px rgba(0, 0, 0, 0.2),
+                             0 0 20px rgba(102, 126, 234, 0.2);
+            }
+            100% {
+                text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 
+                             0 2px 4px rgba(0, 0, 0, 0.2),
+                             0 0 40px rgba(167, 139, 250, 0.4);
+            }
+        }
+        
+        @keyframes underlineExpand {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 120px;
+                opacity: 1;
+            }
+        }
+        
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            line-height: 1.8;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeSlideIn 1.2s ease-out 0.5s backwards,
+                       subtleFloat 4s ease-in-out 2s infinite;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5),
+                         0 0 30px rgba(102, 126, 234, 0.2);
+            font-weight: 400;
+            position: relative;
+            padding: 0 1rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            letter-spacing: 0.2px;
+        }
+        
+        .hero-content p::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% + 40px);
+            height: calc(100% + 40px);
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3),
+                        inset 0 0 20px rgba(255, 255, 255, 0.1);
+            z-index: -1;
+            animation: fadeIn 1s ease-out 1s backwards,
+                       glassShimmer 4s ease-in-out infinite;
+        }
+        
+        @keyframes glassShimmer {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3),
+                            inset 0 0 20px rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                box-shadow: 0 8px 32px rgba(167, 139, 250, 0.5),
+                            inset 0 0 30px rgba(255, 255, 255, 0.2);
+            }
+        }
+        
+        .hero-content p::after {
+            content: '';
+        }
+        
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+                filter: blur(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+            }
+        }
+        
+        @keyframes subtleFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: buttonsReveal 1s ease-out 1s backwards;
+        }
+        
+        @keyframes buttonsReveal {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+                filter: blur(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+        
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            animation: bounce 2s infinite;
+        }
+        
+        .scroll-indicator i {
+            color: white;
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+        
+        .hero-button {
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+            min-width: 200px;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .hero-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .hero-button i {
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-button:hover i {
+            transform: scale(1.2) rotate(5deg);
+        }
+        
+        .primary-btn {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2),
+                        0 0 0 0 rgba(255, 255, 255, 0.5);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2),
+                            0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2),
+                            0 0 20px 5px rgba(255, 255, 255, 0.3);
+            }
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3),
+                        0 0 30px rgba(255, 255, 255, 0.5);
+            color: #5a6fd8;
+        }
+        
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .secondary-btn:hover {
+            background: white;
+            color: #667eea;
+            border-color: white;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* ===== FLOATING ELEMENTS ===== */
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-circle:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+        
+        .floating-circle:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 30%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        /* ===== SERVICES SECTION ===== */
+        .services {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .services::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(to bottom, rgba(102, 126, 234, 0.03), transparent);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .section-title p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 1.5rem auto 0;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+        
+        .service-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            min-width: 0;
+            width: 100%;
+        }
+        
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .service-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .service-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.2rem;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+        }
+        
+        .service-card:hover .service-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .service-icon::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            border-radius: 50%;
+            opacity: 0;
+            animation: ripple 2s infinite;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        .service-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #2c3e50;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        
+        .service-card:hover h3 {
+            color: #667eea;
+        }
+        
+        .service-card p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+        
+        /* ===== FEATURES SECTION ===== */
+        .features {
+            padding: 6rem 2rem;
+            background: white;
+            position: relative;
+        }
+        
+        .features::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+        
+        .feature-item {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            transition: all 0.3s ease;
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+        }
+        
+        .feature-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feature-item:hover::before {
+            opacity: 1;
+        }
+        
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            transition: transform 0.3s ease;
+            filter: grayscale(0.3);
+        }
+        
+        .feature-item:hover .feature-icon {
+            transform: scale(1.2) rotate(5deg);
+            filter: grayscale(0);
+        }
+        
+        .feature-item h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #2c3e50;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .feature-item p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ===== TESTIMONIALS SECTION ===== */
+        .testimonials-section {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .testimonials-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(to bottom, rgba(102, 126, 234, 0.03), transparent);
+        }
+        
+        .testimonials-wrapper {
+            overflow: hidden;
+            padding: 2rem 0;
+            position: relative;
+            z-index: 1;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        
+        .testimonials-track {
+            display: flex;
+            gap: 2rem;
+            animation: scrollTestimonials 40s linear infinite;
+            width: fit-content;
+        }
+        
+        .testimonials-track:hover {
+            animation-play-state: paused;
+        }
+        
+        @keyframes scrollTestimonials {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+        
+        .testimonial-card {
+            background: white;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.15);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 450px;
+            max-width: 450px;
+            flex-shrink: 0;
+        }
+        
+        .testimonial-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(167, 139, 250, 0.05), transparent);
+        }
+        
+        .testimonial-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.25);
+        }
+        
+        .testimonial-stars {
+            color: #fbbf24;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+        }
+        
+        .testimonial-quote {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: #2c3e50;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .testimonial-quote::before {
+            content: '"';
+            font-size: 5rem;
+            color: rgba(102, 126, 234, 0.15);
+            position: absolute;
+            top: -30px;
+            left: -15px;
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+        
+        .testimonial-quote::after {
+            content: '"';
+            font-size: 5rem;
+            color: rgba(102, 126, 234, 0.15);
+            position: absolute;
+            bottom: -50px;
+            right: -15px;
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+        
+        .testimonial-author {
+            font-size: 1.1rem;
+            color: #667eea;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .testimonial-author::before {
+            content: '— ';
+            color: rgba(102, 126, 234, 0.5);
+        }
+        
+        /* ===== CTA SECTION ===== */
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Wave separator at top */
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="%23ffffff"/></svg>') no-repeat;
+            background-size: cover;
+            transform: translateY(-1px);
+        }
+        
+        /* Animated background gradient */
+        .cta-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+        
+        .cta-section .container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.95;
+            line-height: 1.7;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+        
+        .cta-section .hero-buttons {
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+        
+        /* Scroll reveal animation */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* ===== STATISTICS SECTION ===== */
+        .stats-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 5rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveGrid 20s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes moveGrid {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(50px, 50px) rotate(360deg);
+            }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                        inset 0 0 20px rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+        }
+        
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3),
+                        inset 0 0 30px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                         0 0 40px rgba(167, 139, 250, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ===== CURSOR TRAIL ===== */
+        .cursor-trail {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.8), rgba(102, 126, 234, 0.4));
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            animation: cursorPulse 1s ease-out forwards;
+        }
+        
+        @keyframes cursorPulse {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        
+        /* ===== PARALLAX ELEMENTS ===== */
+        .parallax-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .parallax-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.3), rgba(102, 126, 234, 0.1));
+            filter: blur(40px);
+            animation: floatShape 15s ease-in-out infinite;
+        }
+        
+        .parallax-shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .parallax-shape:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .parallax-shape:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            bottom: 10%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes floatShape {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1024px) {
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+                gap: 2rem;
+                row-gap: 2rem;
+                column-gap: 2rem;
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                gap: 2rem;
+                row-gap: 2rem;
+                max-width: 100%;
+                width: 100%;
+            }
+            
+            .hero-content h1 {
+                font-size: 2.5rem;
+                letter-spacing: -0.5px;
+                margin-bottom: 1.5rem;
+            }
+            
+            .hero-content h1::after {
+                width: 100px !important;
+                height: 3px;
+            }
+            
+            .hero-content p {
+                font-size: 1.2rem;
+                padding: 0 2rem;
+            }
+            
+            .hero-content p::before {
+                width: calc(100% + 30px);
+                height: calc(100% + 30px);
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-button {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .scroll-indicator {
+                bottom: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-content h1 {
+                font-size: 2rem;
+                letter-spacing: 0;
+                margin-bottom: 1.5rem;
+            }
+            
+            .hero-content h1::after {
+                bottom: -8px;
+                height: 2px;
+                width: 80px !important;
+            }
+            
+            .hero-content p {
+                font-size: 1.1rem;
+                padding: 0 1.5rem;
+                margin-bottom: 2.5rem;
+            }
+            
+            .hero-content p::before {
+                width: calc(100% + 20px);
+                height: calc(100% + 20px);
+            }
+            
+            .hero-button {
+                padding: 0.9rem 2rem;
+                font-size: 1rem;
+            }
+            
+            .section-title h2 {
+                font-size: 2rem;
+            }
+            
+            .section-title p {
+                font-size: 1rem;
+            }
+            
+            .cta-section h2 {
+                font-size: 2rem;
+            }
+            
+            .cta-section p {
+                font-size: 1rem;
+            }
+            
+            .testimonial-card {
+                min-width: 320px;
+                max-width: 320px;
+                padding: 2rem 1.5rem;
+            }
+            
+            .testimonials-track {
+                gap: 1.5rem;
+            }
+            
+            .testimonial-quote {
+                font-size: 1.1rem;
+            }
+            
+            .testimonial-quote::before,
+            .testimonial-quote::after {
+                font-size: 3rem;
+            }
+            
+            .testimonial-stars {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</asp:Content>
+
+<asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
+    <!-- Hero Landing Section -->
+    <section class="hero-landing">
+        <div class="floating-elements">
+            <div class="floating-circle"></div>
+            <div class="floating-circle"></div>
+            <div class="floating-circle"></div>
+        </div>
+        
+        <div class="hero-content">
+            <h1>Your Vision, Our Priority</h1>
+            <p>Experience professional eye care and discover the perfect eyewear at Emonti Optometrist. Your vision is our passion.</p>
+            <div class="hero-buttons">
+                <asp:LinkButton ID="btnBookEyeExam" runat="server" CssClass="hero-button primary-btn" OnClick="btnBookEyeExam_Click">
+                    <i class="fas fa-calendar-plus"></i> Book Eye Exam
+                </asp:LinkButton>
+                <asp:LinkButton ID="btnShopFrames" runat="server" CssClass="hero-button secondary-btn" OnClick="btnShopFrames_Click">
+                    <i class="fas fa-shopping-bag"></i> Shop Frames
+                </asp:LinkButton>
+            </div>
+        </div>
+        
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-item scroll-reveal">
+                <div class="stat-number" data-target="2500">0</div>
+                <div class="stat-label">Happy Patients</div>
+            </div>
+            <div class="stat-item scroll-reveal">
+                <div class="stat-number" data-target="15">0</div>
+                <div class="stat-label">Years Experience</div>
+            </div>
+            <div class="stat-item scroll-reveal">
+                <div class="stat-number" data-target="500">0</div>
+                <div class="stat-label">Frames Available</div>
+            </div>
+            <div class="stat-item scroll-reveal">
+                <div class="stat-number" data-target="98">0</div>
+                <div class="stat-label">Satisfaction %</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="parallax-bg">
+            <div class="parallax-shape"></div>
+            <div class="parallax-shape"></div>
+            <div class="parallax-shape"></div>
+        </div>
+        <div class="container">
+            <div class="section-title scroll-reveal">
+                <h2>Our Services</h2>
+                <p>Comprehensive eye care services designed to keep your vision healthy and your style on point</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">👁️</div>
+                    <h3>Comprehensive Eye Exams</h3>
+                    <p>Thorough eye examinations using state-of-the-art equipment to detect vision problems and eye diseases early.</p>
+                </div>
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">👓</div>
+                    <h3>Prescription Eyewear</h3>
+                    <p>Stylish frames and high-quality lenses customized to your prescription and lifestyle needs.</p>
+                </div>
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">🔬</div>
+                    <h3>Contact Lens Fitting</h3>
+                    <p>Professional contact lens consultations and fittings for maximum comfort and clear vision.</p>
+                </div>
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">⚕️</div>
+                    <h3>Medical Aid Claims</h3>
+                    <p>We handle your medical aid claims directly, making your visit hassle-free and affordable.</p>
+                </div>
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">👶</div>
+                    <h3>Pediatric Eye Care</h3>
+                    <p>Specialized eye care for children with gentle, child-friendly examinations to ensure healthy vision development from an early age.</p>
+                </div>
+                <div class="service-card scroll-reveal">
+                    <div class="service-icon">🔧</div>
+                    <h3>Frame Repairs & Adjustments</h3>
+                    <p>Expert frame repairs, adjustments, and maintenance services to keep your eyewear comfortable and in perfect condition.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title scroll-reveal">
+                <h2>Why Choose Emonti Optometrist?</h2>
+                <p>Modern technology meets personalized care for the best possible eye health experience</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">📅</div>
+                    <h3>Online Booking</h3>
+                    <p>Schedule appointments 24/7 through our convenient online system. No more phone tag - book your eye exam at midnight if you want! Get instant confirmation and automatic reminders so you never miss an appointment. Choose your preferred time slot and optometrist with just a few clicks.</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">🛍️</div>
+                    <h3>Online Shopping</h3>
+                    <p>Browse and purchase frames and accessories from the comfort of your home. Explore our collection of designer and budget-friendly eyewear with detailed photos and specifications. Filter by style, color, and price range to find your perfect match. Free delivery on orders over R500!</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">💳</div>
+                    <h3>Multiple Payment Options</h3>
+                    <p>Pay with cash, card, or medical aid - whatever works best for you. We accept all major medical aids and handle the paperwork for you, making claims quick and hassle-free. Split payment options available for larger purchases with flexible 0% interest plans.</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">📋</div>
+                    <h3>Digital Records</h3>
+                    <p>Your prescription and visit history securely stored and easily accessible online 24/7. Access your records from anywhere, share them with other healthcare providers instantly, and never worry about losing your prescription again. Cloud-based security ensures your data is always protected.</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">📍</div>
+                    <h3>Convenient Location</h3>
+                    <p>Located at New Colonnade, Vincent, East London for easy access. Ample free parking available, fully wheelchair accessible, and close to public transport routes. We're in the heart of the shopping center - combine your eye care with your weekly errands for maximum convenience!</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Expert Care</h3>
+                    <p>Experienced optometrists with over 15 years of combined experience dedicated to your vision health. Continuous training in the latest eye care technology and techniques ensures you receive world-class care. State-of-the-art diagnostic equipment for accurate prescriptions and early disease detection.</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">👨‍👩‍👧‍👦</div>
+                    <h3>Family-Friendly Service</h3>
+                    <p>We welcome patients of all ages, from children to seniors. Our friendly, patient approach ensures everyone feels comfortable during their visit. Special accommodations for children and elderly patients make eye care accessible for the whole family.</p>
+                </div>
+                <div class="feature-item scroll-reveal">
+                    <div class="feature-icon">🔬</div>
+                    <h3>Advanced Technology</h3>
+                    <p>Cutting-edge diagnostic equipment and digital imaging technology for the most accurate eye examinations. We invest in the latest optometry technology to provide precise prescriptions and early detection of eye conditions, ensuring the best possible outcomes for your vision health.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="container">
+            <div class="section-title scroll-reveal">
+                <h2>What Our Customers Say</h2>
+                <p>Real experiences from real people who trust us with their vision care</p>
+            </div>
+        </div>
+        <div class="testimonials-wrapper">
+            <div class="testimonials-track">
+                <!-- Original Set -->
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Best optometrist in East London! Professional, friendly, and they really take time to explain everything. The online booking system made it so easy, and I found the perfect frames. Highly recommend!</p>
+                    <p class="testimonial-author">Charlize Theron, Cape Town</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Love the huge selection of frames and the virtual try-on feature! The staff helped me find the perfect pair within my medical aid budget. The whole experience was smooth and professional from start to finish.</p>
+                    <p class="testimonial-author">Pearl Thusi, Equestria</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">My whole family has been going to Emonti for years. They're great with kids and adults alike. The thorough eye exams caught an issue early that could have been serious. We trust them completely with our vision care!</p>
+                    <p class="testimonial-author">Kiernan Forbes, Sandton</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Excellent service and state-of-the-art equipment! The optometrist was knowledgeable and patient with all my questions. My new prescription is spot-on, and the lenses are crystal clear. Worth every cent!</p>
+                    <p class="testimonial-author">Bonang Matheba, Sandton</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">The medical aid claim process was seamless - they handled everything for me. No stress, no paperwork headaches. Plus, the designer frame collection is impressive. Found exactly what I was looking for at a great price!</p>
+                    <p class="testimonial-author">Cassper Nyovest, Midrand</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Amazing experience from start to finish! Booked online, got a reminder the day before, and the appointment was quick and efficient. The staff are incredibly professional and caring. My new glasses fit perfectly!</p>
+                    <p class="testimonial-author">Minnie Dlamini, Cape Town</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Been wearing contact lenses for 20 years and this is the best fitting I've ever had! They took the time to ensure perfect comfort and provided excellent aftercare advice. Professional service that really cares about patients.</p>
+                    <p class="testimonial-author">Maps Maponyane, Midrand</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">The digital record system is brilliant! I can access my prescription anytime, anywhere. Super convenient when I needed to order backup glasses online. This is what modern optometry should be like!</p>
+                    <p class="testimonial-author">Nomzamo Mbatha, Cape Town</p>
+                </div>
+                
+                <!-- Duplicate Set for Infinite Loop -->
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Best optometrist in East London! Professional, friendly, and they really take time to explain everything. The online booking system made it so easy, and I found the perfect frames. Highly recommend!</p>
+                    <p class="testimonial-author">Charlize Theron, Cape Town</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Love the huge selection of frames and the virtual try-on feature! The staff helped me find the perfect pair within my medical aid budget. The whole experience was smooth and professional from start to finish.</p>
+                    <p class="testimonial-author">Pearl Thusi, Equestria</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">My whole family has been going to Emonti for years. They're great with kids and adults alike. The thorough eye exams caught an issue early that could have been serious. We trust them completely with our vision care!</p>
+                    <p class="testimonial-author">Kiernan Forbes, Sandton</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Excellent service and state-of-the-art equipment! The optometrist was knowledgeable and patient with all my questions. My new prescription is spot-on, and the lenses are crystal clear. Worth every cent!</p>
+                    <p class="testimonial-author">Bonang Matheba, Sandton</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">The medical aid claim process was seamless - they handled everything for me. No stress, no paperwork headaches. Plus, the designer frame collection is impressive. Found exactly what I was looking for at a great price!</p>
+                    <p class="testimonial-author">Cassper Nyovest, Midrand</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Amazing experience from start to finish! Booked online, got a reminder the day before, and the appointment was quick and efficient. The staff are incredibly professional and caring. My new glasses fit perfectly!</p>
+                    <p class="testimonial-author">Minnie Dlamini, Cape Town</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">Been wearing contact lenses for 20 years and this is the best fitting I've ever had! They took the time to ensure perfect comfort and provided excellent aftercare advice. Professional service that really cares about patients.</p>
+                    <p class="testimonial-author">Maps Maponyane, Midrand</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-quote">The digital record system is brilliant! I can access my prescription anytime, anywhere. Super convenient when I needed to order backup glasses online. This is what modern optometry should be like!</p>
+                    <p class="testimonial-author">Nomzamo Mbatha, Cape Town</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to See Clearly?</h2>
+            <p>Book your appointment today or browse our collection of stylish frames. Your perfect vision solution awaits!</p>
+            <div class="hero-buttons">
+                <asp:LinkButton ID="btnScheduleExam" runat="server" CssClass="hero-button primary-btn" OnClick="btnScheduleExam_Click">Schedule Eye Exam</asp:LinkButton>
+                <asp:LinkButton ID="btnBrowseEyewear" runat="server" CssClass="hero-button secondary-btn" OnClick="btnBrowseEyewear_Click">Browse Eyewear</asp:LinkButton>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced Three.js Effects & Animations -->
+    <script>
+        // Wait for page to load
+        window.addEventListener('DOMContentLoaded', function () {
+
+            // ===== CURSOR TRAIL EFFECT =====
+            let cursorTrailTimeout;
+            document.addEventListener('mousemove', function (e) {
+                clearTimeout(cursorTrailTimeout);
+                cursorTrailTimeout = setTimeout(function () {
+                    const trail = document.createElement('div');
+                    trail.className = 'cursor-trail';
+                    trail.style.left = e.pageX + 'px';
+                    trail.style.top = e.pageY + 'px';
+                    document.body.appendChild(trail);
+
+                    setTimeout(function () {
+                        trail.remove();
+                    }, 1000);
+                }, 50);
+            });
+
+            // ===== THREE.JS OPTOMETRY ANIMATIONS - HERO SECTION =====
+            if (typeof THREE !== 'undefined') {
+                const heroSection = document.querySelector('.hero-landing');
+
+                if (heroSection) {
+                    // Create canvas for Three.js
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'optometry-canvas';
+                    canvas.style.position = 'absolute';
+                    canvas.style.top = '0';
+                    canvas.style.left = '0';
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    canvas.style.zIndex = '0';
+                    canvas.style.pointerEvents = 'none';
+                    heroSection.insertBefore(canvas, heroSection.firstChild);
+
+                    // Setup Three.js
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, heroSection.offsetWidth / heroSection.offsetHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+                    renderer.setSize(heroSection.offsetWidth, heroSection.offsetHeight);
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                    // ===== FLOATING EYEGLASSES FRAMES =====
+                    const glasses = [];
+
+                    function createGlasses(x, y, z, frameColor, size) {
+                        const glassesGroup = new THREE.Group();
+
+                        // Left lens frame (circular)
+                        const leftLensFrameGeometry = new THREE.RingGeometry(0.15, 0.25, 32);
+                        const frameMaterial = new THREE.MeshPhongMaterial({
+                            color: frameColor,
+                            shininess: 100,
+                            specular: 0x222222,
+                            side: THREE.DoubleSide
+                        });
+                        const leftLensFrame = new THREE.Mesh(leftLensFrameGeometry, frameMaterial);
+                        leftLensFrame.position.x = -0.3;
+                        glassesGroup.add(leftLensFrame);
+
+                        // Right lens frame (circular)
+                        const rightLensFrame = new THREE.Mesh(leftLensFrameGeometry.clone(), frameMaterial);
+                        rightLensFrame.position.x = 0.3;
+                        glassesGroup.add(rightLensFrame);
+
+                        // Bridge between lenses
+                        const bridgeGeometry = new THREE.BoxGeometry(0.15, 0.08, 0.05);
+                        const bridge = new THREE.Mesh(bridgeGeometry, frameMaterial);
+                        bridge.position.y = -0.05;
+                        glassesGroup.add(bridge);
+
+                        // Left temple (arm)
+                        const leftTempleGeometry = new THREE.BoxGeometry(0.4, 0.05, 0.05);
+                        const leftTemple = new THREE.Mesh(leftTempleGeometry, frameMaterial);
+                        leftTemple.position.set(-0.55, 0, 0);
+                        leftTemple.rotation.z = -0.1;
+                        glassesGroup.add(leftTemple);
+
+                        // Right temple (arm)
+                        const rightTempleGeometry = new THREE.BoxGeometry(0.4, 0.05, 0.05);
+                        const rightTemple = new THREE.Mesh(rightTempleGeometry, frameMaterial);
+                        rightTemple.position.set(0.55, 0, 0);
+                        rightTemple.rotation.z = 0.1;
+                        glassesGroup.add(rightTemple);
+
+                        // Lens material (semi-transparent)
+                        const lensMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.3,
+                            shininess: 200,
+                            specular: 0xffffff
+                        });
+
+                        // Left lens
+                        const leftLensGeometry = new THREE.CircleGeometry(0.15, 32);
+                        const leftLens = new THREE.Mesh(leftLensGeometry, lensMaterial);
+                        leftLens.position.x = -0.3;
+                        glassesGroup.add(leftLens);
+
+                        // Right lens
+                        const rightLensGeometry = new THREE.CircleGeometry(0.15, 32);
+                        const rightLens = new THREE.Mesh(rightLensGeometry, lensMaterial);
+                        rightLens.position.x = 0.3;
+                        glassesGroup.add(rightLens);
+
+                        glassesGroup.position.set(x, y, z);
+                        glassesGroup.scale.set(size, size, size);
+                        scene.add(glassesGroup);
+                        glasses.push(glassesGroup);
+                    }
+
+                    // Create multiple floating glasses
+                    const frameColors = [0x667eea, 0x764ba2, 0xa78bfa, 0x4a5568, 0x2d3748];
+                    for (let i = 0; i < 6; i++) {
+                        createGlasses(
+                            (Math.random() - 0.5) * 12,
+                            (Math.random() - 0.5) * 8 - 1,
+                            (Math.random() - 0.5) * 8 - 2,
+                            frameColors[Math.floor(Math.random() * frameColors.length)],
+                            0.5 + Math.random() * 0.5
+                        );
+                    }
+
+                    // ===== VISION LIGHT RAYS =====
+                    const lightRays = [];
+
+                    function createLightRay(x, y, z, angle) {
+                        const rayGroup = new THREE.Group();
+
+                        // Main beam
+                        const rayGeometry = new THREE.ConeGeometry(0.05, 2, 8);
+                        const rayMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.4,
+                            emissive: 0xffffff,
+                            emissiveIntensity: 0.5
+                        });
+                        const ray = new THREE.Mesh(rayGeometry, rayMaterial);
+                        ray.rotation.z = Math.PI;
+                        rayGroup.add(ray);
+
+                        // Glow effect
+                        const glowGeometry = new THREE.ConeGeometry(0.08, 2.2, 8);
+                        const glowMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xa78bfa,
+                            transparent: true,
+                            opacity: 0.2,
+                            emissive: 0xa78bfa,
+                            emissiveIntensity: 0.3
+                        });
+                        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                        glow.rotation.z = Math.PI;
+                        rayGroup.add(glow);
+
+                        rayGroup.position.set(x, y, z);
+                        rayGroup.rotation.y = angle;
+                        scene.add(rayGroup);
+                        lightRays.push(rayGroup);
+                    }
+
+                    // Create light rays
+                    for (let i = 0; i < 8; i++) {
+                        createLightRay(
+                            (Math.random() - 0.5) * 10,
+                            2 + Math.random() * 3,
+                            (Math.random() - 0.5) * 8,
+                            (Math.PI * 2 * i) / 8
+                        );
+                    }
+
+                    // ===== EYE GEOMETRIC SHAPES =====
+                    const eyeShapes = [];
+
+                    function createEyeShape(x, y, z) {
+                        const eyeGroup = new THREE.Group();
+
+                        // Outer eye shape (ellipse)
+                        const eyeGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+                        const eyeMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.2,
+                            shininess: 100
+                        });
+                        const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+                        eye.scale.set(1, 0.6, 1);
+                        eyeGroup.add(eye);
+
+                        // Iris
+                        const irisGeometry = new THREE.SphereGeometry(0.15, 32, 32);
+                        const irisMaterial = new THREE.MeshPhongMaterial({
+                            color: 0x667eea,
+                            shininess: 150,
+                            emissive: 0x667eea,
+                            emissiveIntensity: 0.2
+                        });
+                        const iris = new THREE.Mesh(irisGeometry, irisMaterial);
+                        iris.scale.set(1, 0.6, 1);
+                        iris.position.z = 0.1;
+                        eyeGroup.add(iris);
+
+                        // Pupil
+                        const pupilGeometry = new THREE.SphereGeometry(0.08, 32, 32);
+                        const pupilMaterial = new THREE.MeshPhongMaterial({
+                            color: 0x000000,
+                            shininess: 200
+                        });
+                        const pupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+                        pupil.position.z = 0.15;
+                        eyeGroup.add(pupil);
+
+                        // Highlight
+                        const highlightGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+                        const highlightMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+                        highlight.position.set(0.05, 0.05, 0.2);
+                        eyeGroup.add(highlight);
+
+                        eyeGroup.position.set(x, y, z);
+                        scene.add(eyeGroup);
+                        eyeShapes.push(eyeGroup);
+                    }
+
+                    // Create eye shapes
+                    for (let i = 0; i < 4; i++) {
+                        createEyeShape(
+                            (Math.random() - 0.5) * 8,
+                            (Math.random() - 0.5) * 6,
+                            (Math.random() - 0.5) * 6
+                        );
+                    }
+
+                    // ===== CLARITY PARTICLES (representing clear vision) =====
+                    const clarityParticlesGeometry = new THREE.BufferGeometry();
+                    const clarityParticlesCount = 200;
+                    const clarityPositions = new Float32Array(clarityParticlesCount * 3);
+                    const claritySizes = new Float32Array(clarityParticlesCount);
+
+                    for (let i = 0; i < clarityParticlesCount * 3; i += 3) {
+                        clarityPositions[i] = (Math.random() - 0.5) * 20;
+                        clarityPositions[i + 1] = (Math.random() - 0.5) * 15;
+                        clarityPositions[i + 2] = (Math.random() - 0.5) * 10;
+                        claritySizes[i / 3] = Math.random() * 0.05 + 0.02;
+                    }
+
+                    clarityParticlesGeometry.setAttribute('position', new THREE.BufferAttribute(clarityPositions, 3));
+                    clarityParticlesGeometry.setAttribute('size', new THREE.BufferAttribute(claritySizes, 1));
+
+                    const clarityParticlesMaterial = new THREE.PointsMaterial({
+                        color: 0xffffff,
+                        size: 0.08,
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending,
+                        sizeAttenuation: true
+                    });
+
+                    const clarityParticles = new THREE.Points(clarityParticlesGeometry, clarityParticlesMaterial);
+                    scene.add(clarityParticles);
+
+                    // ===== LENS REFRACTION EFFECTS =====
+                    const lensEffects = [];
+
+                    function createLensEffect(x, y, z) {
+                        const lensGroup = new THREE.Group();
+
+                        // Lens shape (convex)
+                        const lensGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+                        const lensMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.1,
+                            shininess: 300,
+                            specular: 0xffffff,
+                            side: THREE.DoubleSide
+                        });
+                        const lens = new THREE.Mesh(lensGeometry, lensMaterial);
+                        lens.scale.set(1, 1, 0.2);
+                        lensGroup.add(lens);
+
+                        // Refraction ring
+                        const ringGeometry = new THREE.RingGeometry(0.35, 0.4, 32);
+                        const ringMaterial = new THREE.MeshPhongMaterial({
+                            color: 0xa78bfa,
+                            transparent: true,
+                            opacity: 0.3,
+                            side: THREE.DoubleSide
+                        });
+                        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                        lensGroup.add(ring);
+
+                        lensGroup.position.set(x, y, z);
+                        scene.add(lensGroup);
+                        lensEffects.push(lensGroup);
+                    }
+
+                    // Create lens effects
+                    for (let i = 0; i < 3; i++) {
+                        createLensEffect(
+                            (Math.random() - 0.5) * 10,
+                            (Math.random() - 0.5) * 8,
+                            (Math.random() - 0.5) * 8
+                        );
+                    }
+
+                    // ===== LIGHTS =====
+                    // Ambient light
+                    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                    scene.add(ambientLight);
+
+                    // Main directional light (representing clear vision)
+                    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+                    mainLight.position.set(5, 5, 5);
+                    scene.add(mainLight);
+
+                    // Soft accent lights
+                    const accentLight1 = new THREE.PointLight(0x667eea, 0.8, 20);
+                    accentLight1.position.set(-5, 3, 5);
+                    scene.add(accentLight1);
+
+                    const accentLight2 = new THREE.PointLight(0xa78bfa, 0.8, 20);
+                    accentLight2.position.set(5, 3, -5);
+                    scene.add(accentLight2);
+
+                    camera.position.z = 5;
+                    camera.position.y = 1;
+
+                    // Mouse movement effect for interactive feel
+                    let mouseX = 0;
+                    let mouseY = 0;
+                    let targetX = 0;
+                    let targetY = 0;
+
+                    document.addEventListener('mousemove', function (event) {
+                        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+                    });
+
+                    // Animation loop
+                    const clock = new THREE.Clock();
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        const elapsedTime = clock.getElapsedTime();
+
+                        // Animate floating glasses (gentle rotation and floating)
+                        glasses.forEach((glassesFrame, index) => {
+                            glassesFrame.rotation.y = elapsedTime * (0.2 + index * 0.05);
+                            glassesFrame.rotation.x = Math.sin(elapsedTime * 0.5 + index) * 0.1;
+                            glassesFrame.position.y += Math.sin(elapsedTime * 1.5 + index) * 0.003;
+                            glassesFrame.position.x += Math.cos(elapsedTime * 0.8 + index) * 0.002;
+                        });
+
+                        // Animate light rays (rotating and pulsing)
+                        lightRays.forEach((ray, index) => {
+                            ray.rotation.y = elapsedTime * 0.3 + (index * Math.PI / 4);
+                            const pulse = Math.sin(elapsedTime * 2 + index) * 0.3 + 0.7;
+                            ray.children[0].material.opacity = pulse * 0.4;
+                            ray.children[1].material.opacity = pulse * 0.2;
+                        });
+
+                        // Animate eye shapes (subtle movement and blinking effect)
+                        eyeShapes.forEach((eye, index) => {
+                            eye.rotation.y = elapsedTime * 0.1 + index;
+                            // Blinking effect
+                            const blink = Math.sin(elapsedTime * 0.5 + index * 0.5);
+                            if (blink < -0.8) {
+                                eye.children[0].scale.y = 0.1;
+                            } else {
+                                eye.children[0].scale.y = 0.6;
+                            }
+                            // Pupil movement
+                            eye.children[2].position.x = Math.sin(elapsedTime * 0.3 + index) * 0.05;
+                            eye.children[2].position.y = Math.cos(elapsedTime * 0.2 + index) * 0.05;
+                        });
+
+                        // Animate clarity particles (gentle floating)
+                        const clarityPositions = clarityParticles.geometry.attributes.position.array;
+                        for (let i = 1; i < clarityPositions.length; i += 3) {
+                            clarityPositions[i] += Math.sin(elapsedTime + i * 0.01) * 0.001;
+                        }
+                        clarityParticles.geometry.attributes.position.needsUpdate = true;
+                        clarityParticles.rotation.y = elapsedTime * 0.05;
+
+                        // Animate lens effects (rotating and shimmering)
+                        lensEffects.forEach((lens, index) => {
+                            lens.rotation.z = elapsedTime * (0.2 + index * 0.1);
+                            const shimmer = Math.sin(elapsedTime * 2 + index) * 0.1 + 0.1;
+                            lens.children[0].material.opacity = shimmer;
+                        });
+
+                        // Animate accent lights (gentle movement)
+                        accentLight1.position.x = Math.sin(elapsedTime * 0.5) * 3;
+                        accentLight1.position.y = 3 + Math.cos(elapsedTime * 0.7) * 1;
+                        accentLight2.position.x = Math.cos(elapsedTime * 0.6) * 3;
+                        accentLight2.position.y = 3 + Math.sin(elapsedTime * 0.8) * 1;
+
+                        // Smooth camera movement following mouse
+                        targetX += (mouseX - targetX) * 0.05;
+                        targetY += (mouseY - targetY) * 0.05;
+
+                        camera.position.x = targetX * 0.2;
+                        camera.position.y = 1 + targetY * 0.2;
+                        camera.lookAt(scene.position);
+
+                        renderer.render(scene, camera);
+                    }
+
+                    animate();
+
+                    // Handle window resize
+                    window.addEventListener('resize', function () {
+                        camera.aspect = heroSection.offsetWidth / heroSection.offsetHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(heroSection.offsetWidth, heroSection.offsetHeight);
+                    });
+                }
+            }
+
+            // ===== PARALLAX SCROLLING =====
+            window.addEventListener('scroll', function () {
+                const scrolled = window.pageYOffset;
+                const parallaxShapes = document.querySelectorAll('.parallax-shape');
+
+                parallaxShapes.forEach(function (shape, index) {
+                    const speed = 0.5 + (index * 0.2);
+                    const yPos = -(scrolled * speed);
+                    shape.style.transform = 'translateY(' + yPos + 'px)';
+                });
+            });
+
+            // ===== THREE.JS FEATURES SECTION PARTICLES =====
+            if (typeof THREE !== 'undefined') {
+                const featuresSection = document.querySelector('.features');
+
+                if (featuresSection) {
+                    // Create canvas for Features section
+                    const featuresCanvas = document.createElement('canvas');
+                    featuresCanvas.style.position = 'absolute';
+                    featuresCanvas.style.top = '0';
+                    featuresCanvas.style.left = '0';
+                    featuresCanvas.style.width = '100%';
+                    featuresCanvas.style.height = '100%';
+                    featuresCanvas.style.zIndex = '0';
+                    featuresCanvas.style.pointerEvents = 'none';
+                    featuresSection.style.position = 'relative';
+                    featuresSection.insertBefore(featuresCanvas, featuresSection.firstChild);
+
+                    // Setup Three.js for Features
+                    const featuresScene = new THREE.Scene();
+                    const featuresCamera = new THREE.PerspectiveCamera(75, featuresSection.offsetWidth / featuresSection.offsetHeight, 0.1, 1000);
+                    const featuresRenderer = new THREE.WebGLRenderer({ canvas: featuresCanvas, alpha: true, antialias: true });
+                    featuresRenderer.setSize(featuresSection.offsetWidth, featuresSection.offsetHeight);
+                    featuresRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                    // Create particles for Features
+                    const featuresParticlesGeometry = new THREE.BufferGeometry();
+                    const featuresParticlesCount = 300;
+                    const featuresPositions = new Float32Array(featuresParticlesCount * 3);
+                    const featuresColors = new Float32Array(featuresParticlesCount * 3);
+
+                    for (let i = 0; i < featuresParticlesCount * 3; i += 3) {
+                        featuresPositions[i] = (Math.random() - 0.5) * 15;
+                        featuresPositions[i + 1] = (Math.random() - 0.5) * 15;
+                        featuresPositions[i + 2] = (Math.random() - 0.5) * 8;
+
+                        // Purple colors
+                        featuresColors[i] = 0.4 + Math.random() * 0.2;
+                        featuresColors[i + 1] = 0.3 + Math.random() * 0.2;
+                        featuresColors[i + 2] = 0.9 + Math.random() * 0.1;
+                    }
+
+                    featuresParticlesGeometry.setAttribute('position', new THREE.BufferAttribute(featuresPositions, 3));
+                    featuresParticlesGeometry.setAttribute('color', new THREE.BufferAttribute(featuresColors, 3));
+
+                    const featuresParticlesMaterial = new THREE.PointsMaterial({
+                        size: 0.03,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending
+                    });
+
+                    const featuresParticlesMesh = new THREE.Points(featuresParticlesGeometry, featuresParticlesMaterial);
+                    featuresScene.add(featuresParticlesMesh);
+
+                    featuresCamera.position.z = 5;
+
+                    // Animate Features particles
+                    const featuresClock = new THREE.Clock();
+                    function animateFeatures() {
+                        requestAnimationFrame(animateFeatures);
+                        const elapsed = featuresClock.getElapsedTime();
+
+                        featuresParticlesMesh.rotation.y = elapsed * 0.03;
+                        featuresParticlesMesh.rotation.x = elapsed * 0.01;
+
+                        featuresRenderer.render(featuresScene, featuresCamera);
+                    }
+
+                    animateFeatures();
+
+                    // Handle resize for Features canvas
+                    window.addEventListener('resize', function () {
+                        featuresCamera.aspect = featuresSection.offsetWidth / featuresSection.offsetHeight;
+                        featuresCamera.updateProjectionMatrix();
+                        featuresRenderer.setSize(featuresSection.offsetWidth, featuresSection.offsetHeight);
+                    });
+                }
+            }
+
+            // ===== COUNTER ANIMATION =====
+            let counterAnimated = false;
+            function animateCounters() {
+                if (counterAnimated) return;
+
+                const counters = document.querySelectorAll('.stat-number');
+                const statsSection = document.querySelector('.stats-section');
+                const statsSectionTop = statsSection.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+
+                if (statsSectionTop < windowHeight - 100) {
+                    counterAnimated = true;
+
+                    counters.forEach(function (counter) {
+                        const target = parseInt(counter.getAttribute('data-target'));
+                        const duration = 2000;
+                        const increment = target / (duration / 16);
+                        let current = 0;
+
+                        const updateCounter = function () {
+                            current += increment;
+                            if (current < target) {
+                                counter.textContent = Math.ceil(current);
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counter.textContent = target;
+                            }
+                        };
+
+                        updateCounter();
+                    });
+                }
+            }
+
+            // ===== SCROLL REVEAL ANIMATION =====
+            const revealElements = document.querySelectorAll('.scroll-reveal');
+
+            function revealOnScroll() {
+                const windowHeight = window.innerHeight;
+                const revealPoint = 100;
+
+                revealElements.forEach(function (element) {
+                    const elementTop = element.getBoundingClientRect().top;
+
+                    if (elementTop < windowHeight - revealPoint) {
+                        element.classList.add('active');
+                    }
+                });
+
+                // Trigger counter animation
+                animateCounters();
+            }
+
+            // Initial check
+            revealOnScroll();
+
+            // Check on scroll
+            window.addEventListener('scroll', revealOnScroll);
+
+            // Stagger animation delay for cards
+            const serviceCards = document.querySelectorAll('.service-card.scroll-reveal');
+            serviceCards.forEach(function (card, index) {
+                card.style.transitionDelay = (index * 0.1) + 's';
+            });
+
+            const featureItems = document.querySelectorAll('.feature-item.scroll-reveal');
+            featureItems.forEach(function (item, index) {
+                item.style.transitionDelay = (index * 0.08) + 's';
+            });
+
+            const statItems = document.querySelectorAll('.stat-item.scroll-reveal');
+            statItems.forEach(function (item, index) {
+                item.style.transitionDelay = (index * 0.15) + 's';
+            });
+        });
+    </script>
+
+</asp:Content>

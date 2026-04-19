@@ -1,0 +1,817 @@
+﻿<%@ Page Title="Contact Us" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Contact.aspx.cs" Inherits="Emonti_Optometrist_Website.Contact" %>
+
+<asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* Hero Section */
+        .contact-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            margin-top: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .contact-hero .container {
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+        
+        .contact-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+        
+        .contact-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .contact-content {
+            padding: 2rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .contact-content > * {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .contact-content > *:nth-child(1) { animation-delay: 0.1s; }
+        .contact-content > *:nth-child(2) { animation-delay: 0.2s; }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .contact-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+            }
+        }
+        
+        .contact-info {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .contact-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .contact-info:hover::before {
+            left: 100%;
+        }
+
+        .contact-info:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .contact-info h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .contact-info h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLine 0.6s ease-out 0.3s forwards;
+        }
+        
+        @keyframes expandLine {
+            from { width: 0; }
+            to { width: 60px; }
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        .contact-item.animated {
+            opacity: 1;
+            transform: translateX(0);
+            animation: slideInLeft 0.5s ease-out forwards;
+        }
+        
+        .contact-item:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+            transform: translateX(8px);
+            border-left-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .contact-icon {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-right: 1rem;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 10px;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .contact-item:hover .contact-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .contact-details h3 {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .contact-details p {
+            color: #666;
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .hours-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1.5rem;
+            margin: 1rem -1.5rem 0;
+            border-radius: 12px;
+        }
+
+        .hours-info {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hours-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .hours-info:hover::before {
+            left: 100%;
+        }
+
+        .hours-info:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .hours-info h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .hours-info h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLine 0.6s ease-out 0.3s forwards;
+        }
+        
+        .hours-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hours-content h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.25rem;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .hours-content h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLineCenter 0.6s ease-out 0.3s forwards;
+        }
+        
+        @keyframes expandLineCenter {
+            from { width: 0; }
+            to { width: 60px; }
+        }
+        
+        .hours-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .hours-info .hours-grid {
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .hours-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .hours-info .hours-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+        }
+        
+        .hours-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1.25rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hours-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .hours-card:hover::before {
+            left: 100%;
+        }
+
+        .hours-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        .hours-card h3 {
+            color: #333;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .hours-card h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .hours-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .hours-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .hours-list li:hover {
+            padding-left: 0.5rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 5px;
+        }
+
+        .hours-info .hours-list li {
+            padding: 0.5rem 0;
+        }
+        
+        .hours-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .day {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        
+        .time {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .map-section {
+            margin-top: 1.5rem;
+        }
+
+        .map-section h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.25rem;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .map-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLineCenter 0.6s ease-out 0.3s forwards;
+        }
+        
+        .map-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            transition: left 0.5s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .map-container:hover::before {
+            left: 100%;
+        }
+
+        .map-container:hover {
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+            transform: translateY(-3px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .map-container iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .map-container:hover iframe {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .map-container p {
+            margin-top: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 992px) {
+            .contact-hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+            
+            .contact-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .contact-hero p {
+                font-size: 1.1rem;
+            }
+            
+            .contact-content {
+                padding: 1.75rem 1.25rem;
+            }
+            
+            .contact-grid {
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .contact-hero {
+                padding: 6rem 1rem 3rem;
+                margin-top: 0;
+            }
+            
+            .contact-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .contact-hero p {
+                font-size: 1rem;
+            }
+
+            .contact-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .hours-section {
+                padding: 1.25rem 1rem;
+                margin: 1rem -1rem 0;
+            }
+
+            .hours-info {
+                padding: 1.25rem;
+            }
+            
+            .hours-info h2,
+            .contact-info h2,
+            .map-section h2 {
+                font-size: 1.5rem;
+            }
+
+            .contact-item {
+                padding: 0.875rem;
+            }
+
+            .contact-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.3rem;
+            }
+
+            .map-container {
+                padding: 1rem;
+            }
+
+            .map-container iframe {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .contact-hero {
+                padding: 5rem 0.75rem 2.5rem;
+            }
+            
+            .contact-hero h1 {
+                font-size: 2rem;
+            }
+
+            .contact-hero p {
+                font-size: 0.95rem;
+            }
+            
+            .contact-content {
+                padding: 1.25rem 0.75rem;
+            }
+
+            .contact-info {
+                padding: 1.25rem;
+            }
+            
+            .contact-info h2,
+            .hours-info h2,
+            .map-section h2 {
+                font-size: 1.35rem;
+            }
+
+            .hours-card {
+                padding: 1rem;
+            }
+            
+            .contact-item {
+                padding: 0.75rem;
+            }
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+    </style>
+</asp:Content>
+
+<asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
+    <!-- Contact Hero Section -->
+    <section class="contact-hero">
+        <div class="container">
+            <h1>Contact Us</h1>
+            <p>Get in touch with us for appointments, inquiries, or to learn more about our services. We're here to help with all your eye care needs.</p>
+        </div>
+    </section>
+
+    <!-- Contact Content -->
+    <div class="contact-content">
+        <div class="contact-grid">
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h2>Get In Touch</h2>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="contact-details">
+                        <h3>Address</h3>
+                        <p>Shop 7 New Colonnade<br />Devereaux Ave, Vincent<br />East London 5247, South Africa</p>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="contact-details">
+                        <h3>Phone</h3>
+                        <p>076 463 1930</p>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="contact-details">
+                        <h3>Email</h3>
+                        <p>emontioptom@gmail.com</p>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="contact-details">
+                        <h3>Emergency</h3>
+                        <p>For urgent eye care, call us immediately or visit our emergency service.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Hours -->
+            <div class="hours-info">
+                <h2>Business Hours</h2>
+                <div class="hours-grid">
+                    <div class="hours-card">
+                        <h3>Regular Hours</h3>
+                        <ul class="hours-list">
+                            <li>
+                                <span class="day">Monday - Friday</span>
+                                <span class="time">8:00 AM - 5:00 PM</span>
+                            </li>
+                            <li>
+                                <span class="day">Saturday</span>
+                                <span class="time">8:00 AM - 2:00 PM</span>
+                            </li>
+                            <li>
+                                <span class="day">Sunday</span>
+                                <span class="time">Closed</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="hours-card">
+                        <h3>Appointment Booking</h3>
+                        <ul class="hours-list">
+                            <li>
+                                <span class="day">Online Booking</span>
+                                <span class="time">24/7 Available</span>
+                            </li>
+                            <li>
+                                <span class="day">Phone Booking</span>
+                                <span class="time">During Business Hours</span>
+                            </li>
+                            <li>
+                                <span class="day">Walk-ins</span>
+                                <span class="time">Subject to Availability</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="contact-content">
+        <div class="map-section">
+            <h2>Find Us</h2>
+            <div class="map-container">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3304.123456789!2d27.901702!3d-32.981608!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDU4JzU3LjgiUyAyN8KwNTQnMDYuMSJF!5e0!3m2!1sen!2sza!4v1234567890123!5m2!1sen!2sza"
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                <p>We are conveniently located in the heart of East London, easily accessible by public transport and with ample parking available.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Intersection Observer for scroll animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -30px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe contact items for scroll animations
+            const contactItems = document.querySelectorAll('.contact-item');
+            contactItems.forEach(function(item, index) {
+                // Add staggered delay
+                item.style.animationDelay = (index * 0.1) + 's';
+                observer.observe(item);
+            });
+        });
+    </script>
+</asp:Content>

@@ -1,0 +1,221 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.UI;
+
+namespace Emonti_Optometrist_Website
+{
+	public partial class SiteMaster : MasterPage
+	{
+		protected void Page_Load(object sender, EventArgs e)
+		{
+			if (!IsPostBack)
+			{
+				UpdateCartCount();
+				UpdateLoginState();
+
+				// Hide the Staff Portal button when the project runs
+				btnStaffPortal.Visible = false;
+			}
+		}
+
+		protected override void OnPreRender(EventArgs e)
+		{
+			base.OnPreRender(e);
+			// Update cart count before rendering to catch any changes during the page lifecycle
+			UpdateCartCount();
+		}
+
+		private void UpdateLoginState()
+		{
+			// Check if user is logged in using session
+			bool isLoggedIn = IsUserLoggedIn();
+
+			// Show/hide login controls based on session state
+			if (isLoggedIn)
+			{
+				// User is logged in - show My Account dropdown, hide login/register and staff portal
+				btnLogin.Visible = false;
+				btnRegister.Visible = false;
+				btnMyAccount.Visible = true;
+				btnStaffPortal.Visible = false;
+			}
+			else
+			{
+				// User is not logged in - show login, register and staff portal buttons
+				btnLogin.Visible = true;
+				btnRegister.Visible = true;
+				btnMyAccount.Visible = false;
+				btnStaffPortal.Visible = true;
+			}
+		}
+
+		/// <summary>
+		/// Helper method to check if user is logged in using session-based authentication
+		/// </summary>
+		/// <returns>True if user is logged in, false otherwise</returns>
+		public bool IsUserLoggedIn()
+		{
+			return Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+		}
+
+		/// <summary>
+		/// Helper method to get the current user's customer ID from session
+		/// </summary>
+		/// <returns>Customer ID as string, or null if not logged in</returns>
+		public string GetCurrentCustomerId()
+		{
+			return Session["Cust_ID"]?.ToString();
+		}
+
+		/// <summary>
+		/// Helper method to get the current user's email from session
+		/// </summary>
+		/// <returns>User email as string, or null if not logged in</returns>
+		public string GetCurrentUserEmail()
+		{
+			return Session["UserEmail"]?.ToString();
+		}
+
+		private void UpdateCartCount()
+		{
+			int totalItems = 0;
+			bool isLoggedIn = IsUserLoggedIn();
+
+			if (isLoggedIn)
+			{
+				// Use database cart for logged-in users
+				string custId = GetCurrentCustomerId();
+				if (!string.IsNullOrEmpty(custId))
+				{
+					try
+					{
+						int cartId = CartDatabase.GetOrCreateCart(custId);
+						totalItems = CartDatabase.GetCartItemCount(cartId);
+					}
+					catch (Exception ex)
+					{
+						System.Diagnostics.Debug.WriteLine($"Error getting database cart count: {ex.Message}");
+						totalItems = 0;
+					}
+				}
+			}
+			else
+			{
+				// Use session cart for guests
+				totalItems = CartTransfer.GetTotalItems(Session.SessionID);
+			}
+
+			// Find the cart count span and update it
+			var cartCountSpan = btnCart.FindControl("cartCountSpan") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			if (cartCountSpan != null)
+			{
+				cartCountSpan.InnerText = totalItems.ToString();
+			}
+		}
+
+		private void UpdateWishlistCount()
+		{
+			if (IsUserLoggedIn())
+			{
+				string custId = GetCurrentCustomerId();
+				if (!string.IsNullOrEmpty(custId))
+				{
+					try
+					{
+						int customerId = Convert.ToInt32(custId);
+						int wishlistCount = WishlistDatabase.GetWishlistItemCount(customerId);
+
+						// Find the wishlist count span and update it (if it exists)
+						var wishlistCountSpan = btnWishlist.FindControl("wishlistCountSpan") as System.Web.UI.HtmlControls.HtmlGenericControl;
+						if (wishlistCountSpan != null)
+						{
+							wishlistCountSpan.InnerText = wishlistCount.ToString();
+						}
+					}
+					catch (Exception ex)
+					{
+						System.Diagnostics.Debug.WriteLine($"Error getting wishlist count: {ex.Message}");
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Public method to update cart counter - call this from other pages after cart modifications
+		/// </summary>
+		public void UpdateCartCounter()
+		{
+			UpdateCartCount();
+		}
+
+		protected void btnCart_Click(object sender, EventArgs e)
+		{
+			// Redirect to cart page
+			Response.Redirect("~/Cart.aspx");
+		}
+
+		protected void btnLogin_Click(object sender, EventArgs e)
+		{
+			// Redirect to login page
+			Response.Redirect("~/Account/Login.aspx");
+		}
+
+		protected void btnRegister_Click(object sender, EventArgs e)
+		{
+			// Redirect to register page
+			Response.Redirect("~/Account/Register.aspx");
+		}
+
+		protected void btnMyAccount_Click(object sender, EventArgs e)
+		{
+			// Toggle dropdown visibility
+			string script = @"
+                var dropdown = document.getElementById('myAccountDropdown');
+                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                    dropdown.style.display = 'block';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            ";
+			ScriptManager.RegisterStartupScript(this, GetType(), "ToggleDropdown", script, true);
+		}
+
+		protected void btnPersonalDetails_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/PersonalDetails.aspx");
+		}
+
+		protected void btnOrders_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Orders.aspx");
+		}
+
+		protected void btnAppointments_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Appointments.aspx");
+		}
+
+		protected void btnWishlist_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Wishlist.aspx");
+		}
+
+		protected void btnLogout_Click(object sender, EventArgs e)
+		{
+			// Clear session variables
+			Session["Cust_ID"] = null;
+			Session["UserEmail"] = null;
+			Session["IsLoggedIn"] = null;
+
+			// Redirect to home page
+			Response.Redirect("~/Default.aspx");
+		}
+
+		protected void btnStaffPortal_Click(object sender, EventArgs e)
+		{
+			// Redirect to staff portal login
+			Response.Redirect("~/Staff/Login.aspx");
+		}
+	}
+}

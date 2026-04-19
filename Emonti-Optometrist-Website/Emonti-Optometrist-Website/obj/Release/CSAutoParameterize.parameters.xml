@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parameters>
+  <parameter name="DefaultConnection-Web.config Connection String" description="DefaultConnection Connection String used in web.config by the application to access the database." defaultValue="Data Source=(LocalDb)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\aspnet-Emonti-Optometrist-Website-20250820104328.mdf;Initial Catalog=aspnet-Emonti-Optometrist-Website-20250820104328;Integrated Security=True" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\A\.PMB-G20-59\\Desktop\\Emonti-Optometrist-Website\\Emonti-Optometrist-Website\\Emonti-Optometrist-Website\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='DefaultConnection']/@connectionString" />
+  </parameter>
+  <parameter name="ProductConnection-Web.config Connection String" description="ProductConnection Connection String used in web.config by the application to access the database." defaultValue="Data Source=146.230.177.46;Initial Catalog=WstGrp5;User ID=WstGrp5;Password=87ad5;Encrypt=False" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\A\.PMB-G20-59\\Desktop\\Emonti-Optometrist-Website\\Emonti-Optometrist-Website\\Emonti-Optometrist-Website\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='ProductConnection']/@connectionString" />
+  </parameter>
+</parameters>

@@ -1,0 +1,223 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Emonti_Optometrist_Website
+{
+	public partial class SiteMaster : MasterPage
+	{
+		protected global::System.Web.UI.HtmlControls.HtmlGenericControl navMenu;
+
+		protected void Page_Load(object sender, EventArgs e)
+		{
+			if (!IsPostBack)
+			{
+				UpdateCartCount();
+				UpdateLoginState();
+
+				// Hide navigation links if staff is logged in
+				bool isStaffLoggedIn = Session["IsStaffLoggedIn"] != null && (bool)Session["IsStaffLoggedIn"];
+				navMenu.Visible = !isStaffLoggedIn;
+				btnCart.Visible = !isStaffLoggedIn;
+				btnLogin.Visible = !isStaffLoggedIn;
+				btnRegister.Visible = !isStaffLoggedIn;
+			}
+		}
+
+		protected override void OnPreRender(EventArgs e)
+		{
+			base.OnPreRender(e);
+			// Ensure login state is up-to-date before rendering
+			UpdateLoginState();
+			// Update cart count before rendering to catch any changes during the page lifecycle
+			UpdateCartCount();
+		}
+
+		private void UpdateLoginState()
+		{
+			bool isLoggedIn = IsUserLoggedIn();
+
+			// Try to hide the grouped login/register placeholder if present
+			try
+			{
+				var phAuth = FindControl("phAuth") as PlaceHolder;
+				if (phAuth != null)
+				{
+					phAuth.Visible = !isLoggedIn;
+				}
+			}
+			catch { }
+
+			// Individual control visibility as fallback
+			btnLogin.Visible = !isLoggedIn;
+			btnRegister.Visible = !isLoggedIn;
+			btnMyAccount.Visible = isLoggedIn;
+
+			// Show greeting with first name only
+			try
+			{
+				string first = Session["FirstName"]?.ToString() ?? string.Empty;
+				string display = first.Trim();
+				if (!string.IsNullOrEmpty(display) && isLoggedIn)
+				{
+					lblGreeting.Text = "Hi " + display;
+					lblGreeting.Visible = true;
+				}
+				else if (lblGreeting != null)
+				{
+					lblGreeting.Text = string.Empty;
+					lblGreeting.Visible = false;
+				}
+			}
+			catch { }
+		}
+
+		public bool IsUserLoggedIn()
+		{
+			return Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+		}
+
+		public string GetCurrentCustomerId()
+		{
+			return Session["Cust_ID"]?.ToString();
+		}
+
+		public string GetCurrentUserEmail()
+		{
+			return Session["UserEmail"]?.ToString();
+		}
+
+		private void UpdateCartCount()
+		{
+			int totalItems = 0;
+			bool isLoggedIn = IsUserLoggedIn();
+
+			if (isLoggedIn)
+			{
+				string custId = GetCurrentCustomerId();
+				if (!string.IsNullOrEmpty(custId))
+				{
+					try
+					{
+						int cartId = CartDatabase.GetOrCreateCart(custId);
+						totalItems = CartDatabase.GetCartItemCount(cartId);
+					}
+					catch (Exception ex)
+					{
+						System.Diagnostics.Debug.WriteLine($"Error getting database cart count: {ex.Message}");
+						totalItems = 0;
+					}
+				}
+			}
+			else
+			{
+				totalItems = CartTransfer.GetTotalItems(Session.SessionID);
+			}
+
+			var cartCountSpan = btnCart.FindControl("cartCountSpan") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			if (cartCountSpan != null)
+			{
+				cartCountSpan.InnerText = totalItems.ToString();
+			}
+		}
+
+		private void UpdateWishlistCount()
+		{
+			if (IsUserLoggedIn())
+			{
+				string custId = GetCurrentCustomerId();
+				if (!string.IsNullOrEmpty(custId))
+				{
+					try
+					{
+						int customerId = Convert.ToInt32(custId);
+						int wishlistCount = WishlistDatabase.GetWishlistItemCount(customerId);
+
+						var wishlistCountSpan = btnWishlist.FindControl("wishlistCountSpan") as System.Web.UI.HtmlControls.HtmlGenericControl;
+						if (wishlistCountSpan != null)
+						{
+							wishlistCountSpan.InnerText = wishlistCount.ToString();
+						}
+					}
+					catch (Exception ex)
+					{
+						System.Diagnostics.Debug.WriteLine($"Error getting wishlist count: {ex.Message}");
+					}
+				}
+			}
+		}
+
+		public void UpdateCartCounter()
+		{
+			UpdateCartCount();
+		}
+
+		protected void btnCart_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Cart.aspx");
+		}
+
+		protected void btnLogin_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Account/Login.aspx");
+		}
+
+		protected void btnRegister_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Account/Register.aspx");
+		}
+
+		protected void btnMyAccount_Click(object sender, EventArgs e)
+		{
+			string script = @"
+                var dropdown = document.getElementById('myAccountDropdown');
+                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                    dropdown.style.display = 'block';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            ";
+			ScriptManager.RegisterStartupScript(this, GetType(), "ToggleDropdown", script, true);
+		}
+
+		protected void btnPersonalDetails_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/PersonalDetails.aspx");
+		}
+
+		protected void btnOrders_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Orders.aspx");
+		}
+
+		protected void btnAppointments_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Appointments.aspx");
+		}
+
+		protected void btnWishlist_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Wishlist.aspx");
+		}
+
+		protected void btnLogout_Click(object sender, EventArgs e)
+		{
+			// Clear session variables
+			Session["Cust_ID"] = null;
+			Session["UserEmail"] = null;
+			Session["IsLoggedIn"] = null;
+			Session["FirstName"] = null;
+			Session["LastName"] = null;
+
+			// Redirect to home page
+			Response.Redirect("~/Default.aspx");
+		}
+
+		protected void btnStaffPortal_Click(object sender, EventArgs e)
+		{
+			Response.Redirect("~/Staff/Login.aspx");
+		}
+	}
+}

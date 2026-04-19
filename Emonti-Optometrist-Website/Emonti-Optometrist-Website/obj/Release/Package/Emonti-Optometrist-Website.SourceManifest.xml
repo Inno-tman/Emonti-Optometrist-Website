@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<sitemanifest>
+  <IisApp path="C:\Users\A.PMB-G20-59\Desktop\Emonti-Optometrist-Website\Emonti-Optometrist-Website\Emonti-Optometrist-Website\obj\Release\Package\PackageTmp" />
+  <setAcl path="C:\Users\A.PMB-G20-59\Desktop\Emonti-Optometrist-Website\Emonti-Optometrist-Website\Emonti-Optometrist-Website\obj\Release\Package\PackageTmp" setAclResourceType="Directory" />
+  <setAcl path="C:\Users\A.PMB-G20-59\Desktop\Emonti-Optometrist-Website\Emonti-Optometrist-Website\Emonti-Optometrist-Website\obj\Release\Package\PackageTmp" setAclUser="anonymousAuthenticationUser" setAclResourceType="Directory" />
+</sitemanifest>

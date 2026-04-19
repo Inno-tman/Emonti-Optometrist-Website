@@ -1,0 +1,474 @@
+﻿using System;
+using System.Linq;
+using System.Web.UI;
+using System.Data.SqlClient;
+using System.Net.Mail;
+using Emonti_Optometrist_Website.Models;
+
+namespace Emonti_Optometrist_Website
+{
+    public partial class OrderConfirmation : Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                // Check if this is a new payment confirmation
+                string paymentRef = Request.QueryString["ref"];
+                if (!string.IsNullOrEmpty(paymentRef))
+                {
+                    // Create order from payment confirmation
+                    CreateOrderFromPayment(paymentRef);
+                }
+                
+                // Load order details
+                LoadOrderDetails();
+            }
+        }
+
+        private void LoadOrderDetails()
+        {
+            try
+            {
+                // Get order ID from query string
+                string orderIdStr = Request.QueryString["OrderId"];
+                
+                if (string.IsNullOrEmpty(orderIdStr) || !int.TryParse(orderIdStr, out int orderId))
+                {
+                    ShowMessage("Invalid order ID. Please contact support if this issue persists.", false);
+                    return;
+                }
+
+                // Load order details from database
+                var order = OrderDatabase.GetOrder(orderId);
+                if (order == null)
+                {
+                    ShowMessage("Order not found. Please contact support.", false);
+                    return;
+                }
+
+                // Display order information
+                litOrderNumber.Text = order.Order_Number;
+                litOrderDate.Text = order.Order_Date.ToString("MMMM dd, yyyy");
+
+                // Load order items
+                var orderItems = OrderDatabase.GetOrderItems(orderId);
+                if (orderItems != null && orderItems.Count > 0)
+                {
+                    // Bind order items to repeater
+                    rptOrderItems.DataSource = orderItems;
+                    rptOrderItems.DataBind();
+                    
+                    // Display order totals
+                    decimal subtotal = orderItems.Sum(x => x.Subtotal);
+                    decimal shipping = 150.00m; // Fixed shipping cost
+                    decimal total = order.Order_Total;
+
+                    // Update literals with real data
+                    litSubtotal.Text = subtotal.ToString("F2");
+                    litShipping.Text = shipping.ToString("F2");
+                    litTotal.Text = total.ToString("F2");
+                }
+
+                // Display shipping information
+                litShippingAddress.Text = order.Delivery_Address.Replace("\n", "<br>");
+                litPaymentMethod.Text = GetPaymentMethodDisplay(order.Payment_Method);
+
+                // Note: Email is sent in CreateOrderFromPayment after order creation
+                // This prevents duplicate emails when user refreshes the confirmation page
+                // Note: Inventory levels are updated in CreateOrderFromPayment after order items are added
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading order details: {ex.Message}");
+                ShowMessage("Error loading order details. Please contact support.", false);
+            }
+        }
+
+        private void ShowMessage(string message, bool isSuccess)
+        {
+            // You'll need to add a message panel to the .aspx file
+            // lblMessage.Text = message;
+            // pnlMessage.CssClass = isSuccess ? "alert alert-success" : "alert alert-error";
+            // pnlMessage.Visible = true;
+        }
+
+        private string GetPaymentMethodDisplay(string paymentMethod)
+        {
+            switch (paymentMethod?.ToLower())
+            {
+                case "paystack":
+                    return "Paystack (Secure Payment Gateway)";
+                case "card":
+                    return "Credit/Debit Card";
+                case "eft":
+                    return "EFT/Bank Transfer";
+                case "paypal":
+                    return "PayPal";
+                case "medical-aid":
+                    return "Medical Aid";
+                default:
+                    return paymentMethod ?? "Not specified";
+            }
+        }
+
+        protected void btnViewOrder_Click(object sender, EventArgs e)
+        {
+            // Force redirect to Orders page to view order history
+            Response.Redirect("~/Orders.aspx", true);
+        }
+
+        protected void btnContinueShopping_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Shop.aspx");
+        }
+
+        protected void btnBookAppointment_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/BookAppointment.aspx");
+        }
+
+        private string GetCustomerEmail(string custId)
+        {
+            try
+            {
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    string query = "SELECT Customer_Email FROM customer WHERE Cust_ID = @CustID";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustID", custId);
+                        conn.Open();
+                        object result = cmd.ExecuteScalar();
+                        return result?.ToString() ?? string.Empty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting customer email: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        private void SendOrderConfirmationEmail(int orderId, Order order)
+        {
+            try
+            {
+                // Get customer email from database
+                string customerEmail = GetCustomerEmail(order.CustID);
+                if (string.IsNullOrEmpty(customerEmail))
+                {
+                    System.Diagnostics.Debug.WriteLine($"No customer email found for order {orderId}");
+                    return;
+                }
+
+                // Get order items for email content
+                var orderItems = OrderDatabase.GetOrderItems(orderId);
+                if (orderItems == null || orderItems.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"No order items found for order {orderId}");
+                    return;
+                }
+
+                // Build order items list for email
+                string orderItemsList = string.Join("\n", orderItems.Select(item => 
+                    $"  • {item.Product_Name} (Qty: {item.Quantity}) - R {item.Subtotal:F2}"));
+
+                // Calculate totals
+                decimal subtotal = orderItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m; // Fixed shipping cost
+
+                // Build email body
+                string body = $@"Dear Valued Customer,
+
+Your order has been successfully placed with Emonti Optometrist.
+
+ORDER DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Order Number: {order.Order_Number}
+Order Date: {order.Order_Date:dddd, MMMM dd, yyyy}
+Order Status: {order.Order_Status}
+
+ORDER ITEMS:
+{orderItemsList}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: R {subtotal:F2}
+Shipping: R {shipping:F2}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL: R {order.Order_Total:F2}
+
+SHIPPING INFORMATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{order.Delivery_Address.Replace("\n", "\n")}
+
+PAYMENT INFORMATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Payment Method: {GetPaymentMethodDisplay(order.Payment_Method)}
+Payment Status: {order.Payment_Status}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your order will be processed and shipped within 3-5 business days. You will receive a tracking number once your order has been dispatched.
+
+If you have any questions or concerns about your order, please contact us at:
+Phone: 076 463 1930
+Email: emonti.istn3si@gmail.com
+
+Thank you for choosing Emonti Optometrist!
+
+Best regards,
+Emonti Optometrist Team";
+
+                // Get SMTP configuration from web.config
+                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
+                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
+                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
+                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
+                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
+                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+
+                // Validate SMTP credentials are configured
+                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: SMTP credentials not configured in web.config");
+                    return;
+                }
+
+                // Send email using SMTP
+                using (SmtpClient smtp = new SmtpClient(smtpHost, smtpPort))
+                {
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
+                    smtp.EnableSsl = enableSsl;
+                    smtp.Timeout = 30000; // 30 seconds timeout
+
+                    using (MailMessage message = new MailMessage())
+                    {
+                        message.From = new MailAddress(smtpEmail, smtpFromName);
+                        message.To.Add(customerEmail);
+                        message.Subject = $"Order Confirmation - {order.Order_Number} - Emonti Optometrist";
+                        message.Body = body;
+                        message.IsBodyHtml = false;
+
+                        smtp.Send(message);
+                        System.Diagnostics.Debug.WriteLine($"Order confirmation email sent to: {customerEmail} for order {order.Order_Number}");
+                    }
+                }
+            }
+            catch (SmtpException smtpEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"SMTP Error sending order confirmation email: {smtpEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"SMTP Status Code: {smtpEx.StatusCode}");
+                // Don't throw - email failure shouldn't break the order confirmation
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error sending order confirmation email: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                // Don't throw - email failure shouldn't break the order confirmation
+            }
+        }
+
+        private string GetCustomerStreetAddress(string custId)
+        {
+            try
+            {
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    string query = @"
+                        SELECT Street_Number, Street_Name, Complex_Name, Unit_Number
+                        FROM customer 
+                        WHERE Cust_ID = @CustID";
+                    
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustID", custId);
+                        conn.Open();
+                        
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string streetNumber = reader["Street_Number"]?.ToString() ?? "";
+                                string streetName = reader["Street_Name"]?.ToString() ?? "";
+                                string complexName = reader["Complex_Name"]?.ToString() ?? "";
+                                string unitNumber = reader["Unit_Number"]?.ToString() ?? "";
+                                
+                                // Build street address
+                                string streetAddress = "";
+                                if (!string.IsNullOrEmpty(streetNumber) && !string.IsNullOrEmpty(streetName))
+                                {
+                                    streetAddress = streetNumber + " " + streetName;
+                                }
+                                else if (!string.IsNullOrEmpty(streetName))
+                                {
+                                    streetAddress = streetName;
+                                }
+                                
+                                if (!string.IsNullOrEmpty(complexName))
+                                {
+                                    streetAddress += (string.IsNullOrEmpty(streetAddress) ? "" : ", ") + complexName;
+                                }
+                                
+                                if (!string.IsNullOrEmpty(unitNumber))
+                                {
+                                    streetAddress += (string.IsNullOrEmpty(streetAddress) ? "" : ", Unit ") + unitNumber;
+                                }
+                                
+                                return streetAddress;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting customer street address: {ex.Message}");
+            }
+            
+            return "";
+        }
+
+        private void CreateOrderFromPayment(string paymentReference)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Payment reference = {paymentReference}");
+
+                // Get customer ID and cart ID from session
+                string custId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(custId))
+                {
+                    System.Diagnostics.Debug.WriteLine("CreateOrderFromPayment Error: Customer ID is null or empty");
+                    ShowMessage("Customer session expired. Please try again.", false);
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Customer ID = {custId}");
+
+                int cartId = CartDatabase.GetOrCreateCart(custId);
+                var cartItems = CartDatabase.GetCartItems(cartId);
+                
+                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Cart ID = {cartId}, Items Count = {cartItems.Count}");
+                
+                if (cartItems.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("CreateOrderFromPayment Error: No items in cart");
+                    ShowMessage("No items in cart. Please add items and try again.", false);
+                    return;
+                }
+
+                // Calculate order total
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m; // Fixed shipping cost
+                decimal total = subtotal + shipping;
+
+                // Get street address from customer database
+                string deliveryAddress = GetCustomerStreetAddress(custId);
+                if (string.IsNullOrEmpty(deliveryAddress))
+                {
+                    deliveryAddress = "Address not available";
+                }
+
+                // Create order in database
+                var order = new Order
+                {
+                    CustID = custId,
+                    Order_Date = DateTime.Now,
+                    Order_Total = total,
+                    Order_Status = "Paid", // Payment was successful
+                    Delivery_Address = deliveryAddress,
+                    Payment_Method = "paystack",
+                    Payment_Status = "Paid",
+                    Order_Number = OrderDatabase.GenerateOrderNumber(),
+                    Notes = $"Paystack Reference: {paymentReference}"
+                };
+
+                // Use database transaction to ensure atomicity
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    conn.Open();
+                    
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Create order
+                            int orderId = OrderDatabase.CreateOrder(order, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Order created with ID = {orderId}");
+
+                            // Create payment record in Payments table
+                            int paymentId = OrderDatabase.CreatePaymentRecord(orderId, custId, paymentReference, total, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Payment record created with ID = {paymentId}");
+
+                            // Add order items
+                            foreach (var cartItem in cartItems)
+                            {
+                                var orderItem = new DatabaseOrderItem
+                                {
+                                    OrderID = orderId,
+                                    Product_ID = Convert.ToInt32(cartItem.ProductId),
+                                    Product_Name = cartItem.ProductName,
+                                    Product_Brand = cartItem.Brand,
+                                    Product_Category = cartItem.Category,
+                                    Quantity = cartItem.Quantity,
+                                    Unit_Price = cartItem.Price,
+                                    Subtotal = cartItem.Subtotal
+                                };
+                                OrderDatabase.AddOrderItem(orderItem, conn, transaction);
+                            }
+
+                            // Update inventory levels after order items are added
+                            OrderDatabase.UpdateInventory(orderId, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"Inventory updated for order {orderId}");
+
+                            // Clear the cart after successful order
+                            CartDatabase.ClearCart(cartId);
+
+                            // Store order ID in session for confirmation page
+                            Session["LastOrderId"] = orderId;
+
+                            // Commit transaction
+                            transaction.Commit();
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Transaction committed successfully");
+
+                            // Update order object with the generated order ID
+                            order.OrderID = orderId;
+                            
+                            // Send order confirmation email after successful order creation
+                            SendOrderConfirmationEmail(orderId, order);
+
+                            // Redirect to show the created order
+                            Response.Redirect($"OrderConfirmation.aspx?OrderId={orderId}&fromPayment=true");
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Transaction rolled back due to error: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Stack Trace: {ex.StackTrace}");
+                            if (ex.InnerException != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment: Inner Exception: {ex.InnerException.Message}");
+                            }
+                            ShowMessage("Error creating order. Please contact support with reference: " + paymentReference, false);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment Error Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"CreateOrderFromPayment Error Inner Exception: {ex.InnerException.Message}");
+                }
+                ShowMessage("Error processing payment confirmation. Please contact support with reference: " + paymentReference, false);
+            }
+        }
+    }
+}

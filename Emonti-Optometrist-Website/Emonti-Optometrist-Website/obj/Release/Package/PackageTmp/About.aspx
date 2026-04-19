@@ -1,0 +1,1175 @@
+﻿<%@ Page Title="About Us" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="About.aspx.cs" Inherits="Emonti_Optometrist_Website.About" %>
+
+<asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
+    <style>
+        /* Keyframe Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Hero Section */
+        .about-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            margin-top: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .about-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .about-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .about-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+        
+        .about-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        /* About Content */
+        .about-content {
+            padding: clamp(2rem, 5vw, 5rem) clamp(1rem, 3vw, 2rem);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .about-section {
+            margin-bottom: clamp(3rem, 6vw, 5rem);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .about-section:last-of-type {
+            margin-bottom: clamp(1rem, 2vw, 2rem);
+        }
+
+        .about-section:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .about-section:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .about-section:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+        
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(2rem, 4vw, 4rem);
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .about-grid.reverse {
+            direction: rtl;
+        }
+
+        .about-grid.reverse > * {
+            direction: ltr;
+        }
+        
+        .about-text {
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        .about-grid.reverse .about-text {
+            animation: slideInRight 0.8s ease-out;
+        }
+        
+        .about-text h2 {
+            color: #2c5aa0;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .about-text h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: slideInLeft 1s ease-out 0.3s both;
+        }
+        
+        .about-text p {
+            color: #555;
+            line-height: 1.9;
+            margin-bottom: 1.5rem;
+            font-size: clamp(1rem, 2vw, 1.1rem);
+        }
+        
+        .about-image {
+            text-align: center;
+            animation: slideInRight 0.8s ease-out;
+            position: relative;
+        }
+
+        .about-grid.reverse .about-image {
+            animation: slideInLeft 0.8s ease-out;
+        }
+        
+        .about-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: scaleIn 0.8s ease-out;
+        }
+
+        .about-image img:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Creative Image Layouts */
+        .image-featured {
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .image-featured img {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .image-featured img:hover {
+            transform: scale(1.03) rotate(1deg);
+            box-shadow: 0 25px 70px rgba(102, 126, 234, 0.3);
+        }
+
+        .image-overlap-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            margin: 2rem 0;
+        }
+
+        .image-overlap-main {
+            position: relative;
+            z-index: 2;
+            width: 70%;
+            max-width: 500px;
+            animation: slideInRight 0.8s ease-out;
+        }
+
+        .image-overlap-main img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            transition: all 0.5s ease;
+        }
+
+        .image-overlap-secondary {
+            position: absolute;
+            top: 20%;
+            right: 5%;
+            width: 50%;
+            max-width: 350px;
+            z-index: 1;
+            opacity: 0.9;
+            animation: slideInLeft 1s ease-out 0.3s both;
+        }
+
+        .image-overlap-secondary img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            transform: rotate(-5deg);
+            transition: all 0.5s ease;
+        }
+
+        .image-overlap-secondary img:hover {
+            transform: rotate(0deg) scale(1.05);
+            opacity: 1;
+            z-index: 3;
+        }
+
+        .image-overlap-main img:hover {
+            transform: scale(1.08) translateY(-10px);
+            z-index: 3;
+        }
+
+        .image-asymmetrical {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .image-asymmetrical .img-large {
+            grid-row: span 2;
+        }
+
+        .image-asymmetrical img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+
+        .image-asymmetrical img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.25);
+        }
+
+        /* Alternative Creative Layouts */
+        
+        /* Asymmetrical Grid - Two images, one large, one small */
+        .image-asymmetrical-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 1rem;
+            margin: 2rem 0;
+            height: 500px;
+        }
+
+        .image-asymmetrical-grid .img-large {
+            grid-row: 1 / -1;
+        }
+
+        .image-asymmetrical-grid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+
+        .image-asymmetrical-grid img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.25);
+        }
+
+        /* Side-by-side with different sizes */
+        .image-side-by-side {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .image-side-by-side .img-primary {
+            flex: 2;
+            max-width: 65%;
+        }
+
+        .image-side-by-side .img-secondary {
+            flex: 1;
+            max-width: 35%;
+        }
+
+        .image-side-by-side img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+
+        .image-side-by-side img:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.25);
+        }
+
+        /* Split diagonal layout */
+        .image-split-diagonal {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin: 2rem 0;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-split-diagonal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+            z-index: 2;
+            transform: translateX(-50%);
+        }
+
+        .image-split-diagonal img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s ease;
+        }
+
+        .image-split-diagonal img:first-child {
+            border-radius: 20px 0 0 20px;
+        }
+
+        .image-split-diagonal img:last-child {
+            border-radius: 0 20px 20px 0;
+        }
+
+        .image-split-diagonal:hover img:first-child {
+            transform: scale(1.05) translateX(-5px);
+        }
+
+        .image-split-diagonal:hover img:last-child {
+            transform: scale(1.05) translateX(5px);
+        }
+
+        /* Featured image with decorative border */
+        .image-featured-border {
+            position: relative;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 25px;
+            margin: 2rem 0;
+        }
+
+        .image-featured-border::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 25px;
+            z-index: -1;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-featured-border:hover::before {
+            opacity: 0.5;
+        }
+
+        .image-featured-border img {
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+        }
+
+        .image-featured-border:hover img {
+            transform: scale(1.02);
+        }
+
+        /* Gallery style - clean grid */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .image-gallery img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s ease;
+        }
+
+        .image-gallery img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.25);
+        }
+        
+        /* Values Section */
+        .values-section-title {
+            text-align: center;
+            color: #2c5aa0;
+            margin-bottom: 3rem;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .values-section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: clamp(1.5rem, 3vw, 2.5rem);
+            margin-top: 3rem;
+        }
+        
+        .value-card {
+            background: white;
+            padding: clamp(1.5rem, 3vw, 2.5rem);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .value-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .value-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .value-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .value-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .value-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .value-card:hover::before {
+            left: 100%;
+        }
+        
+        .value-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+        
+        .value-icon {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            color: #2c5aa0;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            transition: all 0.3s ease;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .value-card:hover .value-icon {
+            transform: scale(1.2) rotate(5deg);
+            color: #667eea;
+            animation: none;
+        }
+        
+        .value-title {
+            font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .value-description {
+            color: #666;
+            line-height: 1.8;
+            font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+        }
+        
+        /* Team Section */
+        .team-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 3vw, 2rem);
+            margin: 0 -2rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .team-section-title {
+            text-align: center;
+            color: #2c5aa0;
+            margin-bottom: 3rem;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .team-section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: clamp(1.5rem, 3vw, 2.5rem);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .team-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            animation: scaleIn 0.6s ease-out forwards;
+        }
+
+        .team-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .team-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .team-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        .team-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+        }
+        
+        .team-photo {
+            height: clamp(180px, 25vw, 220px);
+            background: linear-gradient(135deg, #2c5aa0, #667eea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: clamp(3rem, 6vw, 4.5rem);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .team-photo::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            transition: transform 0.6s;
+        }
+
+        .team-card:hover .team-photo::before {
+            transform: scale(1.5);
+        }
+
+        .team-card:hover .team-photo {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transform: scale(1.1);
+        }
+        
+        .team-info {
+            padding: clamp(1.25rem, 2.5vw, 2rem);
+            text-align: center;
+        }
+        
+        .team-name {
+            font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .team-role {
+            color: #2c5aa0;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+        }
+        
+        .team-description {
+            color: #666;
+            line-height: 1.8;
+            font-size: clamp(0.9rem, 1.6vw, 1rem);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .about-grid {
+                gap: 2.5rem;
+            }
+
+            .values-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .image-overlap-container {
+                min-height: 350px;
+            }
+
+            .image-overlap-main {
+                width: 75%;
+            }
+
+            .image-overlap-secondary {
+                width: 55%;
+                right: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .about-hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+
+            .about-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .about-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .about-grid.reverse {
+                direction: ltr;
+            }
+
+            .about-text,
+            .about-image {
+                animation: fadeInUp 0.8s ease-out;
+            }
+
+            /* Creative layouts on mobile */
+            .image-overlap-container {
+                min-height: 300px;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .image-overlap-main {
+                width: 90%;
+                position: relative;
+            }
+
+            .image-overlap-secondary {
+                position: relative;
+                width: 85%;
+                top: 0;
+                right: 0;
+                opacity: 1;
+                transform: rotate(0deg);
+            }
+
+            .image-overlap-secondary img {
+                transform: rotate(0deg);
+            }
+
+            .image-side-by-side {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .image-side-by-side .img-primary,
+            .image-side-by-side .img-secondary {
+                max-width: 100%;
+                flex: 1;
+            }
+
+            .image-split-diagonal {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .image-split-diagonal::before {
+                display: none;
+            }
+
+            .image-split-diagonal img:first-child {
+                border-radius: 20px 20px 0 0;
+            }
+
+            .image-split-diagonal img:last-child {
+                border-radius: 0 0 20px 20px;
+            }
+
+            .image-asymmetrical-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                height: auto;
+            }
+
+            .image-asymmetrical-grid .img-large {
+                grid-row: auto;
+            }
+
+            .image-gallery {
+                grid-template-columns: 1fr;
+            }
+            
+            .values-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .team-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .about-content {
+                padding: 3rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .about-hero {
+                padding: 5rem 1rem 2.5rem;
+            }
+
+            .about-hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .about-hero p {
+                font-size: 0.95rem;
+            }
+
+            .value-card,
+            .team-card {
+                padding: 1.5rem;
+            }
+
+            .about-image img {
+                border-radius: 15px;
+            }
+
+            .image-overlap-container {
+                min-height: 250px;
+            }
+
+            .image-overlap-main,
+            .image-overlap-secondary {
+                width: 100%;
+            }
+
+            .image-side-by-side {
+                flex-direction: column;
+            }
+
+            .image-side-by-side .img-primary,
+            .image-side-by-side .img-secondary {
+                max-width: 100%;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .about-section.loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</asp:Content>
+
+<asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
+    <!-- About Hero Section -->
+    <section class="about-hero">
+        <div class="container">
+            <h1>About Emonti Optometrist</h1>
+            <p>Your trusted partner in eye care since 2023, providing comprehensive vision solutions with a personal touch.</p>
+        </div>
+    </section>
+
+    <!-- About Content -->
+    <div class="about-content">
+        <!-- Our Story Section -->
+        <div class="about-section">
+            <div class="about-grid">
+                <div class="about-image">
+                    <div class="image-overlap-container">
+                        <div class="image-overlap-main">
+                            <img src="https://lh3.googleusercontent.com/p/AF1QipMPIacwqkBsrXlil3a61-xRy0Z6SM6M544s0M9m=s680-w680-h510-rw" alt="Emonti Practice" />
+                        </div>
+                        <div class="image-overlap-secondary">
+                            <img src="https://lh3.googleusercontent.com/p/AF1QipO1ir6DMiC6_CGG3NzkSyU-U13lTQZTT3LIPLwu=s680-w680-h510-rw" alt="Emonti Interior" />
+                        </div>
+                    </div>
+                </div>
+                <div class="about-text">
+                    <h2>Our Story</h2>
+                    <p>Founded in 2023, Emonti Optometrist has been serving the East London community with dedication and expertise. What started as a small family practice has grown into one of the region's most trusted eye care providers.</p>
+                    <p>Our commitment to excellence and personalized care has remained unchanged throughout our journey. We believe that every patient deserves the highest quality eye care, delivered with compassion and professionalism.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Our Mission Section -->
+        <div class="about-section">
+            <div class="about-grid">
+                <div class="about-text">
+                    <h2>Our Mission</h2>
+                    <p>At Emonti Optometrist, our mission is to provide exceptional eye care services that enhance the quality of life for our patients. We combine cutting-edge technology with years of experience to deliver accurate diagnoses and effective treatments.</p>
+                    <p>We are committed to educating our patients about their eye health and providing them with the tools they need to maintain optimal vision throughout their lives.</p>
+                </div>
+                <div class="about-image">
+                    <div class="image-side-by-side">
+                        <div class="img-primary">
+                            <img src="https://lh3.googleusercontent.com/p/AF1QipO1ir6DMiC6_CGG3NzkSyU-U13lTQZTT3LIPLwu=s680-w680-h510-rw" alt="Emonti Technology" />
+                        </div>
+                        <div class="img-secondary">
+                            <img src="https://lh3.googleusercontent.com/p/AF1QipMPIacwqkBsrXlil3a61-xRy0Z6SM6M544s0M9m=s680-w680-h510-rw" alt="Emonti Care" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Our Values -->
+        <div class="about-section">
+            <h2 class="values-section-title">Our Core Values</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 class="value-title">Compassionate Care</h3>
+                    <p class="value-description">We treat every patient with kindness, respect, and understanding, ensuring a comfortable and supportive experience.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <h3 class="value-title">Excellence</h3>
+                    <p class="value-description">We maintain the highest standards of professional care, using the latest technology and best practices in optometry.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="value-title">Community Focus</h3>
+                    <p class="value-description">We are deeply committed to serving our local community and building lasting relationships with our patients.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3 class="value-title">Innovation</h3>
+                    <p class="value-description">We continuously embrace new technologies and techniques to provide the best possible care for our patients.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Section -->
+    <section class="team-section">
+        <div class="about-content">
+            <h2 class="team-section-title">Meet Our Team</h2>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="team-photo">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="team-info">
+                        <h3 class="team-name">Philisiwe Mayisela</h3>
+                        <p class="team-role">Optometrist</p>
+                        <p class="team-description">With years of experience, Philisiwe Mayisela specializes in comprehensive eye exams and contact lens fittings.</p>
+                    </div>
+                </div>
+                <div class="team-card">
+                    <div class="team-photo">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="team-info">
+                        <h3 class="team-name">Svumelwano Dlamini</h3>
+                        <p class="team-role">Optometrist</p>
+                        <p class="team-description">Svumelwano Dlamini brings expertise in pediatric optometry and specializes in treating vision problems in children.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Enhanced scroll-triggered animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                threshold: 0.15,
+                rootMargin: '0px 0px -80px 0px'
+            };
+
+            const fadeInObserver = new IntersectionObserver(function(entries) {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('animate-in');
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, index * 100);
+                        fadeInObserver.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            // Observe sections and cards
+            const sections = document.querySelectorAll('.about-section');
+            sections.forEach(section => {
+                fadeInObserver.observe(section);
+            });
+
+            const cards = document.querySelectorAll('.value-card, .team-card');
+            cards.forEach(card => {
+                fadeInObserver.observe(card);
+            });
+
+            // Enhanced image reveal animation for creative layouts
+            const imageObserver = new IntersectionObserver(function(entries) {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            if (entry.target.closest('.image-overlap-main')) {
+                                entry.target.style.transform = 'scale(1) translateY(0)';
+                            } else if (entry.target.closest('.image-overlap-secondary')) {
+                                entry.target.style.transform = 'rotate(-5deg) scale(1)';
+                            } else if (entry.target.closest('.image-side-by-side')) {
+                                entry.target.style.transform = 'translateX(0) scale(1)';
+                            } else if (entry.target.closest('.image-split-diagonal')) {
+                                entry.target.style.transform = 'scale(1) translateX(0)';
+                            } else if (entry.target.closest('.image-gallery') || entry.target.closest('.image-asymmetrical-grid')) {
+                                entry.target.style.transform = 'scale(1)';
+                            } else {
+                                entry.target.style.transform = 'scale(1) translateY(0)';
+                            }
+                        }, index * 150);
+                        imageObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+            // Handle different image types
+            const overlapMainImages = document.querySelectorAll('.image-overlap-main img');
+            const overlapSecondaryImages = document.querySelectorAll('.image-overlap-secondary img');
+            const sideBySideImages = document.querySelectorAll('.image-side-by-side img');
+            const splitDiagonalImages = document.querySelectorAll('.image-split-diagonal img');
+            const galleryImages = document.querySelectorAll('.image-gallery img');
+            const asymmetricalImages = document.querySelectorAll('.image-asymmetrical-grid img');
+            const regularImages = document.querySelectorAll('.about-image img:not(.image-overlap-main img):not(.image-overlap-secondary img):not(.image-side-by-side img):not(.image-split-diagonal img):not(.image-gallery img):not(.image-asymmetrical-grid img)');
+
+            overlapMainImages.forEach(img => {
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.9) translateY(20px)';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                imageObserver.observe(img);
+            });
+
+            overlapSecondaryImages.forEach(img => {
+                img.style.opacity = '0';
+                img.style.transform = 'rotate(-10deg) scale(0.9)';
+                img.style.transition = 'opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1)';
+                imageObserver.observe(img);
+            });
+
+            sideBySideImages.forEach((img, index) => {
+                img.style.opacity = '0';
+                img.style.transform = 'translateX(' + (index === 0 ? '-20px' : '20px') + ') scale(0.95)';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                imageObserver.observe(img);
+            });
+
+            splitDiagonalImages.forEach((img, index) => {
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.9) translateX(' + (index === 0 ? '-10px' : '10px') + ')';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                imageObserver.observe(img);
+            });
+
+            galleryImages.forEach((img, index) => {
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.95)';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                setTimeout(() => imageObserver.observe(img), index * 100);
+            });
+
+            asymmetricalImages.forEach((img, index) => {
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.9)';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                setTimeout(() => imageObserver.observe(img), index * 100);
+            });
+
+            regularImages.forEach(img => {
+                img.style.opacity = '0';
+                img.style.transform = 'scale(0.95) translateY(20px)';
+                img.style.transition = 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                imageObserver.observe(img);
+            });
+
+            // Add hover effect enhancement for cards
+            const valueCards = document.querySelectorAll('.value-card');
+            valueCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                });
+            });
+
+            // Smooth scroll behavior enhancement
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</asp:Content>

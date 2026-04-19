@@ -1,0 +1,299 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Emonti_Optometrist_Website
+{
+    public partial class Cart : Page
+    {
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                LoadCart();
+                
+                // Update master page cart counter
+                var master = this.Master as SiteMaster;
+                if (master != null)
+                {
+                    master.UpdateCartCounter();
+                }
+            }
+            else
+            {
+                // On postback, still load cart to refresh display
+                LoadCart();
+            }
+        }
+
+        private void LoadCart()
+        {
+            List<CartItem> cartItems = new List<CartItem>();
+            bool isLoggedIn = Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+            
+            if (isLoggedIn)
+            {
+                // Use database cart for logged-in users
+                string custId = Session["Cust_ID"]?.ToString();
+                if (!string.IsNullOrEmpty(custId))
+                {
+                    try
+                    {
+                        int cartId = CartDatabase.GetOrCreateCart(custId);
+                        cartItems = CartDatabase.GetCartItems(cartId);
+                        Session["Cart_ID"] = cartId; // Store cart ID in session
+                        lblDebugSession.Text = "Database cart active";
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error loading database cart: {ex.Message}");
+                        lblDebugSession.Text = "Error loading cart";
+                    }
+                }
+            }
+            else
+            {
+                // Use session cart for guests
+                cartItems = CartTransfer.GetCart(Session.SessionID);
+                lblDebugSession.Text = "Session cart active";
+            }
+            
+            // Update debug labels
+            lblDebugCount.Text = cartItems.Count.ToString();
+            
+            if (cartItems.Count > 0)
+            {
+                pnlCartItems.Visible = true;
+                pnlEmptyCart.Visible = false;
+                
+                // Bind cart items to repeater
+                rptCartItems.DataSource = cartItems;
+                rptCartItems.DataBind();
+                
+                // Update item count
+                litItemCount.Text = cartItems.Count.ToString();
+                
+                // Update cart totals
+                UpdateCartTotals();
+            }
+            else
+            {
+                pnlCartItems.Visible = false;
+                pnlEmptyCart.Visible = true;
+            }
+        }
+
+        protected void rptCartItems_ItemCommand(object source, RepeaterCommandEventArgs e)
+        {
+            bool isLoggedIn = Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+            
+            if (isLoggedIn)
+            {
+                // Handle database cart operations
+                string cartItemIdStr = e.CommandArgument.ToString();
+                if (int.TryParse(cartItemIdStr, out int cartItemId))
+                {
+                    switch (e.CommandName)
+                    {
+                        case "IncreaseQuantity":
+                            // Simple: get current quantity and add 1
+                            var currentItems = CartDatabase.GetCartItems(Convert.ToInt32(Session["Cart_ID"]));
+                            var currentItem = currentItems.FirstOrDefault(x => x.CartItemId == cartItemId);
+                            if (currentItem != null)
+                            {
+                                CartDatabase.UpdateCartItemQuantity(cartItemId, currentItem.Quantity + 1);
+                            }
+                            break;
+                        case "DecreaseQuantity":
+                            // Simple: get current quantity and subtract 1
+                            var currentItems2 = CartDatabase.GetCartItems(Convert.ToInt32(Session["Cart_ID"]));
+                            var currentItem2 = currentItems2.FirstOrDefault(x => x.CartItemId == cartItemId);
+                            if (currentItem2 != null && currentItem2.Quantity > 1)
+                            {
+                                CartDatabase.UpdateCartItemQuantity(cartItemId, currentItem2.Quantity - 1);
+                            }
+                            else if (currentItem2 != null && currentItem2.Quantity == 1)
+                            {
+                                // If quantity is 1, remove the item instead
+                                CartDatabase.RemoveCartItem(cartItemId);
+                            }
+                            break;
+                        case "RemoveItem":
+                            CartDatabase.RemoveCartItem(cartItemId);
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                // Handle session cart operations
+                // Retrieve productId from hidden field inside the repeater item instead of CommandArgument
+                var item = e.Item;
+                var hfProduct = item.FindControl("hfProductId") as HiddenField;
+                string productId = hfProduct != null ? hfProduct.Value : e.CommandArgument.ToString();
+
+                var cartItems = CartTransfer.GetCart(Session.SessionID);
+
+                switch (e.CommandName)
+                {
+                    case "IncreaseQuantity":
+                        var itemInc = cartItems.FirstOrDefault(x => x.ProductId == productId);
+                        if (itemInc != null)
+                        {
+                            itemInc.Quantity++;
+                        }
+                        break;
+                    case "DecreaseQuantity":
+                        var itemDec = cartItems.FirstOrDefault(x => x.ProductId == productId);
+                        if (itemDec != null && itemDec.Quantity > 1)
+                        {
+                            itemDec.Quantity--;
+                        }
+                        else if (itemDec != null && itemDec.Quantity == 1)
+                        {
+                            // If quantity is 1, remove the item instead
+                            cartItems.RemoveAll(x => x.ProductId == productId);
+                        }
+                        break;
+                    case "RemoveItem":
+                        cartItems.RemoveAll(x => x.ProductId == productId);
+                        break;
+                }
+
+                CartTransfer.SaveCart(Session.SessionID, cartItems);
+            }
+
+            // Reload cart after any operation
+            LoadCart();
+        }
+
+        protected void txtQuantity_TextChanged(object sender, EventArgs e)
+        {
+            TextBox txtQuantity = (TextBox)sender;
+            RepeaterItem item = (RepeaterItem)txtQuantity.NamingContainer;
+            bool isLoggedIn = Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+            
+            if (int.TryParse(txtQuantity.Text, out int newQuantity) && newQuantity > 0)
+            {
+                if (isLoggedIn)
+                {
+                    // Handle database cart
+                    string cartItemIdStr = ((HiddenField)item.FindControl("hfCartItemId")).Value;
+                    if (int.TryParse(cartItemIdStr, out int cartItemId))
+                    {
+                        CartDatabase.UpdateCartItemQuantity(cartItemId, newQuantity);
+                    }
+                }
+                else
+                {
+                    // Handle session cart
+                    string productId = ((HiddenField)item.FindControl("hfProductId")).Value;
+                    var cartItems = CartTransfer.GetCart(Session.SessionID);
+                    var cartItem = cartItems.FirstOrDefault(x => x.ProductId == productId);
+                    if (cartItem != null)
+                    {
+                        cartItem.Quantity = newQuantity;
+                        CartTransfer.SaveCart(Session.SessionID, cartItems);
+                    }
+                }
+                LoadCart();
+            }
+            else
+            {
+                // Reset to 1 if invalid quantity
+                txtQuantity.Text = "1";
+            }
+        }
+
+        protected void btnApplyPromo_Click(object sender, EventArgs e)
+        {
+            string promoCode = txtPromoCode.Text.Trim().ToUpper();
+            
+            if (promoCode == "SAVE10")
+            {
+                lblPromoMessage.Text = "Promo code applied! 10% discount added.";
+                lblPromoMessage.Visible = true;
+                litDiscountCode.Text = "SAVE10";
+                discountRow.Visible = true;
+                UpdateCartTotals();
+            }
+            else if (!string.IsNullOrEmpty(promoCode))
+            {
+                lblPromoMessage.Text = "Invalid promo code. Please try again.";
+                lblPromoMessage.Visible = true;
+            }
+        }
+
+        private void UpdateCartTotals()
+        {
+            List<CartItem> cartItems = new List<CartItem>();
+            bool isLoggedIn = Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+            
+            if (isLoggedIn)
+            {
+                // Get database cart items
+                if (Session["Cart_ID"] != null)
+                {
+                    cartItems = CartDatabase.GetCartItems(Convert.ToInt32(Session["Cart_ID"]));
+                }
+            }
+            else
+            {
+                // Get session cart items
+                cartItems = CartTransfer.GetCart(Session.SessionID);
+            }
+            
+            if (cartItems.Count > 0)
+            {
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m; // Fixed shipping cost
+                decimal discount = 0;
+                
+                // Apply discount if promo code is applied
+                if (discountRow.Visible)
+                {
+                    discount = subtotal * 0.10m; // 10% discount
+                }
+                
+                decimal total = subtotal + shipping - discount;
+                
+                litSubtotalItems.Text = cartItems.Sum(x => x.Quantity).ToString();
+                litSubtotal.Text = subtotal.ToString("F2");
+                litShipping.Text = shipping.ToString("F2");
+                litDiscount.Text = discount.ToString("F2");
+                litTotal.Text = total.ToString("F2");
+            }
+        }
+
+        protected void btnStartShopping_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Shop.aspx");
+        }
+
+        protected void btnContinueShopping_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Shop.aspx");
+        }
+
+        protected void btnProceedToCheckout_Click(object sender, EventArgs e)
+        {
+            // Check if user is logged in using session
+            bool isLoggedIn = Session["IsLoggedIn"] != null && (bool)Session["IsLoggedIn"];
+            
+            if (isLoggedIn)
+            {
+                Response.Redirect("~/Checkout.aspx");
+            }
+            else
+            {
+                // Redirect to login page with return URL
+                Response.Redirect("~/Account/Login.aspx?ReturnUrl=" + Server.UrlEncode("~/Cart.aspx"));
+            }
+        }
+
+    }
+}
+

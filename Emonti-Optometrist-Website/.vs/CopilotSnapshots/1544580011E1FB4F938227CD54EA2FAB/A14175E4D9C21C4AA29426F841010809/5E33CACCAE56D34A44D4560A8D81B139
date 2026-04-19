@@ -1,0 +1,127 @@
+﻿using System;
+using System.Data.SqlClient;
+using System.Web;
+using System.Web.UI;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using Owin;
+using Emonti_Optometrist_Website.Models;
+
+namespace Emonti_Optometrist_Website.Account
+{
+    public partial class Login : Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                RegisterHyperLink.NavigateUrl = "Register";
+                // Enable this once you have account confirmation enabled for password reset functionality
+                //ForgotPasswordHyperLink.NavigateUrl = "Forgot";
+                
+                var returnUrl = HttpUtility.UrlEncode(Request.QueryString["ReturnUrl"]);
+                if (!String.IsNullOrEmpty(returnUrl))
+                {
+                    RegisterHyperLink.NavigateUrl += "?ReturnUrl=" + returnUrl;
+                }
+
+               
+            }
+        }
+
+         protected void LogIn(object sender, EventArgs e)
+        {
+            string connectionString = System.Configuration.ConfigurationManager
+                .ConnectionStrings["ProductConnection"].ConnectionString;
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "SELECT Cust_ID, Customer_Email FROM customer WHERE Customer_Email = @Email AND Customer_Password = @Password";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Email", Email.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Password", Password.Text.Trim());
+
+                    conn.Open();
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        // Store customer data in session
+                        string custId = reader["Cust_ID"].ToString();
+                        Session["Cust_ID"] = custId;
+                        Session["UserEmail"] = reader["Customer_Email"];
+                        Session["IsLoggedIn"] = true;
+
+                        // Merge session cart with user's database cart
+                        try
+                        {
+                            CartDatabase.MergeSessionCartWithUserCart(Session.SessionID, custId);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't prevent login
+                            System.Diagnostics.Debug.WriteLine($"Error merging cart on login: {ex.Message}");
+                        }
+
+                        // Redirect
+                        string returnUrl = Request.QueryString["ReturnUrl"];
+                        if (!string.IsNullOrEmpty(returnUrl))
+                        {
+                            Response.Redirect(HttpUtility.UrlDecode(returnUrl));
+                        }
+                        else
+                        {
+                            Response.Redirect("~/Default.aspx");
+                        }
+                    }
+                    else
+                    {
+                        // No customer match - check staff table
+                        reader.Close();
+
+                        try
+                        {
+                            string staffQuery = "SELECT Staff_ID, Staff_Name, Staff_Role, Staff_Password, Staff_Email FROM Staff WHERE ( Staff_ID = @Email)";
+                            using (SqlCommand staffCmd = new SqlCommand(staffQuery, conn))
+                            {
+                                staffCmd.Parameters.AddWithValue("@Email", Email.Text.Trim());
+ 
+                                using (SqlDataReader staffReader = staffCmd.ExecuteReader())
+                                {
+                                    if (staffReader.Read())
+                                    {
+                                        string dbPassword = staffReader["Staff_Password"]?.ToString() ?? string.Empty;
+
+                                        // Compare passwords (plain text comparison as current system uses plain text)
+                                        if (string.Equals(dbPassword, Password.Text.Trim(), StringComparison.Ordinal))
+                                        {
+                                            // Staff authenticated - set staff session and redirect to staff dashboard
+                                            string staffId = staffReader["Staff_ID"].ToString();
+                                            Session["StaffId"] = staffId;
+                                            Session["StaffName"] = staffReader["Staff_Name"]?.ToString();
+                                            Session["StaffRole"] = staffReader["Staff_Role"]?.ToString();
+                                            Session["IsStaffLoggedIn"] = true;
+
+                                            Response.Redirect("~/Staff/Dashboard.aspx");
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error checking staff login: {ex.Message}");
+                        }
+
+                        // If we get here, neither customer nor staff matched
+                        FailureText.Text = "Invalid email or password.";
+                        ErrorMessage.Visible = true;
+                    }
+                }
+            }
+        }
+    }
+}

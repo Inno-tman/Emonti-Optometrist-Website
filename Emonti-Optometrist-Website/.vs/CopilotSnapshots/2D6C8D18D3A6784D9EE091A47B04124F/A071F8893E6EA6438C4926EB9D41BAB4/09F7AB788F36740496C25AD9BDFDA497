@@ -1,0 +1,256 @@
+﻿using System;
+using System.Data.SqlClient;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Text.RegularExpressions;
+
+namespace Emonti_Optometrist_Website.Account
+{
+    public partial class Register : Page
+    {
+        private string connectionString = System.Configuration.ConfigurationManager
+            .ConnectionStrings["ProductConnection"].ConnectionString;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                rbIsMainMemberYes.Checked = true;
+                rbIsMainMemberNo.Checked = false;
+                mainMemberDetails.Style["display"] = "none";
+            }
+        }
+
+        protected void rbIsMainMember_Changed(object sender, EventArgs e)
+        {
+            mainMemberDetails.Style["display"] = rbIsMainMemberNo.Checked ? "block" : "none";
+        }
+
+        protected void btnCreateAccount_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!ValidateAccountInfo() || !ValidatePersonalInfo() || !ValidateMedicalInfo() || !ValidateAddressInfo())
+                    return;
+
+                InsertCustomerDetails();
+
+                SuccessMessage.Text = "Account created successfully!";
+                ErrorMessage.Text = "";
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage.Text = "An error occurred while creating your account: " + ex.Message;
+            }
+        }
+
+        private void InsertCustomerDetails()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        string query = @"
+                            INSERT INTO customer (
+                                Customer_Name, Customer_Surname, Customer_DOB, Customer_Gender,
+                                Customer_Email, Customer_Phone, Customer_Address,
+                                Medical_Aid, Medical_Aid_Number,
+                                Main_Member_Name, Main_Member_Surname, Main_Member_ID,
+                                Street_Number, Street_Name, Complex_Name, Unit_Number,
+                                City, Province, Postal_Code, Is_Archive, Customer_Password
+                            ) VALUES (
+                                @Customer_Name, @Customer_Surname, @Customer_DOB, @Customer_Gender,
+                                @Customer_Email, @Customer_Phone, @Customer_Address,
+                                @Medical_Aid, @Medical_Aid_Number,
+                                @Main_Member_Name, @Main_Member_Surname, @Main_Member_ID,
+                                @Street_Number, @Street_Name, @Complex_Name, @Unit_Number,
+                                @City, @Province, @Postal_Code, 0, @Customer_Password
+                            )";
+
+                        using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@Customer_Name", txtFirstName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Customer_Surname", txtLastName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Customer_DOB",
+                                string.IsNullOrEmpty(txtDateOfBirth.Text) ? DBNull.Value : (object)DateTime.Parse(txtDateOfBirth.Text));
+                            cmd.Parameters.AddWithValue("@Customer_Gender", ddlGender.SelectedValue);
+                            cmd.Parameters.AddWithValue("@Customer_Email", txtEmail.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Customer_Phone", txtPhone.Text.Trim());
+
+                            string address = $"{txtStreetNumber.Text} {txtStreetName.Text}";
+                            if (!string.IsNullOrEmpty(txtComplexName.Text))
+                                address += $", {txtComplexName.Text}";
+                            if (!string.IsNullOrEmpty(txtUnitNumber.Text))
+                                address += $", Unit {txtUnitNumber.Text}";
+                            address += $", {txtCity.Text}, {txtProvince.Text}, {txtPostalCode.Text}";
+                            cmd.Parameters.AddWithValue("@Customer_Address", address);
+
+                            cmd.Parameters.AddWithValue("@Medical_Aid", txtMedicalAid.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Medical_Aid_Number", txtMedicalAidNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Street_Number", txtStreetNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Street_Name", txtStreetName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Complex_Name", txtComplexName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Unit_Number", txtUnitNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@City", txtCity.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Province", txtProvince.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Postal_Code", txtPostalCode.Text.Trim());
+
+                            cmd.Parameters.AddWithValue("@Customer_Password", txtPassword.Text.Trim());
+
+                            if (rbIsMainMemberYes.Checked)
+                            {
+                                cmd.Parameters.AddWithValue("@Main_Member_Name", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Main_Member_Surname", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Main_Member_ID", DBNull.Value);
+                            }
+                            else
+                            {
+                                cmd.Parameters.AddWithValue("@Main_Member_Name", txtMainMemberName.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Main_Member_Surname", txtMainMemberSurname.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Main_Member_ID", txtMainMemberID.Text.Trim());
+                            }
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        // -----------------------------
+        // VALIDATION SECTION
+        // -----------------------------
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsValidPhoneNumber(string phone)
+        {
+            return Regex.IsMatch(phone, @"^0\d{9}$"); // South African: starts with 0 + 9 digits
+        }
+
+        private bool IsValidPostalCode(string code)
+        {
+            return Regex.IsMatch(code, @"^\d{4}$"); // SA postal code: 4 digits
+        }
+
+        private bool IsValidID(string id)
+        {
+            return Regex.IsMatch(id, @"^\d{13}$"); // 13 digits
+        }
+
+        private bool ValidateAccountInfo()
+        {
+            if (string.IsNullOrWhiteSpace(txtEmail.Text) || !IsValidEmail(txtEmail.Text))
+            {
+                ErrorMessage.Text = "Please enter a valid email address.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtPassword.Text) || txtPassword.Text.Length < 6)
+            {
+                ErrorMessage.Text = "Password must be at least 6 characters long.";
+                return false;
+            }
+
+            if (txtPassword.Text != txtConfirmPassword.Text)
+            {
+                ErrorMessage.Text = "Passwords do not match.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidatePersonalInfo()
+        {
+            if (string.IsNullOrWhiteSpace(txtFirstName.Text) || !Regex.IsMatch(txtFirstName.Text, @"^[a-zA-Z\s\-']{2,50}$"))
+            {
+                ErrorMessage.Text = "Please enter a valid first name.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtLastName.Text) || !Regex.IsMatch(txtLastName.Text, @"^[a-zA-Z\s\-']{2,50}$"))
+            {
+                ErrorMessage.Text = "Please enter a valid surname.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtPhone.Text) || !IsValidPhoneNumber(txtPhone.Text))
+            {
+                ErrorMessage.Text = "Please enter a valid South African phone number (e.g. 0821234567).";
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateMedicalInfo()
+        {
+            if (rbIsMainMemberNo.Checked)
+            {
+                if (string.IsNullOrWhiteSpace(txtMainMemberName.Text) || !Regex.IsMatch(txtMainMemberName.Text, @"^[a-zA-Z\s\-']{2,50}$"))
+                {
+                    ErrorMessage.Text = "Please enter a valid main member first name.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(txtMainMemberSurname.Text) || !Regex.IsMatch(txtMainMemberSurname.Text, @"^[a-zA-Z\s\-']{2,50}$"))
+                {
+                    ErrorMessage.Text = "Please enter a valid main member surname.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(txtMainMemberID.Text) || !IsValidID(txtMainMemberID.Text))
+                {
+                    ErrorMessage.Text = "Main member ID must be 13 digits.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ValidateAddressInfo()
+        {
+            if (!string.IsNullOrEmpty(txtPostalCode.Text) && !IsValidPostalCode(txtPostalCode.Text))
+            {
+                ErrorMessage.Text = "Please enter a valid 4-digit postal code.";
+                return false;
+            }
+            return true;
+        }
+
+        private void ClearForm()
+        {
+            txtFirstName.Text = txtLastName.Text = txtEmail.Text = txtPhone.Text = "";
+            txtPassword.Text = txtConfirmPassword.Text = "";
+            txtDateOfBirth.Text = "";
+            txtMedicalAid.Text = txtMedicalAidNumber.Text = "";
+            txtStreetNumber.Text = txtStreetName.Text = txtComplexName.Text = txtUnitNumber.Text = "";
+            txtCity.Text = txtProvince.Text = txtPostalCode.Text = "";
+            txtMainMemberName.Text = txtMainMemberSurname.Text = txtMainMemberID.Text = "";
+        }
+    }
+}

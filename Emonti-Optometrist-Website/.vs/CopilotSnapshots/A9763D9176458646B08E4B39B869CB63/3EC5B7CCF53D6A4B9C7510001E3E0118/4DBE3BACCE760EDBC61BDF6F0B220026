@@ -1,0 +1,136 @@
+﻿using System;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Emonti_Optometrist_Website
+{
+    public partial class StaffDashboard : Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                // Check if user is logged in as staff
+                if (Session["IsStaffLoggedIn"] == null || !(bool)Session["IsStaffLoggedIn"])
+                {
+                    Response.Redirect("~/Staff/Login.aspx");
+                    return;
+                }
+
+                LoadDashboardData();
+            }
+        }
+
+        private void LoadDashboardData()
+        {
+            // Load staff information
+            litStaffName.Text = Session["StaffName"]?.ToString() ?? "Staff Member";
+            litStaffRole.Text = Session["StaffRole"]?.ToString() ?? "Staff";
+            litStaffId.Text = Session["StaffId"]?.ToString() ?? "";
+
+            // Load dashboard statistics
+            LoadDashboardStats();
+        }
+
+        private void LoadDashboardStats()
+        {
+            // In a real application, these would be loaded from the database
+            litTodayAppointments.Text = "3";
+            litAvailableSlots.Text = "8";
+            litTotalPatients.Text = "1,247";
+            litMonthlyRevenue.Text = "R 45,680";
+        }
+
+        protected void btnLogout_Click(object sender, EventArgs e)
+        {
+            // Clear staff session
+            Session["StaffId"] = null;
+            Session["StaffName"] = null;
+            Session["StaffRole"] = null;
+            Session["IsStaffLoggedIn"] = null;
+
+            // Redirect to staff login
+            Response.Redirect("~/Staff/Login.aspx");
+        }
+
+        // Navigation methods
+        protected void btnViewAppointments_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/Appointments.aspx");
+        }
+
+        protected void btnManageAppointments_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/ManageAppointments.aspx");
+        }
+
+        protected void btnUpdateTimeslots_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/UpdateTimeslots.aspx");
+        }
+
+        protected void btnViewSchedule_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/Schedule.aspx");
+        }
+
+        protected void btnViewPatients_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/Patients.aspx");
+        }
+
+        protected void btnAddPatient_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/AddPatient.aspx");
+        }
+
+        protected void btnViewReports_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/Reports.aspx");
+        }
+
+        protected void btnExportData_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Staff/ExportData.aspx");
+        }
+
+        // Appointment management methods
+        protected void btnStartAppointment_Click(object sender, EventArgs e)
+        {
+            LinkButton btn = (LinkButton)sender;
+            string appointmentId = btn.CommandArgument;
+            
+            // In a real application, you would:
+            // 1. Update appointment status to "In Progress"
+            // 2. Log the start time
+            // 3. Redirect to appointment details/consultation page
+            
+            Response.Redirect($"~/Staff/Consultation.aspx?id={appointmentId}");
+        }
+
+        protected void btnReschedule_Click(object sender, EventArgs e)
+        {
+            LinkButton btn = (LinkButton)sender;
+            string appointmentId = btn.CommandArgument;
+            
+            // Redirect to reschedule page
+            Response.Redirect($"~/Staff/RescheduleAppointment.aspx?id={appointmentId}");
+        }
+
+        protected void btnCancel_Click(object sender, EventArgs e)
+        {
+            LinkButton btn = (LinkButton)sender;
+            string appointmentId = btn.CommandArgument;
+            
+            // In a real application, you would:
+            // 1. Show confirmation dialog
+            // 2. Update appointment status to "Cancelled"
+            // 3. Send notification to patient
+            // 4. Free up the timeslot
+            
+            // For demo purposes, show a message
+            ScriptManager.RegisterStartupScript(this, GetType(), "CancelMessage", 
+                $"if(confirm('Are you sure you want to cancel this appointment?')) {{ alert('Appointment cancelled successfully.'); }}", true);
+        }
+    }
+}

@@ -1,0 +1,536 @@
+﻿using System;
+using System.Data.SqlClient;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Emonti_Optometrist_Website
+{
+    public partial class PersonalDetails : Page
+    {
+        private string connectionString = System.Configuration.ConfigurationManager
+            .ConnectionStrings["ProductConnection"].ConnectionString;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            // Check if user is logged in
+            if (Session["IsLoggedIn"] == null || !(bool)Session["IsLoggedIn"])
+            {
+                Response.Redirect("~/Account/Login.aspx");
+                return;
+            }
+
+            if (!IsPostBack)
+            {
+                LoadCustomerDetails();
+            }
+        }
+
+        private void LoadCustomerDetails()
+        {
+            try
+            {
+                string customerId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(customerId))
+                {
+                    ShowMessage("Customer ID not found. Please log in again.", "error");
+                    return;
+                }
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                        SELECT Customer_Email, Customer_Name, Customer_Surname, 
+                               Customer_Phone, Customer_DOB, Customer_Gender,
+                               Medical_Aid, Medical_Aid_Number,
+                               Street_Number, Street_Name, Complex_Name, Unit_Number,
+                               City, Province, Postal_Code,
+                               Main_Member_Name, Main_Member_Surname, Main_Member_ID
+                        FROM customer 
+                        WHERE Cust_ID = @CustomerId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                        conn.Open();
+                        SqlDataReader reader = cmd.ExecuteReader();
+
+                        if (reader.Read())
+                        {
+                            txtEmail.Text = reader["Customer_Email"]?.ToString() ?? "";
+                            txtFirstName.Text = reader["Customer_Name"]?.ToString() ?? "";
+                            txtLastName.Text = reader["Customer_Surname"]?.ToString() ?? "";
+                            txtPhone.Text = reader["Customer_Phone"]?.ToString() ?? "";
+                            
+                            if (reader["Customer_DOB"] != DBNull.Value)
+                            {
+                                DateTime dateOfBirth = (DateTime)reader["Customer_DOB"];
+                                txtDateOfBirth.Text = dateOfBirth.ToString("yyyy-MM-dd");
+                            }
+                            
+                            ddlGender.SelectedValue = reader["Customer_Gender"]?.ToString() ?? "";
+                            txtMedicalAid.Text = reader["Medical_Aid"]?.ToString() ?? "";
+                            txtMedicalAidNumber.Text = reader["Medical_Aid_Number"]?.ToString() ?? "";
+                            
+                            // Address fields
+                            txtStreetNumber.Text = reader["Street_Number"]?.ToString() ?? "";
+                            txtStreetName.Text = reader["Street_Name"]?.ToString() ?? "";
+                            txtComplexName.Text = reader["Complex_Name"]?.ToString() ?? "";
+                            txtUnitNumber.Text = reader["Unit_Number"]?.ToString() ?? "";
+                            txtCity.Text = reader["City"]?.ToString() ?? "";
+                            txtProvince.Text = reader["Province"]?.ToString() ?? "";
+                            txtPostalCode.Text = reader["Postal_Code"]?.ToString() ?? "";
+                            
+                            // Main member fields
+                            string mainMemberName = reader["Main_Member_Name"]?.ToString();
+                            string mainMemberSurname = reader["Main_Member_Surname"]?.ToString();
+                            string mainMemberID = reader["Main_Member_ID"]?.ToString();
+                            
+                            // Determine if user is main member (if main member fields are null, they are the main member)
+                            bool isMainMember = string.IsNullOrEmpty(mainMemberName) && 
+                                             string.IsNullOrEmpty(mainMemberSurname) && 
+                                             string.IsNullOrEmpty(mainMemberID);
+                            
+                            rbIsMainMemberYes.Checked = isMainMember;
+                            rbIsMainMemberNo.Checked = !isMainMember;
+                            
+                            if (!isMainMember)
+                            {
+                                // User is not main member, show main member details
+                                txtMainMemberName.Text = mainMemberName ?? "";
+                                txtMainMemberSurname.Text = mainMemberSurname ?? "";
+                                txtMainMemberID.Text = mainMemberID ?? "";
+                                mainMemberDetails.Style["display"] = "block";
+                                
+                                // Enable validators
+                                rfvMainMemberName.Enabled = true;
+                                rfvMainMemberSurname.Enabled = true;
+                                rfvMainMemberID.Enabled = true;
+                                revMainMemberName.Enabled = true;
+                                revMainMemberSurname.Enabled = true;
+                                revMainMemberID.Enabled = true;
+                            }
+                            else
+                            {
+                                // User is main member, hide main member details
+                                mainMemberDetails.Style["display"] = "none";
+                                
+                                // Disable validators
+                                rfvMainMemberName.Enabled = false;
+                                rfvMainMemberSurname.Enabled = false;
+                                rfvMainMemberID.Enabled = false;
+                                revMainMemberName.Enabled = false;
+                                revMainMemberSurname.Enabled = false;
+                                revMainMemberID.Enabled = false;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Error loading customer details: " + ex.Message, "error");
+            }
+        }
+
+        // Handle radio button changes for main member question
+        protected void rbIsMainMember_Changed(object sender, EventArgs e)
+        {
+            if (rbIsMainMemberYes.Checked)
+            {
+                // Hide main member details
+                mainMemberDetails.Style["display"] = "none";
+                
+                // Clear main member fields
+                txtMainMemberName.Text = "";
+                txtMainMemberSurname.Text = "";
+                txtMainMemberID.Text = "";
+                
+                // Disable validators
+                rfvMainMemberName.Enabled = false;
+                rfvMainMemberSurname.Enabled = false;
+                rfvMainMemberID.Enabled = false;
+                revMainMemberName.Enabled = false;
+                revMainMemberSurname.Enabled = false;
+                revMainMemberID.Enabled = false;
+            }
+            else if (rbIsMainMemberNo.Checked)
+            {
+                // Show main member details
+                mainMemberDetails.Style["display"] = "block";
+                
+                // Enable validators
+                rfvMainMemberName.Enabled = true;
+                rfvMainMemberSurname.Enabled = true;
+                rfvMainMemberID.Enabled = true;
+                revMainMemberName.Enabled = true;
+                revMainMemberSurname.Enabled = true;
+                revMainMemberID.Enabled = true;
+            }
+        }
+
+        protected void btnSaveChanges_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Verify password first
+                if (string.IsNullOrEmpty(txtPassword.Text.Trim()))
+                {
+                    ShowMessage("Password is required to save changes.", "error");
+                    return;
+                }
+
+                if (!VerifyPassword(txtPassword.Text.Trim()))
+                {
+                    ShowMessage("Invalid password. Please enter your current password.", "error");
+                    return;
+                }
+
+                // Validate all sections
+                if (!ValidatePersonalInfo() || !ValidateMedicalInfo() || !ValidateAddressInfo())
+                {
+                    return;
+                }
+
+                string customerId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(customerId))
+                {
+                    ShowMessage("Customer ID not found. Please log in again.", "error");
+                    return;
+                }
+
+                // Update all customer information in one transaction
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Update personal information
+                            string personalQuery = @"
+                                UPDATE customer 
+                                SET Customer_Name = @FirstName,
+                                    Customer_Surname = @LastName,
+                                    Customer_Email = @Email,
+                                    Customer_Phone = @Phone,
+                                    Customer_DOB = @DateOfBirth,
+                                    Customer_Gender = @Gender
+                                WHERE Cust_ID = @CustomerId";
+
+                            using (SqlCommand personalCmd = new SqlCommand(personalQuery, conn, transaction))
+                            {
+                                personalCmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
+                                personalCmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
+                                personalCmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
+                                personalCmd.Parameters.AddWithValue("@Phone", txtPhone.Text.Trim());
+                                personalCmd.Parameters.AddWithValue("@DateOfBirth", 
+                                    string.IsNullOrEmpty(txtDateOfBirth.Text) ? DBNull.Value : (object)DateTime.Parse(txtDateOfBirth.Text));
+                                personalCmd.Parameters.AddWithValue("@Gender", ddlGender.SelectedValue);
+                                personalCmd.Parameters.AddWithValue("@CustomerId", customerId);
+                                personalCmd.ExecuteNonQuery();
+                            }
+
+                            // Update medical information
+                            string medicalQuery = @"
+                                UPDATE customer 
+                                SET Medical_Aid = @MedicalAid,
+                                    Medical_Aid_Number = @MedicalAidNumber,
+                                    Main_Member_Name = @MainMemberName,
+                                    Main_Member_Surname = @MainMemberSurname,
+                                    Main_Member_ID = @MainMemberID
+                                WHERE Cust_ID = @CustomerId";
+
+                            using (SqlCommand medicalCmd = new SqlCommand(medicalQuery, conn, transaction))
+                            {
+                                medicalCmd.Parameters.AddWithValue("@MedicalAid", txtMedicalAid.Text.Trim());
+                                medicalCmd.Parameters.AddWithValue("@MedicalAidNumber", txtMedicalAidNumber.Text.Trim());
+                                
+                                // Only set main member details if user is not the main member
+                                if (rbIsMainMemberNo.Checked)
+                                {
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberName", txtMainMemberName.Text.Trim());
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberSurname", txtMainMemberSurname.Text.Trim());
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberID", txtMainMemberID.Text.Trim());
+                                }
+                                else
+                                {
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberName", DBNull.Value);
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberSurname", DBNull.Value);
+                                    medicalCmd.Parameters.AddWithValue("@MainMemberID", DBNull.Value);
+                                }
+                                
+                                medicalCmd.Parameters.AddWithValue("@CustomerId", customerId);
+                                medicalCmd.ExecuteNonQuery();
+                            }
+
+                            // Update address information
+                            string addressQuery = @"
+                                UPDATE customer 
+                                SET Street_Number = @StreetNumber,
+                                    Street_Name = @StreetName,
+                                    Complex_Name = @ComplexName,
+                                    Unit_Number = @UnitNumber,
+                                    City = @City,
+                                    Province = @Province,
+                                    Postal_Code = @PostalCode
+                                WHERE Cust_ID = @CustomerId";
+
+                            using (SqlCommand addressCmd = new SqlCommand(addressQuery, conn, transaction))
+                            {
+                                addressCmd.Parameters.AddWithValue("@StreetNumber", txtStreetNumber.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@StreetName", txtStreetName.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@ComplexName", txtComplexName.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@UnitNumber", txtUnitNumber.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@City", txtCity.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@Province", txtProvince.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@PostalCode", txtPostalCode.Text.Trim());
+                                addressCmd.Parameters.AddWithValue("@CustomerId", customerId);
+                                addressCmd.ExecuteNonQuery();
+                            }
+
+                            // Commit the transaction
+                            transaction.Commit();
+                            ShowMessage("All changes saved successfully!", "success");
+                            txtPassword.Text = ""; // Clear password field after successful save
+                        }
+                        catch (Exception ex)
+                        {
+                            // Rollback the transaction on error
+                            transaction.Rollback();
+                            throw ex;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Error saving changes: " + ex.Message, "error");
+            }
+        }
+
+        private void ShowMessage(string message, string type)
+        {
+            MessageText.Text = message;
+            MessageDiv.Attributes["class"] = "alert alert-" + (type == "success" ? "success" : "error");
+            MessagePlaceHolder.Visible = true;
+        }
+
+        // Password verification method
+        private bool VerifyPassword(string password)
+        {
+            try
+            {
+                string customerId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(customerId))
+                {
+                    return false;
+                }
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = "SELECT COUNT(*) FROM customer WHERE Cust_ID = @CustomerId AND Customer_Password = @Password";
+                    
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                        cmd.Parameters.AddWithValue("@Password", password);
+                        
+                        conn.Open();
+                        int count = (int)cmd.ExecuteScalar();
+                        return count > 0;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Validation helper methods
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrEmpty(email)) return false;
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsValidPhoneNumber(string phone)
+        {
+            if (string.IsNullOrEmpty(phone)) return false;
+            return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0\d{9}$");
+        }
+
+        private bool IsValidAge(DateTime dateOfBirth)
+        {
+            if (dateOfBirth == DateTime.MinValue) return true; // Optional field
+            
+            int age = DateTime.Now.Year - dateOfBirth.Year;
+            if (dateOfBirth > DateTime.Now.AddYears(-age)) age--;
+            
+            return age >= 13 && age <= 80;
+        }
+
+        private bool IsValidMedicalAidNumber(string medicalAidNumber)
+        {
+            if (string.IsNullOrEmpty(medicalAidNumber)) return true; // Optional field
+            return System.Text.RegularExpressions.Regex.IsMatch(medicalAidNumber, @"^[a-zA-Z0-9\s\-_\.]{3,50}$");
+        }
+
+        private bool IsValidPostalCode(string postalCode)
+        {
+            if (string.IsNullOrEmpty(postalCode)) return true; // Optional field
+            return System.Text.RegularExpressions.Regex.IsMatch(postalCode, @"^\d{4}$");
+        }
+
+        // Custom validator for date of birth
+        protected void ValidateDateOfBirth(object source, ServerValidateEventArgs args)
+        {
+            if (string.IsNullOrEmpty(txtDateOfBirth.Text))
+            {
+                args.IsValid = true; // Optional field
+                return;
+            }
+
+            if (DateTime.TryParse(txtDateOfBirth.Text, out DateTime dateOfBirth))
+            {
+                args.IsValid = IsValidAge(dateOfBirth);
+            }
+            else
+            {
+                args.IsValid = false;
+            }
+        }
+
+        // Enhanced validation methods for each section
+        private bool ValidatePersonalInfo()
+        {
+            bool isValid = true;
+            string errors = "";
+
+            // Validate required fields
+            if (string.IsNullOrEmpty(txtFirstName.Text.Trim()))
+            {
+                errors += "First name is required. ";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(txtFirstName.Text.Trim(), @"^[a-zA-Z'\s]{2,50}$"))
+            {
+                errors += "First name must be 2-50 characters; letters, spaces and apostrophes only. ";
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(txtLastName.Text.Trim()))
+            {
+                errors += "Last name is required. ";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(txtLastName.Text.Trim(), @"^[a-zA-Z'\s]{2,50}$"))
+            {
+                errors += "Last name must be 2-50 characters; letters, spaces and apostrophes only. ";
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(txtEmail.Text.Trim()))
+            {
+                errors += "Email is required. ";
+                isValid = false;
+            }
+            else if (!IsValidEmail(txtEmail.Text.Trim()))
+            {
+                errors += "Please enter a valid email address. ";
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(txtPhone.Text.Trim()))
+            {
+                errors += "Phone number is required. ";
+                isValid = false;
+            }
+            else if (!IsValidPhoneNumber(txtPhone.Text.Trim()))
+            {
+                errors += "Phone must be 10 digits starting with 0 (e.g., 0123456789). ";
+                isValid = false;
+            }
+
+            // Validate date of birth if provided
+            if (!string.IsNullOrEmpty(txtDateOfBirth.Text))
+            {
+                if (DateTime.TryParse(txtDateOfBirth.Text, out DateTime dateOfBirth))
+                {
+                    if (!IsValidAge(dateOfBirth))
+                    {
+                        errors += "Age must be between 13 and 80 years. ";
+                        isValid = false;
+                    }
+                }
+                else
+                {
+                    errors += "Please enter a valid date of birth. ";
+                    isValid = false;
+                }
+            }
+
+            if (!isValid)
+            {
+                ShowMessage(errors.Trim(), "error");
+            }
+
+            return isValid;
+        }
+
+        private bool ValidateMedicalInfo()
+        {
+            bool isValid = true;
+            string errors = "";
+
+            // Validate medical aid number if provided
+            if (!string.IsNullOrEmpty(txtMedicalAidNumber.Text.Trim()))
+            {
+                if (!IsValidMedicalAidNumber(txtMedicalAidNumber.Text.Trim()))
+                {
+                    errors += "Medical aid number must be 3-50 characters (letters, numbers, spaces, hyphens, underscores, periods allowed). ";
+                    isValid = false;
+                }
+            }
+
+            if (!isValid)
+            {
+                ShowMessage(errors.Trim(), "error");
+            }
+
+            return isValid;
+        }
+
+        private bool ValidateAddressInfo()
+        {
+            bool isValid = true;
+            string errors = "";
+
+            // Validate postal code if provided
+            if (!string.IsNullOrEmpty(txtPostalCode.Text.Trim()))
+            {
+                if (!IsValidPostalCode(txtPostalCode.Text.Trim()))
+                {
+                    errors += "Postal code must be 4 digits. ";
+                    isValid = false;
+                }
+            }
+
+            if (!isValid)
+            {
+                ShowMessage(errors.Trim(), "error");
+            }
+
+            return isValid;
+        }
+    }
+}
+

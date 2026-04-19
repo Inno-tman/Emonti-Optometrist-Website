@@ -1,0 +1,1120 @@
+using System;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Emonti_Optometrist_Website
+{
+    public partial class Checkout : Page
+    {
+        private string connectionString = System.Configuration.ConfigurationManager
+            .ConnectionStrings["ProductConnection"].ConnectionString;
+        
+        // Store original address data for repopulation
+        private CustomerAddress OriginalAddress { get; set; }
+        
+        // Helper class to store address data
+        [Serializable]
+        public class CustomerAddress
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string Email { get; set; }
+            public string Phone { get; set; }
+            public string Address1 { get; set; }
+            public string City { get; set; }
+            public string PostalCode { get; set; }
+        }
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            // Check if user is logged in using session
+            if (Session["IsLoggedIn"] == null || !(bool)Session["IsLoggedIn"])
+            {
+                Response.Redirect("~/Account/Login.aspx?ReturnUrl=" + Server.UrlEncode(Request.Url.ToString()));
+                return;
+            }
+
+            if (!IsPostBack)
+            {
+                LoadUserData();
+                LoadOrderSummary();
+            }
+            else
+            {
+                // Restore OriginalAddress from ViewState on postback
+                if (ViewState["OriginalAddress"] != null)
+                {
+                    OriginalAddress = ViewState["OriginalAddress"] as CustomerAddress;
+                }
+                
+                // Restore validator state on postback
+                if (ViewState["ValidatorsEnabled"] != null)
+                {
+                    bool validatorsEnabled = (bool)ViewState["ValidatorsEnabled"];
+                    if (validatorsEnabled)
+                    {
+                        EnableAllValidators();
+                        // Make fields editable
+                        txtShippingFirstName.ReadOnly = false;
+                        txtShippingLastName.ReadOnly = false;
+                        txtShippingEmail.ReadOnly = false;
+                        txtShippingPhone.ReadOnly = false;
+                        txtShippingAddress1.ReadOnly = false;
+                        txtShippingAddress2.ReadOnly = false;
+                        txtShippingCity.ReadOnly = false;
+                        txtShippingPostalCode.ReadOnly = false;
+                    }
+                    else
+                    {
+                        DisableAllValidators();
+                        // Make fields read-only
+                        txtShippingFirstName.ReadOnly = true;
+                        txtShippingLastName.ReadOnly = true;
+                        txtShippingEmail.ReadOnly = true;
+                        txtShippingPhone.ReadOnly = true;
+                        txtShippingAddress1.ReadOnly = true;
+                        txtShippingAddress2.ReadOnly = true;
+                        txtShippingCity.ReadOnly = true;
+                        txtShippingPostalCode.ReadOnly = true;
+                    }
+                }
+            }
+        }
+
+
+        private void LoadUserData()
+        {
+            try
+            {
+                string customerId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(customerId))
+                {
+                    ShowMessage("Customer ID not found. Please log in again.", false);
+                    return;
+                }
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                        SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone,
+                               Street_Number, Street_Name, Complex_Name, Unit_Number,
+                               City, Province, Postal_Code
+                        FROM customer 
+                        WHERE Cust_ID = @CustomerId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                        conn.Open();
+                        SqlDataReader reader = cmd.ExecuteReader();
+
+                        if (reader.Read())
+                        {
+                            // Build address from components
+                            string streetNumber = reader["Street_Number"]?.ToString() ?? "";
+                            string streetName = reader["Street_Name"]?.ToString() ?? "";
+                            string complexName = reader["Complex_Name"]?.ToString() ?? "";
+                            string unitNumber = reader["Unit_Number"]?.ToString() ?? "";
+                            
+                            string address1 = "";
+                            if (!string.IsNullOrEmpty(streetNumber) && !string.IsNullOrEmpty(streetName))
+                            {
+                                address1 = streetNumber + " " + streetName;
+                            }
+                            else if (!string.IsNullOrEmpty(streetName))
+                            {
+                                address1 = streetName;
+                            }
+                            
+                            if (!string.IsNullOrEmpty(complexName))
+                            {
+                                address1 += (string.IsNullOrEmpty(address1) ? "" : ", ") + complexName;
+                            }
+                            
+                            if (!string.IsNullOrEmpty(unitNumber))
+                            {
+                                address1 += (string.IsNullOrEmpty(address1) ? "" : ", Unit ") + unitNumber;
+                            }
+                            
+                            // Store original address data
+                            OriginalAddress = new CustomerAddress
+                            {
+                                FirstName = reader["Customer_Name"]?.ToString() ?? "",
+                                LastName = reader["Customer_Surname"]?.ToString() ?? "",
+                                Email = reader["Customer_Email"]?.ToString() ?? "",
+                                Phone = reader["Customer_Phone"]?.ToString() ?? "",
+                                Address1 = address1,
+                                City = reader["City"]?.ToString() ?? "",
+                                PostalCode = reader["Postal_Code"]?.ToString() ?? ""
+                            };
+                            
+                            // Store in ViewState for postback persistence
+                            ViewState["OriginalAddress"] = OriginalAddress;
+                            
+                            // By default, populate with home address
+                            PopulateHomeAddress();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading user data: {ex.Message}");
+                ShowMessage("Error loading your information. Please try again.", false);
+            }
+        }
+        
+        private void PopulateHomeAddress()
+        {
+            CustomerAddress address = OriginalAddress;
+            
+            // If OriginalAddress is null (postback), try to get from ViewState
+            if (address == null && ViewState["OriginalAddress"] != null)
+            {
+                address = ViewState["OriginalAddress"] as CustomerAddress;
+            }
+            
+            if (address != null)
+            {
+                txtShippingFirstName.Text = address.FirstName;
+                txtShippingLastName.Text = address.LastName;
+                txtShippingEmail.Text = address.Email;
+                txtShippingPhone.Text = address.Phone;
+                txtShippingAddress1.Text = address.Address1;
+                txtShippingCity.Text = address.City;
+                txtShippingPostalCode.Text = address.PostalCode;
+                
+                // Make fields read-only since data comes from database
+                txtShippingFirstName.ReadOnly = true;
+                txtShippingLastName.ReadOnly = true;
+                txtShippingEmail.ReadOnly = true;
+                txtShippingPhone.ReadOnly = true;
+                txtShippingAddress1.ReadOnly = true;
+                txtShippingAddress2.ReadOnly = true;
+                txtShippingCity.ReadOnly = true;
+                txtShippingPostalCode.ReadOnly = true;
+                
+                // Update button states
+                btnUseHomeAddress.CssClass = "btn-address-option active";
+                btnEnterRecipientInfo.CssClass = "btn-address-option";
+                
+                // Disable validators since data comes from database (assumed correct)
+                DisableAllValidators();
+            }
+        }
+        
+        private void ClearRecipientFields()
+        {
+            txtShippingFirstName.Text = "";
+            txtShippingLastName.Text = "";
+            txtShippingEmail.Text = "";
+            txtShippingPhone.Text = "";
+            txtShippingAddress1.Text = "";
+            txtShippingAddress2.Text = "";
+            txtShippingCity.Text = "";
+            txtShippingPostalCode.Text = "";
+            
+            // Make fields editable for manual entry
+            txtShippingFirstName.ReadOnly = false;
+            txtShippingLastName.ReadOnly = false;
+            txtShippingEmail.ReadOnly = false;
+            txtShippingPhone.ReadOnly = false;
+            txtShippingAddress1.ReadOnly = false;
+            txtShippingAddress2.ReadOnly = false;
+            txtShippingCity.ReadOnly = false;
+            txtShippingPostalCode.ReadOnly = false;
+            
+            // Update button states
+            btnUseHomeAddress.CssClass = "btn-address-option";
+            btnEnterRecipientInfo.CssClass = "btn-address-option active";
+            
+            // Enable validators since user will enter data manually
+            EnableAllValidators();
+        }
+        
+        protected void btnUseHomeAddress_Click(object sender, EventArgs e)
+        {
+            // Restore OriginalAddress from ViewState if needed
+            if (OriginalAddress == null && ViewState["OriginalAddress"] != null)
+            {
+                OriginalAddress = ViewState["OriginalAddress"] as CustomerAddress;
+            }
+            
+            PopulateHomeAddress();
+        }
+        
+        protected void btnEnterRecipientInfo_Click(object sender, EventArgs e)
+        {
+            ClearRecipientFields();
+        }
+        
+        // Methods to enable/disable validators based on address selection
+        private void DisableAllValidators()
+        {
+            // Disable all validators for shipping fields when using home address
+            rfvShippingFirstName.Enabled = false;
+            revShippingFirstName.Enabled = false;
+            rfvShippingLastName.Enabled = false;
+            revShippingLastName.Enabled = false;
+            rfvShippingEmail.Enabled = false;
+            revShippingEmail.Enabled = false;
+            cvShippingEmail.Enabled = false;
+            rfvShippingPhone.Enabled = false;
+            revShippingPhone.Enabled = false;
+            cvShippingPhone.Enabled = false;
+            rfvShippingAddress1.Enabled = false;
+            revShippingAddress1.Enabled = false;
+            revShippingAddress2.Enabled = false;
+            rfvShippingCity.Enabled = false;
+            revShippingCity.Enabled = false;
+            rfvShippingPostalCode.Enabled = false;
+            revShippingPostalCode.Enabled = false;
+            cvShippingPostalCode.Enabled = false;
+            
+            // Store state in ViewState
+            ViewState["ValidatorsEnabled"] = false;
+        }
+        
+        private void EnableAllValidators()
+        {
+            // Enable all validators for shipping fields when entering recipient info
+            rfvShippingFirstName.Enabled = true;
+            revShippingFirstName.Enabled = true;
+            rfvShippingLastName.Enabled = true;
+            revShippingLastName.Enabled = true;
+            rfvShippingEmail.Enabled = true;
+            revShippingEmail.Enabled = true;
+            cvShippingEmail.Enabled = true;
+            rfvShippingPhone.Enabled = true;
+            revShippingPhone.Enabled = true;
+            cvShippingPhone.Enabled = true;
+            rfvShippingAddress1.Enabled = true;
+            revShippingAddress1.Enabled = true;
+            revShippingAddress2.Enabled = true;
+            rfvShippingCity.Enabled = true;
+            revShippingCity.Enabled = true;
+            rfvShippingPostalCode.Enabled = true;
+            revShippingPostalCode.Enabled = true;
+            cvShippingPostalCode.Enabled = true;
+            
+            // Store state in ViewState
+            ViewState["ValidatorsEnabled"] = true;
+        }
+        
+        // Validation methods for South African context
+        protected void ValidateEmail(object source, ServerValidateEventArgs args)
+        {
+            string email = args.Value?.Trim() ?? "";
+            
+            if (string.IsNullOrEmpty(email))
+            {
+                args.IsValid = false;
+                return;
+            }
+            
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                args.IsValid = addr.Address == email && email.Length <= 100;
+            }
+            catch
+            {
+                args.IsValid = false;
+            }
+        }
+        
+        protected void ValidatePhoneNumber(object source, ServerValidateEventArgs args)
+        {
+            string phone = args.Value?.Trim() ?? "";
+            
+            if (string.IsNullOrEmpty(phone))
+            {
+                args.IsValid = false;
+                return;
+            }
+            
+            // South African phone number: starts with 0, followed by 9 digits (total 10 digits)
+            // Examples: 0821234567, 0834567890, 0841234567
+            args.IsValid = Regex.IsMatch(phone, @"^0\d{9}$");
+        }
+        
+        protected void ValidatePostalCode(object source, ServerValidateEventArgs args)
+        {
+            string postalCode = args.Value?.Trim() ?? "";
+            
+            if (string.IsNullOrEmpty(postalCode))
+            {
+                args.IsValid = false;
+                return;
+            }
+            
+            // South African postal code: exactly 4 digits
+            // Examples: 2000, 8001, 4000
+            args.IsValid = Regex.IsMatch(postalCode, @"^\d{4}$");
+        }
+        
+        // Comprehensive validation method for all recipient fields
+        private bool ValidateRecipientInformation()
+        {
+            bool isValid = true;
+            System.Text.StringBuilder errors = new System.Text.StringBuilder();
+            
+            // Validate First Name - allow Unicode letters, spaces, hyphens, apostrophes, and periods
+            // Supports names like: José, François, O'Brien, Mary-Jane, Jr., III, etc.
+            string firstName = txtShippingFirstName.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(firstName))
+            {
+                errors.AppendLine("First name is required.");
+                isValid = false;
+            }
+            else if (!Regex.IsMatch(firstName, @"^[\p{L}\s\-'\.]{2,50}$"))
+            {
+                errors.AppendLine("First name must be 2-50 characters and contain only letters (including accented), spaces, hyphens, apostrophes, or periods.");
+                isValid = false;
+            }
+            
+            // Validate Last Name - allow Unicode letters, spaces, hyphens, apostrophes, and periods
+            // Supports names like: Van der Merwe, O'Brien, García, Jr., III, etc.
+            string lastName = txtShippingLastName.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(lastName))
+            {
+                errors.AppendLine("Last name is required.");
+                isValid = false;
+            }
+            else if (!Regex.IsMatch(lastName, @"^[\p{L}\s\-'\.]{2,50}$"))
+            {
+                errors.AppendLine("Last name must be 2-50 characters and contain only letters (including accented), spaces, hyphens, apostrophes, or periods.");
+                isValid = false;
+            }
+            
+            // Validate Email
+            string email = txtShippingEmail.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(email))
+            {
+                errors.AppendLine("Email address is required.");
+                isValid = false;
+            }
+            else
+            {
+                try
+                {
+                    var addr = new System.Net.Mail.MailAddress(email);
+                    if (addr.Address != email || email.Length > 100)
+                    {
+                        errors.AppendLine("Please enter a valid email address.");
+                        isValid = false;
+                    }
+                }
+                catch
+                {
+                    errors.AppendLine("Please enter a valid email address.");
+                    isValid = false;
+                }
+            }
+            
+            // Validate Phone Number
+            string phone = txtShippingPhone.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(phone))
+            {
+                errors.AppendLine("Phone number is required.");
+                isValid = false;
+            }
+            else if (!Regex.IsMatch(phone, @"^0\d{9}$"))
+            {
+                errors.AppendLine("Please enter a valid South African phone number (10 digits starting with 0, e.g. 0821234567).");
+                isValid = false;
+            }
+            
+            // Validate Address Line 1
+            string address1 = txtShippingAddress1.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(address1))
+            {
+                errors.AppendLine("Address line 1 is required.");
+                isValid = false;
+            }
+            else if (address1.Length < 5 || address1.Length > 150)
+            {
+                errors.AppendLine("Address line 1 must be between 5 and 150 characters.");
+                isValid = false;
+            }
+            
+            // Validate Address Line 2 (optional)
+            string address2 = txtShippingAddress2.Text?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(address2) && address2.Length > 150)
+            {
+                errors.AppendLine("Address line 2 cannot exceed 150 characters.");
+                isValid = false;
+            }
+            
+            // Validate City
+            string city = txtShippingCity.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(city))
+            {
+                errors.AppendLine("City is required.");
+                isValid = false;
+            }
+            else if (!Regex.IsMatch(city, @"^[a-zA-Z\s\-']{2,100}$"))
+            {
+                errors.AppendLine("City must be 2-100 characters and contain only letters, spaces, hyphens, or apostrophes.");
+                isValid = false;
+            }
+            
+            // Validate Postal Code
+            string postalCode = txtShippingPostalCode.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(postalCode))
+            {
+                errors.AppendLine("Postal code is required.");
+                isValid = false;
+            }
+            else if (!Regex.IsMatch(postalCode, @"^\d{4}$"))
+            {
+                errors.AppendLine("Postal code must be exactly 4 digits (e.g. 2000).");
+                isValid = false;
+            }
+            
+            // Display errors if any
+            if (!isValid)
+            {
+                ShowMessage(errors.ToString().Trim(), false);
+            }
+            
+            return isValid;
+        }
+
+        private void LoadOrderSummary()
+        {
+            try
+            {
+                // Load cart items from database for logged-in user
+                string custId = Session["Cust_ID"]?.ToString();
+                if (!string.IsNullOrEmpty(custId))
+                {
+                    int cartId = CartDatabase.GetOrCreateCart(custId);
+                    var cartItems = CartDatabase.GetCartItems(cartId);
+                    
+                    if (cartItems.Count > 0)
+                    {
+                        // Bind cart items to repeater
+                        rptOrderItems.DataSource = cartItems;
+                        rptOrderItems.DataBind();
+                        
+                        // Calculate totals
+                        decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                        decimal shipping = 150.00m; // Fixed shipping cost
+                        decimal discount = 0;
+                        
+                        // Retrieve discount from session if promo code was applied
+                        string promoCode = Session["PromoCode"]?.ToString();
+                        if (!string.IsNullOrEmpty(promoCode) && promoCode == "SAVE10")
+                        {
+                            // Recalculate discount based on current subtotal (in case cart changed)
+                            discount = subtotal * 0.10m; // 10% discount
+                            Session["DiscountAmount"] = discount; // Update discount amount
+                            pnlDiscount.Visible = true;
+                            litDiscountCode.Text = promoCode;
+                            litDiscount.Text = discount.ToString("F2");
+                        }
+                        else
+                        {
+                            pnlDiscount.Visible = false;
+                            Session["DiscountAmount"] = null;
+                        }
+                        
+                        decimal total = subtotal + shipping - discount;
+                        
+                        litSubtotal.Text = subtotal.ToString("F2");
+                        litShipping.Text = shipping.ToString("F2");
+                        litTotal.Text = total.ToString("F2");
+                        litItemCount.Text = cartItems.Sum(x => x.Quantity).ToString();
+                        
+                        pnlOrderSummary.Visible = true;
+                        pnlEmptyCart.Visible = false;
+                    }
+                    else
+                    {
+                        pnlOrderSummary.Visible = false;
+                        pnlEmptyCart.Visible = true;
+                    }
+                }
+                else
+                {
+                    // No customer ID - redirect to login
+                    Response.Redirect("~/Account/Login.aspx?ReturnUrl=" + Server.UrlEncode(Request.Url.ToString()));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading order summary: {ex.Message}");
+                pnlOrderSummary.Visible = false;
+                pnlEmptyCart.Visible = true;
+            }
+        }
+
+        protected void btnBackToCart_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Cart.aspx");
+        }
+
+        protected void btnPlaceOrder_Click(object sender, EventArgs e)
+        {
+            // This method is no longer used since we're using JavaScript
+            // The JavaScript handles the order creation and payment
+        }
+
+        private bool ProcessOrder()
+        {
+            try
+            {
+                // Get customer ID and cart ID
+                string custId = Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(custId))
+                {
+                    System.Diagnostics.Debug.WriteLine("ProcessOrder Error: Customer ID is null or empty");
+                    return false;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"ProcessOrder: Customer ID = {custId}");
+
+                int cartId = CartDatabase.GetOrCreateCart(custId);
+                var cartItems = CartDatabase.GetCartItems(cartId);
+                
+                System.Diagnostics.Debug.WriteLine($"ProcessOrder: Cart ID = {cartId}, Items Count = {cartItems.Count}");
+                
+                if (cartItems.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("ProcessOrder Error: No items in cart");
+                    return false; // No items to process
+                }
+
+                // Calculate order total
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m; // Fixed shipping cost
+                decimal discount = 0;
+                
+                // Apply discount if promo code exists in session
+                string promoCode = Session["PromoCode"]?.ToString();
+                if (!string.IsNullOrEmpty(promoCode) && promoCode == "SAVE10")
+                {
+                    discount = subtotal * 0.10m; // 10% discount
+                }
+                
+                decimal total = subtotal + shipping - discount;
+
+                // Get street address from customer database
+                string deliveryAddress = GetCustomerStreetAddress(custId);
+                if (string.IsNullOrEmpty(deliveryAddress))
+                {
+                    deliveryAddress = "Address not available";
+                }
+
+                // Create order in database
+                var order = new Order
+                {
+                    CustID = custId,
+                    Order_Date = DateTime.Now,
+                    Order_Total = total,
+                    Order_Status = "Pending",
+                    Delivery_Address = deliveryAddress,
+                    Payment_Method = "paystack",
+                    Payment_Status = "pending",
+                    Order_Number = OrderDatabase.GenerateOrderNumber(),
+                    Notes = ""
+                };
+
+                // Database tables should already exist
+                System.Diagnostics.Debug.WriteLine("ProcessOrder: Using existing database tables");
+
+                // Use database transaction to ensure atomicity
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    System.Diagnostics.Debug.WriteLine($"ProcessOrder: Connection string = {connectionString}");
+                    conn.Open();
+                    System.Diagnostics.Debug.WriteLine("ProcessOrder: Database connection opened successfully");
+                    
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine("ProcessOrder: Transaction started");
+                            
+                            // Create order
+                            int orderId = OrderDatabase.CreateOrder(order, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"ProcessOrder: Order created with ID = {orderId}");
+
+                            // Add order items
+                            foreach (var cartItem in cartItems)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"ProcessOrder: Processing cart item - ProductId: {cartItem.ProductId}, Name: {cartItem.ProductName}");
+                                
+                                var orderItem = new DatabaseOrderItem
+                                {
+                                    OrderID = orderId,
+                                    Product_ID = Convert.ToInt32(cartItem.ProductId),
+                                    Product_Name = cartItem.ProductName,
+                                    Product_Brand = cartItem.Brand,
+                                    Product_Category = cartItem.Category,
+                                    Quantity = cartItem.Quantity,
+                                    Unit_Price = cartItem.Price,
+                                    Subtotal = cartItem.Subtotal
+                                };
+                                OrderDatabase.AddOrderItem(orderItem, conn, transaction);
+                                System.Diagnostics.Debug.WriteLine($"ProcessOrder: Order item added for ProductId: {cartItem.ProductId}");
+                            }
+
+                            // Update inventory levels after order items are added
+                            OrderDatabase.UpdateInventory(orderId, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"Inventory updated for order {orderId}");
+
+                // Clear the cart after successful order
+                CartDatabase.ClearCart(cartId);
+                Session["Cart_ID"] = null; // Clear cart ID from session
+
+                            // Store order ID in session for confirmation page
+                            Session["LastOrderId"] = orderId;
+
+                            // Commit transaction
+                            transaction.Commit();
+                return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Rollback transaction on error
+                            transaction.Rollback();
+                            System.Diagnostics.Debug.WriteLine($"ProcessOrder Error in transaction: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"ProcessOrder Error StackTrace: {ex.StackTrace}");
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ProcessOrder Error in main try-catch: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"ProcessOrder Error StackTrace: {ex.StackTrace}");
+                return false;
+            }
+        }
+
+        private string BuildDeliveryAddress()
+        {
+            // Use only the street address (Address1) when saving to database
+            string address = txtShippingAddress1.Text.Trim();
+            
+            // Limit address to 250 characters to ensure it fits in database
+            if (address.Length > 250)
+            {
+                address = address.Substring(0, 247) + "...";
+                System.Diagnostics.Debug.WriteLine($"BuildDeliveryAddress: Address truncated to fit database column (250 chars)");
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"BuildDeliveryAddress: Street address length = {address.Length}, Address = {address}");
+            
+            return address;
+        }
+
+        private string GenerateOrderId()
+        {
+            // Generate a unique order ID
+            return "EL-" + DateTime.Now.ToString("yyyyMMdd") + "-" + new Random().Next(1000, 9999);
+        }
+
+        private string MaskCardNumber(string cardNumber)
+        {
+            if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length < 4)
+                return cardNumber;
+
+            return "**** **** **** " + cardNumber.Substring(cardNumber.Length - 4);
+        }
+
+        private void ShowMessage(string message, bool isSuccess)
+        {
+            lblMessage.Text = message;
+            pnlMessage.CssClass = isSuccess ? "alert alert-success" : "alert alert-error";
+            pnlMessage.Style["display"] = "block";
+            pnlMessage.Style["visibility"] = "visible";
+        }
+
+        /// <summary>
+        /// Get order total for Paystack payment
+        /// </summary>
+        [System.Web.Services.WebMethod]
+        public static string GetOrderTotal()
+        {
+            try
+            {
+                string custId = HttpContext.Current.Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(custId))
+                {
+                    return "0";
+                }
+
+                int cartId = CartDatabase.GetOrCreateCart(custId);
+                var cartItems = CartDatabase.GetCartItems(cartId);
+                
+                if (cartItems.Count == 0)
+                {
+                    return "0";
+                }
+
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m;
+                decimal discount = 0;
+                
+                // Apply discount if promo code exists in session
+                string promoCode = HttpContext.Current.Session["PromoCode"]?.ToString();
+                if (!string.IsNullOrEmpty(promoCode) && promoCode == "SAVE10")
+                {
+                    discount = subtotal * 0.10m; // 10% discount
+                }
+                
+                decimal total = subtotal + shipping - discount;
+
+                return total.ToString("F2");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting order total: {ex.Message}");
+                return "0";
+            }
+        }
+
+
+        /// <summary>
+        /// Get customer street address from database
+        /// </summary>
+        private static string GetCustomerStreetAddress(string custId)
+        {
+            try
+            {
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    string query = @"
+                        SELECT Street_Number, Street_Name, Complex_Name, Unit_Number
+                        FROM customer 
+                        WHERE Cust_ID = @CustID";
+                    
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustID", custId);
+                        conn.Open();
+                        
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string streetNumber = reader["Street_Number"]?.ToString() ?? "";
+                                string streetName = reader["Street_Name"]?.ToString() ?? "";
+                                string complexName = reader["Complex_Name"]?.ToString() ?? "";
+                                string unitNumber = reader["Unit_Number"]?.ToString() ?? "";
+                                
+                                // Build street address
+                                string streetAddress = "";
+                                if (!string.IsNullOrEmpty(streetNumber) && !string.IsNullOrEmpty(streetName))
+                                {
+                                    streetAddress = streetNumber + " " + streetName;
+                                }
+                                else if (!string.IsNullOrEmpty(streetName))
+                                {
+                                    streetAddress = streetName;
+                                }
+                                
+                                if (!string.IsNullOrEmpty(complexName))
+                                {
+                                    streetAddress += (string.IsNullOrEmpty(streetAddress) ? "" : ", ") + complexName;
+                                }
+                                
+                                if (!string.IsNullOrEmpty(unitNumber))
+                                {
+                                    streetAddress += (string.IsNullOrEmpty(streetAddress) ? "" : ", Unit ") + unitNumber;
+                                }
+                                
+                                return streetAddress;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting customer street address: {ex.Message}");
+            }
+            
+            return "";
+        }
+
+        [System.Web.Services.WebMethod]
+        public static string CreateOrderAfterPayment(string paymentReference)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Payment reference = {paymentReference}");
+
+                // Get customer ID and cart ID from session
+                string custId = HttpContext.Current.Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(custId))
+                {
+                    System.Diagnostics.Debug.WriteLine("CreateOrderAfterPayment Error: Customer ID is null or empty");
+                    return "ERROR";
+                }
+
+                System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Customer ID = {custId}");
+
+                int cartId = CartDatabase.GetOrCreateCart(custId);
+                var cartItems = CartDatabase.GetCartItems(cartId);
+                
+                System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Cart ID = {cartId}, Items Count = {cartItems.Count}");
+                
+                if (cartItems.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("CreateOrderAfterPayment Error: No items in cart");
+                    return "ERROR";
+                }
+
+                // Calculate order total
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m; // Fixed shipping cost
+                decimal discount = 0;
+                
+                // Apply discount if promo code exists in session
+                string promoCode = HttpContext.Current.Session["PromoCode"]?.ToString();
+                if (!string.IsNullOrEmpty(promoCode) && promoCode == "SAVE10")
+                {
+                    discount = subtotal * 0.10m; // 10% discount
+                }
+                
+                decimal total = subtotal + shipping - discount;
+
+                // Get street address from customer database
+                string deliveryAddress = GetCustomerStreetAddress(custId);
+                if (string.IsNullOrEmpty(deliveryAddress))
+                {
+                    deliveryAddress = "Address not available";
+                }
+
+                // Create order in database
+                var order = new Order
+                {
+                    CustID = custId,
+                    Order_Date = DateTime.Now,
+                    Order_Total = total,
+                    Order_Status = "Paid", // Payment was successful
+                    Delivery_Address = deliveryAddress,
+                    Payment_Method = "paystack",
+                    Payment_Status = "Paid",
+                    Order_Number = OrderDatabase.GenerateOrderNumber(),
+                    Notes = $"Paystack Reference: {paymentReference}"
+                };
+
+                // Use database transaction to ensure atomicity
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    conn.Open();
+                    
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Create order
+                            int orderId = OrderDatabase.CreateOrder(order, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Order created with ID = {orderId}");
+
+                            // Add order items
+                            foreach (var cartItem in cartItems)
+                            {
+                                var orderItem = new DatabaseOrderItem
+                                {
+                                    OrderID = orderId,
+                                    Product_ID = Convert.ToInt32(cartItem.ProductId),
+                                    Product_Name = cartItem.ProductName,
+                                    Product_Brand = cartItem.Brand,
+                                    Product_Category = cartItem.Category,
+                                    Quantity = cartItem.Quantity,
+                                    Unit_Price = cartItem.Price,
+                                    Subtotal = cartItem.Subtotal
+                                };
+                                OrderDatabase.AddOrderItem(orderItem, conn, transaction);
+                            }
+
+                            // Update inventory levels after order items are added
+                            OrderDatabase.UpdateInventory(orderId, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"Inventory updated for order {orderId}");
+
+                            // Clear the cart after successful order
+                            CartDatabase.ClearCart(cartId);
+
+                            // Store order ID in session for confirmation page
+                            HttpContext.Current.Session["LastOrderId"] = orderId;
+
+                            // Commit transaction
+                            transaction.Commit();
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Transaction committed successfully");
+
+                            return orderId.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment: Transaction rolled back due to error: {ex.Message}");
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateOrderAfterPayment WebMethod Error: {ex.Message}");
+                return "ERROR";
+            }
+        }
+
+        [System.Web.Services.WebMethod]
+        public static string CreatePendingOrder()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("CreatePendingOrder called");
+
+                string custId = HttpContext.Current.Session["Cust_ID"]?.ToString();
+                if (string.IsNullOrEmpty(custId))
+                {
+                    System.Diagnostics.Debug.WriteLine("CreatePendingOrder Error: Customer ID is null or empty");
+                    return "ERROR: No customer session";
+                }
+
+                int cartId = CartDatabase.GetOrCreateCart(custId);
+                var cartItems = CartDatabase.GetCartItems(cartId);
+                if (cartItems == null || cartItems.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("CreatePendingOrder Error: No items in cart");
+                    return "ERROR: Empty cart";
+                }
+
+                decimal subtotal = cartItems.Sum(x => x.Subtotal);
+                decimal shipping = 150.00m;
+                decimal discount = 0;
+                string promoCode = HttpContext.Current.Session["PromoCode"]?.ToString();
+                if (!string.IsNullOrEmpty(promoCode) && promoCode == "SAVE10")
+                {
+                    discount = subtotal * 0.10m;
+                }
+                decimal total = subtotal + shipping - discount;
+
+                // Build delivery address from customer
+                string deliveryAddress = GetCustomerStreetAddress(custId);
+                if (string.IsNullOrEmpty(deliveryAddress)) deliveryAddress = "Address not available";
+
+                var order = new Order
+                {
+                    CustID = custId,
+                    Order_Date = DateTime.Now,
+                    Order_Total = total,
+                    Order_Status = "Pending",
+                    Delivery_Address = deliveryAddress,
+                    Payment_Method = "paystack",
+                    Payment_Status = "pending",
+                    Order_Number = OrderDatabase.GenerateOrderNumber(),
+                    Notes = "" // will update with payment ref later
+                };
+
+                string connString = System.Configuration.ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            int orderId = OrderDatabase.CreateOrder(order, conn, transaction);
+                            System.Diagnostics.Debug.WriteLine($"CreatePendingOrder: Order created with ID = {orderId}");
+
+                            // Insert a pending payment record (do not mark as Paid)
+                            string transactionNumber = DateTime.Now.ToString("yyMMddHHmmss") + new Random().Next(0, 10).ToString();
+                            string insertPayment = @"
+                                INSERT INTO Payments (
+                                    Cust_ID, Order_ID, Appointment_ID, Transaction_Number, Payment_Date,
+                                    Consultation_Fee, Order_Payment, Total_Payable, Payment_Method,
+                                    Amount_Received, Change_Due, Created_Date, Created_By, Payment_Status,
+                                    Medical_Aid_Amount, Patient_Portion_Amount, Patient_Payment_Method,
+                                    Patient_Amount_Received, Patient_Change_Due, Medical_Aid_Reference
+                                )
+                                VALUES (
+                                    @Cust_ID, @Order_ID, NULL, @Transaction_Number, NULL,
+                                    NULL, @Order_Payment, @Total_Payable, @Payment_Method,
+                                    @Amount_Received, NULL, @Created_Date, @Created_By, @Payment_Status,
+                                    NULL, NULL, NULL, NULL, NULL, NULL
+                                );
+                                SELECT SCOPE_IDENTITY();";
+
+                            int paymentId;
+                            using (SqlCommand cmd = new SqlCommand(insertPayment, conn, transaction))
+                            {
+                                int custIdInt = 0;
+                                int.TryParse(custId, out custIdInt);
+                                cmd.Parameters.AddWithValue("@Cust_ID", custIdInt);
+                                cmd.Parameters.AddWithValue("@Order_ID", orderId);
+                                cmd.Parameters.AddWithValue("@Transaction_Number", transactionNumber);
+                                cmd.Parameters.AddWithValue("@Order_Payment", total);
+                                cmd.Parameters.AddWithValue("@Total_Payable", total);
+                                cmd.Parameters.AddWithValue("@Payment_Method", "Card");
+                                cmd.Parameters.AddWithValue("@Amount_Received", 0);
+                                cmd.Parameters.AddWithValue("@Created_Date", DateTime.Now);
+                                cmd.Parameters.AddWithValue("@Created_By", "WEBSITE");
+                                cmd.Parameters.AddWithValue("@Payment_Status", "Pending");
+
+                                object res = cmd.ExecuteScalar();
+                                paymentId = Convert.ToInt32(res);
+                            }
+
+                            System.Diagnostics.Debug.WriteLine($"CreatePendingOrder: Payment record created with ID = {paymentId}");
+
+                            // Add order items (do NOT update inventory yet)
+                            foreach (var cartItem in cartItems)
+                            {
+                                var orderItem = new DatabaseOrderItem
+                                {
+                                    OrderID = orderId,
+                                    Product_ID = Convert.ToInt32(cartItem.ProductId),
+                                    Product_Name = cartItem.ProductName,
+                                    Product_Brand = cartItem.Brand,
+                                    Product_Category = cartItem.Category,
+                                    Quantity = cartItem.Quantity,
+                                    Unit_Price = cartItem.Price,
+                                    Subtotal = cartItem.Subtotal
+                                };
+                                OrderDatabase.AddOrderItem(orderItem, conn, transaction);
+                            }
+
+                            // Clear cart (cart items are now stored against order)
+                            CartDatabase.ClearCart(cartId);
+
+                            // Store order id in session for immediate UX flows
+                            HttpContext.Current.Session["LastOrderId"] = orderId;
+
+                            transaction.Commit();
+
+                            System.Diagnostics.Debug.WriteLine($"CreatePendingOrder: Transaction committed for Order {orderId}");
+                            return orderId.ToString();
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            System.Diagnostics.Debug.WriteLine($"CreatePendingOrder Error: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                            return "ERROR: " + ex.Message;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreatePendingOrder Outer Error: {ex.Message}");
+                return "ERROR: " + ex.Message;
+            }
+        }
+    }
+}
