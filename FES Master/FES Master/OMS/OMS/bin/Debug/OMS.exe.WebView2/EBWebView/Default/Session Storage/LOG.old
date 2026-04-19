@@ -1,0 +1,42 @@
+2025/09/05-11:44:21.578 ed84 Reusing MANIFEST C:\Users\A.PMB-G20-59\Videos\FES Master\OMS\OMS\bin\Debug\OMS.exe.WebView2\EBWebView\Default\Session Storage/MANIFEST-000001
+2025/09/05-11:44:21.580 ed84 Recovering log #128
+2025/09/05-11:44:21.582 ed84 Reusing old log C:\Users\A.PMB-G20-59\Videos\FES Master\OMS\OMS\bin\Debug\OMS.exe.WebView2\EBWebView\Default\Session Storage/000128.log 
+2025/09/05-11:45:21.598 f4d8 Level-0 table #132: started
+2025/09/05-11:45:21.603 f4d8 Level-0 table #132: 15749 bytes OK
+2025/09/05-11:45:21.606 f4d8 Delete type=0 #128
+2025/09/05-11:45:21.607 f4d8 Compacting 4@0 + 1@1 files
+2025/09/05-11:45:21.619 f4d8 Generated table #133@0: 883 keys, 26776 bytes
+2025/09/05-11:45:21.619 f4d8 Compacted 4@0 + 1@1 files => 26776 bytes
+2025/09/05-11:45:21.621 f4d8 compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/09/05-11:45:21.623 f4d8 Delete type=2 #121
+2025/09/05-11:45:21.623 f4d8 Delete type=2 #123
+2025/09/05-11:45:21.623 f4d8 Delete type=2 #126
+2025/09/05-11:45:21.623 f4d8 Delete type=2 #129
+2025/09/05-11:45:21.623 f4d8 Delete type=2 #132
+2025/09/05-11:47:21.597 f4d8 Level-0 table #135: started
+2025/09/05-11:47:21.603 f4d8 Level-0 table #135: 32128 bytes OK
+2025/09/05-11:47:21.605 f4d8 Delete type=0 #131
+2025/09/05-11:48:21.606 f4d8 Level-0 table #137: started
+2025/09/05-11:48:21.612 f4d8 Level-0 table #137: 12829 bytes OK
+2025/09/05-11:48:21.614 f4d8 Delete type=0 #134
+2025/09/05-11:49:21.596 f4d8 Level-0 table #139: started
+2025/09/05-11:49:21.603 f4d8 Level-0 table #139: 15945 bytes OK
+2025/09/05-11:49:21.605 f4d8 Delete type=0 #136
+2025/09/05-11:50:21.599 f4d8 Level-0 table #141: started
+2025/09/05-11:50:21.605 f4d8 Level-0 table #141: 25290 bytes OK
+2025/09/05-11:50:21.608 f4d8 Delete type=0 #138
+2025/09/05-11:50:21.609 f4d8 Compacting 4@0 + 1@1 files
+2025/09/05-11:50:21.617 f4d8 Generated table #142@0: 979 keys, 37609 bytes
+2025/09/05-11:50:21.617 f4d8 Compacted 4@0 + 1@1 files => 37609 bytes
+2025/09/05-11:50:21.618 f4d8 compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/09/05-11:50:21.619 f4d8 Delete type=2 #133
+2025/09/05-11:50:21.619 f4d8 Delete type=2 #135
+2025/09/05-11:50:21.620 f4d8 Delete type=2 #137
+2025/09/05-11:50:21.620 f4d8 Delete type=2 #139
+2025/09/05-11:50:21.620 f4d8 Delete type=2 #141
+2025/09/05-11:51:21.596 f4d8 Level-0 table #144: started
+2025/09/05-11:51:21.601 f4d8 Level-0 table #144: 23625 bytes OK
+2025/09/05-11:51:21.604 f4d8 Delete type=0 #140
+2025/09/05-11:53:21.598 f4d8 Level-0 table #146: started
+2025/09/05-11:53:21.606 f4d8 Level-0 table #146: 24718 bytes OK
+2025/09/05-11:53:21.609 f4d8 Delete type=0 #143

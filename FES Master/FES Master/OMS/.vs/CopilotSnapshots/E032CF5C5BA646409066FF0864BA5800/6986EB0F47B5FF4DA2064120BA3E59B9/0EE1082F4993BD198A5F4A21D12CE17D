@@ -1,0 +1,311 @@
+﻿using OMS.Repositories;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace OMS
+{
+    public partial class Customers : Form
+    {
+        private DataTable allCustomersData; // Store all customer data for filtering
+
+        private List<int> archivedCustomerIds = new List<int>();
+
+        public Customers()
+        {
+            InitializeComponent();
+            LoadAllCustomers();
+            SetupSearchEvents();
+        }
+
+        private void SetupSearchEvents()
+        {
+            // Add event handlers for search functionality
+            this.txtSearch.TextChanged += TxtSearch_TextChanged;
+            this.txtSearch.KeyDown += TxtSearch_KeyDown;
+        }
+
+        private void TxtSearch_TextChanged(object sender, EventArgs e)
+        {
+            // Filter customers as user types
+            FilterCustomers();
+        }
+
+        private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Allow Enter key to trigger search
+            if (e.KeyCode == Keys.Enter)
+            {
+                FilterCustomers();
+                e.Handled = true; // Prevent the 'ding' sound
+            }
+        }
+
+        private void LoadAllCustomers()
+        {
+            try
+            {
+                allCustomersData = new DataTable();
+
+                // Add columns to DataTable
+                allCustomersData.Columns.Add("ID");
+                allCustomersData.Columns.Add("Name");
+                allCustomersData.Columns.Add("Surname");
+                allCustomersData.Columns.Add("DOB");
+                allCustomersData.Columns.Add("Gender");
+                allCustomersData.Columns.Add("Email");
+                allCustomersData.Columns.Add("Phone");
+                allCustomersData.Columns.Add("Address");
+                allCustomersData.Columns.Add("Medical Aid");
+                allCustomersData.Columns.Add("Medical Aid Number");
+                allCustomersData.Columns.Add("Main Member Name");
+                allCustomersData.Columns.Add("Main Member Surname");
+                allCustomersData.Columns.Add("Main Member ID");
+                allCustomersData.Columns.Add("Street Number");
+                allCustomersData.Columns.Add("Street Name");
+                allCustomersData.Columns.Add("Complex Name");
+                allCustomersData.Columns.Add("Unit Number");
+                allCustomersData.Columns.Add("City");
+                allCustomersData.Columns.Add("Province");
+                allCustomersData.Columns.Add("Postal Code");
+
+                var repo = new CustomerRepository();
+                var customers = repo.GetCustomers();
+
+                Console.WriteLine($"Retrieved {customers.Count} customers from database");
+
+                foreach (var customer in customers)
+                {
+                    var row = allCustomersData.NewRow();
+
+                    row["ID"] = customer.Cust_ID;
+                    row["Name"] = customer.Customer_Name ?? "";
+                    row["Surname"] = customer.Customer_Surname ?? "";
+                    row["DOB"] = customer.Customer_DOB ?? "";
+                    row["Gender"] = customer.Customer_Gender ?? "";
+                    row["Email"] = customer.Customer_Email ?? "";
+                    row["Phone"] = customer.Customer_Phone ?? "";
+                    row["Address"] = customer.Customer_Address ?? "";
+                    row["Medical Aid"] = customer.Medical_Aid ?? "";
+                    row["Medical Aid Number"] = customer.Medical_Aid_Number ?? "";
+                    row["Main Member Name"] = customer.Main_Member_Name ?? "";
+                    row["Main Member Surname"] = customer.Main_Member_Surname ?? "";
+                    row["Main Member ID"] = customer.Main_Member_ID ?? "";
+                    row["Street Number"] = customer.Street_Number ?? "";
+                    row["Street Name"] = customer.Street_Name ?? "";
+                    row["Complex Name"] = customer.Complex_Name ?? "";
+                    row["Unit Number"] = customer.Unit_Number ?? "";
+                    row["City"] = customer.City ?? "";
+                    row["Province"] = customer.Province ?? "";
+                    row["Postal Code"] = customer.Postal_Code ?? "";
+
+                    allCustomersData.Rows.Add(row);
+                }
+
+                // Display all customers initially
+                DisplayCustomers(allCustomersData);
+
+                Console.WriteLine($"DataGridView now has {this.dgvCustomers.Rows.Count} rows");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in LoadAllCustomers: " + ex.ToString());
+                MessageBox.Show($"Error loading customer data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void FilterCustomers()
+        {
+            if (allCustomersData == null) return;
+
+            try
+            {
+                string searchTerm = txtSearch.Text.Trim();
+
+                if (string.IsNullOrEmpty(searchTerm))
+                {
+                    // If search is empty, show all customers
+                    DisplayCustomers(allCustomersData);
+                    return;
+                }
+
+                // Create a filtered DataTable
+                DataTable filteredData = allCustomersData.Clone(); // Copy structure
+
+                // Filter by surname (case-insensitive, partial match)
+                var filteredRows = allCustomersData.AsEnumerable()
+                    .Where(row => row.Field<string>("Surname")
+                        .IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                foreach (var row in filteredRows)
+                {
+                    filteredData.ImportRow(row);
+                }
+
+                DisplayCustomers(filteredData);
+
+                Console.WriteLine($"Filtered to {filteredData.Rows.Count} customers matching '{searchTerm}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in FilterCustomers: " + ex.ToString());
+                MessageBox.Show($"Error filtering customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DisplayCustomers(DataTable dataTable)
+        {
+            // Clear existing data source and set new one
+            this.dgvCustomers.DataSource = null;
+            this.dgvCustomers.DataSource = dataTable;
+
+            // Optional: Auto-resize columns to fit content
+            this.dgvCustomers.AutoResizeColumns();
+        }
+
+        // Refresh data after add/edit/delete operations
+        private void RefreshCustomerData()
+        {
+            LoadAllCustomers();
+            // Clear search to show all customers after refresh
+            txtSearch.Text = "";
+        }
+
+        private void btnAddNewCust_Click(object sender, EventArgs e)
+        {
+            AddEditCustomer form = new AddEditCustomer();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                RefreshCustomerData(); // Refresh all data and clear search
+            }
+            form.Dispose(); // Use Dispose instead of Close for proper cleanup
+        }
+
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            // Check if any row is selected
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a customer to edit.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            var cellValue = selectedRow.Cells[0].Value;
+
+            if (cellValue == null || string.IsNullOrEmpty(cellValue.ToString()))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!int.TryParse(cellValue.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var repo = new CustomerRepository();
+            var customer = repo.GetCustomer(customerid);
+
+            if (customer == null)
+            {
+                MessageBox.Show("Customer not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            AddEditCustomer form = new AddEditCustomer();
+            form.EditCustomer(customer);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                RefreshCustomerData(); // Refresh all data and clear search
+            }
+            form.Dispose();
+        }
+
+        // Add this method to handle delete functionality if needed
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a customer to archive.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            if (!int.TryParse(selectedRow.Cells["ID"].Value.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Mark as archived (in memory only)
+            if (!archivedCustomerIds.Contains(customerid))
+                archivedCustomerIds.Add(customerid);
+
+            // Hide from DataGridView
+            selectedRow.Visible = false;
+
+            MessageBox.Show("Customer archived (hidden) successfully.", "Archived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // Optional: Add a clear search button functionality
+        private void btnClearSearch_Click(object sender, EventArgs e)
+        {
+            txtSearch.Text = "";
+            DisplayCustomers(allCustomersData);
+        }
+
+        // Optional: Add a search button if you prefer button-triggered search instead of real-time
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            FilterCustomers();
+        }
+
+        private void dgvCustomers_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btnShowArchived_Click(object sender, EventArgs e)
+        {
+            foreach (DataGridViewRow row in dgvCustomers.Rows)
+            {
+                if (int.TryParse(row.Cells["ID"].Value.ToString(), out int custId))
+                {
+                    row.Visible = archivedCustomerIds.Contains(custId);
+                }
+            }
+        }
+
+        private void btnUnarchive_Click(object sender, EventArgs e)
+        {
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a customer to unarchive.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            if (!int.TryParse(selectedRow.Cells["ID"].Value.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Remove from archive list
+            archivedCustomerIds.Remove(customerid);
+
+            // Show again
+            selectedRow.Visible = true;
+
+            MessageBox.Show("Customer restored successfully.", "Unarchived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+    }
+}

@@ -1,0 +1,463 @@
+﻿using OMS.Models;
+using OMS.Repositories;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace OMS
+{
+    public partial class Customers : Form
+    {
+        private DataTable allCustomersData; // Store all customer data for filtering
+        private bool showArchived = false; // Track whether we're showing archived customers
+
+        public Customers()
+        {
+            InitializeComponent();
+            LoadAllCustomers();
+            SetupSearchEvents();
+            UpdateButtonStates();
+        }
+
+        private void SetupSearchEvents()
+        {
+            // Add event handlers for search functionality
+            this.txtSearch.TextChanged += TxtSearch_TextChanged;
+            this.txtSearch.KeyDown += TxtSearch_KeyDown;
+        }
+
+        private void TxtSearch_TextChanged(object sender, EventArgs e)
+        {
+            // Filter customers as user types
+            FilterCustomers();
+        }
+
+        private void TxtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Allow Enter key to trigger search
+            if (e.KeyCode == Keys.Enter)
+            {
+                FilterCustomers();
+                e.Handled = true; // Prevent the 'ding' sound
+            }
+        }
+
+        private void LoadAllCustomers()
+        {
+            try
+            {
+                allCustomersData = new DataTable();
+
+                // Add columns to DataTable
+                allCustomersData.Columns.Add("ID");
+                allCustomersData.Columns.Add("Name");
+                allCustomersData.Columns.Add("Surname");
+                allCustomersData.Columns.Add("DOB");
+                allCustomersData.Columns.Add("Gender");
+                allCustomersData.Columns.Add("Email");
+                allCustomersData.Columns.Add("Phone");
+                allCustomersData.Columns.Add("Address");
+                allCustomersData.Columns.Add("Medical Aid");
+                allCustomersData.Columns.Add("Medical Aid Number");
+                allCustomersData.Columns.Add("Main Member Name");
+                allCustomersData.Columns.Add("Main Member Surname");
+                allCustomersData.Columns.Add("Main Member ID");
+                allCustomersData.Columns.Add("Street Number");
+                allCustomersData.Columns.Add("Street Name");
+                allCustomersData.Columns.Add("Complex Name");
+                allCustomersData.Columns.Add("Unit Number");
+                allCustomersData.Columns.Add("City");
+                allCustomersData.Columns.Add("Province");
+                allCustomersData.Columns.Add("Postal Code");
+                allCustomersData.Columns.Add("Status"); // Add status column to show archived/active
+
+                var repo = new CustomerRepository();
+                // var customers = repo.GetCustomers(showArchived); // showArchived now means "show archived only"
+                List<Customer> customers;
+                if (showArchived)
+                {
+                    customers = repo.GetArchivedCustomers(); // Only archived
+                }
+                else
+                {
+                    customers = repo.GetCustomers(false); // Only active
+                }
+
+                Console.WriteLine($"Retrieved {customers.Count} customers from database (showing {(showArchived ? "archived" : "active")} customers)");
+
+                foreach (var customer in customers)
+                {
+                    var row = allCustomersData.NewRow();
+
+                    row["ID"] = customer.Cust_ID;
+                    row["Name"] = customer.Customer_Name ?? "";
+                    row["Surname"] = customer.Customer_Surname ?? "";
+                    row["DOB"] = customer.Customer_DOB ?? "";
+                    row["Gender"] = customer.Customer_Gender ?? "";
+                    row["Email"] = customer.Customer_Email ?? "";
+                    row["Phone"] = customer.Customer_Phone ?? "";
+                    row["Address"] = customer.Customer_Address ?? "";
+                    row["Medical Aid"] = customer.Medical_Aid ?? "";
+                    row["Medical Aid Number"] = customer.Medical_Aid_Number ?? "";
+                    row["Main Member Name"] = customer.Main_Member_Name ?? "";
+                    row["Main Member Surname"] = customer.Main_Member_Surname ?? "";
+                    row["Main Member ID"] = customer.Main_Member_ID ?? "";
+                    row["Street Number"] = customer.Street_Number ?? "";
+                    row["Street Name"] = customer.Street_Name ?? "";
+                    row["Complex Name"] = customer.Complex_Name ?? "";
+                    row["Unit Number"] = customer.Unit_Number ?? "";
+                    row["City"] = customer.City ?? "";
+                    row["Province"] = customer.Province ?? "";
+                    row["Postal Code"] = customer.Postal_Code ?? "";
+                    row["Status"] = customer.Is_Archive == 1 ? "Archived" : "Active";
+
+                    allCustomersData.Rows.Add(row);
+                }
+
+                // Display all customers initially
+                DisplayCustomers(allCustomersData);
+
+                Console.WriteLine($"DataGridView now has {this.dgvCustomers.Rows.Count} rows");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in LoadAllCustomers: " + ex.ToString());
+                MessageBox.Show($"Error loading customer data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void FilterCustomers()
+        {
+            if (allCustomersData == null) return;
+
+            try
+            {
+                string searchTerm = txtSearch.Text.Trim();
+
+                if (string.IsNullOrEmpty(searchTerm))
+                {
+                    // If search is empty, show all customers
+                    DisplayCustomers(allCustomersData);
+                    return;
+                }
+
+                // Create a filtered DataTable
+                DataTable filteredData = allCustomersData.Clone(); // Copy structure
+
+                // Filter by surname (case-insensitive, partial match)
+                var filteredRows = allCustomersData.AsEnumerable()
+                    .Where(row => row.Field<string>("Surname")
+                        .IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                foreach (var row in filteredRows)
+                {
+                    filteredData.ImportRow(row);
+                }
+
+                DisplayCustomers(filteredData);
+
+                Console.WriteLine($"Filtered to {filteredData.Rows.Count} customers matching '{searchTerm}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception in FilterCustomers: " + ex.ToString());
+                MessageBox.Show($"Error filtering customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DisplayCustomers(DataTable dataTable)
+        {
+            // Clear existing data source and set new one
+            this.dgvCustomers.DataSource = null;
+            this.dgvCustomers.DataSource = dataTable;
+
+            // Optional: Auto-resize columns to fit content
+            this.dgvCustomers.AutoResizeColumns();
+        }
+
+        private void UpdateButtonStates()
+        {
+            // Update button text and visibility based on current view
+            if (showArchived)
+            {
+                // When showing ONLY archived customers
+                btnRestore.Text = "RESTORE";
+                btnRestore.BackColor = Color.LightGreen;
+                // Disable add/edit buttons when viewing archived customers
+                btnAdd.Enabled = false;
+                btnEdit.Enabled = false;
+
+                // Update form title or label to indicate we're viewing archived customers
+                this.Text = "Customers - Archived View";
+            }
+            else
+            {
+                // When showing ONLY active customers
+                btnRestore.Text = "ARCHIVE";
+                btnRestore.BackColor = Color.LightCoral;
+                btnAdd.Enabled = true;
+                btnEdit.Enabled = true;
+
+                // Update form title to indicate we're viewing active customers
+                this.Text = "Customers - Active View";
+            }
+        }
+
+        // Refresh data after add/edit/delete operations
+        private void RefreshCustomerData()
+        {
+            LoadAllCustomers();
+            UpdateButtonStates();
+            // Clear search to show all customers after refresh
+            txtSearch.Text = "";
+        }
+
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (showArchived)
+            {
+                MessageBox.Show("Cannot edit archived customers.\nRestore the customer first to enable editing.",
+                              "Cannot Edit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Check if any row is selected
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a customer to edit.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            var cellValue = selectedRow.Cells[0].Value;
+
+            if (cellValue == null || string.IsNullOrEmpty(cellValue.ToString()))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!int.TryParse(cellValue.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var repo = new CustomerRepository();
+            var customer = repo.GetCustomer(customerid);
+
+            if (customer == null)
+            {
+                MessageBox.Show("Customer not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            AddEditCustomer form = new AddEditCustomer();
+            form.EditCustomer(customer);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                RefreshCustomerData(); // Refresh all data and clear search
+            }
+            form.Dispose();
+        }
+
+        // Modified delete button to handle both archive and restore based on current view
+        private void btnRestore_Click(object sender, EventArgs e)
+        {
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                string action = showArchived ? "restore" : "archive";
+                MessageBox.Show($"Please select a customer to {action}.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            var cellValue = selectedRow.Cells[0].Value;
+
+            if (cellValue == null || string.IsNullOrEmpty(cellValue.ToString()))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!int.TryParse(cellValue.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var repo = new CustomerRepository();
+
+            if (showArchived)
+            {
+                // Restore archived customer
+                if (!repo.IsCustomerArchived(customerid))
+                {
+                    MessageBox.Show("This customer is not archived.", "Not Archived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to restore this customer?",
+                                           "Confirm Restore", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    repo.RestoreCustomer(customerid);
+                    RefreshCustomerData();
+                    MessageBox.Show("Customer restored successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            else
+            {
+                // Archive active customer
+                if (repo.IsCustomerArchived(customerid))
+                {
+                    MessageBox.Show("This customer is already archived.", "Already Archived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to archive this customer?\n\nThis will hide the customer from the main list but preserve their data.",
+                                           "Confirm Archive", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    repo.SoftDeleteCustomer(customerid);
+                    showArchived = false;
+                    RefreshCustomerData();
+                    MessageBox.Show("Customer archived successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        // Toggle button to switch between active and archived customers view
+        private void btnToggleView_Click(object sender, EventArgs e)
+        {
+            showArchived = !showArchived;
+            RefreshCustomerData();
+
+            // Update the toggle button text if you have one
+            // btnToggleView.Text = showArchived ? "Show Active Customers" : "Show Archived Customers";
+
+            // Clear search when switching views
+            txtSearch.Text = "";
+
+            // Show message to user about what view they're in
+            string viewMessage = showArchived ? "Now showing archived customers only." : "Now showing active customers only.";
+            MessageBox.Show(viewMessage, "View Changed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // Optional: Add a clear search button functionality
+        private void btnClearSearch_Click(object sender, EventArgs e)
+        {
+            txtSearch.Text = "";
+            DisplayCustomers(allCustomersData);
+        }
+
+        // Optional: Add a search button if you prefer button-triggered search instead of real-time
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            FilterCustomers();
+        }
+
+        private void dgvCustomers_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dgvCustomers_SelectionChanged(object sender, EventArgs e)
+        {
+            // Update button states when selection changes
+            UpdateButtonStates();
+        }
+
+        private void btnAdd_Click_1(object sender, EventArgs e)
+        {
+            if (showArchived)
+            {
+                MessageBox.Show("Cannot add customers while viewing archived records.\nSwitch to active customers view first.",
+                              "Cannot Add", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            AddEditCustomer form = new AddEditCustomer();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                RefreshCustomerData(); // Refresh all data and clear search
+            }
+            form.Dispose(); // Use Dispose instead of Close for proper cleanup
+        }
+
+        private void btnRestore_Click_1(object sender, EventArgs e)
+        {
+            if (this.dgvCustomers.SelectedRows.Count == 0)
+            {
+                string action = showArchived ? "restore" : "archive";
+                MessageBox.Show($"Please select a customer to {action}.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = this.dgvCustomers.SelectedRows[0];
+            var cellValue = selectedRow.Cells[0].Value;
+
+            if (cellValue == null || string.IsNullOrEmpty(cellValue.ToString()))
+            {
+                MessageBox.Show("Invalid customer ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!int.TryParse(cellValue.ToString(), out int customerid))
+            {
+                MessageBox.Show("Invalid customer ID format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var repo = new CustomerRepository();
+
+            if (showArchived)
+            {
+                // Restore archived customer
+                if (!repo.IsCustomerArchived(customerid))
+                {
+                    MessageBox.Show("This customer is not archived.", "Not Archived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to restore this customer?",
+                                           "Confirm Restore", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    repo.RestoreCustomer(customerid);
+                    RefreshCustomerData();
+                    MessageBox.Show("Customer restored successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            else
+            {
+                // Archive active customer
+                if (repo.IsCustomerArchived(customerid))
+                {
+                    MessageBox.Show("This customer is already archived.", "Already Archived", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to archive this customer?\n\nThis will hide the customer from the main list but preserve their data.",
+                                           "Confirm Archive", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    repo.SoftDeleteCustomer(customerid);
+                    showArchived = false;
+                    RefreshCustomerData();
+                    MessageBox.Show("Customer archived successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+    }
+}

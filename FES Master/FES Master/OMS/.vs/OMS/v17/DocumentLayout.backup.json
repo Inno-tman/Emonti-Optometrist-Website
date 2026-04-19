@@ -1,0 +1,68 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|c:\\users\\a.pmb-g20-59\\desktop\\fes master\\fes master\\oms\\oms\\reports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|solutionrelative:oms\\reports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\oms\\reports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|solutionrelative:oms\\reports.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\oms\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93FAF88A-1CFD-47F1-90B4-73C45A3A8488}|OMS\\OMS.csproj|solutionrelative:oms\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "REPORTS.cs",
+              "DocumentMoniker": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\REPORTS.cs",
+              "RelativeDocumentMoniker": "OMS\\REPORTS.cs",
+              "ToolTip": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\REPORTS.cs",
+              "RelativeToolTip": "OMS\\REPORTS.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAIwBYAAAC5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T14:42:52.934Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "REPORTS.cs [Design]",
+              "DocumentMoniker": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\REPORTS.cs",
+              "RelativeDocumentMoniker": "OMS\\REPORTS.cs",
+              "ToolTip": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\REPORTS.cs [Design]",
+              "RelativeToolTip": "OMS\\REPORTS.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T14:42:47.152Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\Program.cs",
+              "RelativeDocumentMoniker": "OMS\\Program.cs",
+              "ToolTip": "C:\\Users\\A.PMB-G20-59\\Desktop\\FES Master\\FES Master\\OMS\\OMS\\Program.cs",
+              "RelativeToolTip": "OMS\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-03T05:38:32.091Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
