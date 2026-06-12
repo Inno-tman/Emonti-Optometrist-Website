@@ -5,7 +5,7 @@
 
 window.ChatbotConfig = {
     // API Configuration
-    apiEndpoint: '/ChatbotAPI.ashx',
+    apiEndpoint: '/api/chatbot/chat',
     
     // UI Configuration
     enableTypingIndicator: true,
