@@ -43,3 +43,7 @@ x86/
 
 # Publish Web Output
 *.[Pp]ublish.xml
+# Web config with secrets
+*/Web.config
+*.Web.config
+**/Web.config

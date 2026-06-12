@@ -1,0 +1,1493 @@
+@@page
+@model ServicesModel
+@{
+    ViewData["Title"] = "Our Services";
+}
+
+@section HeadContent {
+    <style>
+        /* ===== SERVICES HERO SECTION ===== */
+        /* Keyframe Animations */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* Hero Section */
+        .services-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            margin-top: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .services-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .services-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @@keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+        
+        .services-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+        
+        .services-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        /* ===== SERVICES SECTION ===== */
+        .services-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .services-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(to bottom, rgba(102, 126, 234, 0.03), transparent);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 0.75rem;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLine 0.6s ease-out 0.3s forwards;
+        }
+        
+        @@keyframes expandLine {
+            from { width: 0; }
+            to { width: 60px; }
+        }
+        
+        .section-title p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 1.5rem auto 0;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .service-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .service-card > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .service-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Gradient top border */
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.4s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Shimmer effect */
+        .service-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(167, 139, 250, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .service-card:hover::before {
+            width: 100%;
+        }
+        
+        .service-card:hover::after {
+            opacity: 1;
+        }
+        
+        .service-icon {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 1.5rem;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            color: white;
+        }
+        
+        .service-icon i {
+            color: white;
+        }
+        
+        .service-card:hover .service-icon {
+            transform: scale(1.2) rotate(5deg);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .service-icon::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            border-radius: 50%;
+            opacity: 0;
+            animation: ripple 2s infinite;
+        }
+        
+        @@keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        .service-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            text-align: center;
+        }
+        
+        .service-card:hover h3 {
+            color: #667eea;
+        }
+        
+        .service-card p {
+            color: #666;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .service-features {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+        
+        .service-features li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+            padding-left: 2.2rem;
+            font-size: 0.95rem;
+            color: #555;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .service-features li:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+            margin: 0 -1rem;
+            padding-left: 3.2rem;
+            padding-right: 1rem;
+            border-radius: 6px;
+        }
+        
+        .service-features li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-size: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(102, 126, 234, 0.1);
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .service-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.9rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+            flex: 1;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 11;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        /* ===== PARALLAX SHAPES ===== */
+        .parallax-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .parallax-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.3), rgba(102, 126, 234, 0.1));
+            filter: blur(40px);
+            animation: floatShape 15s ease-in-out infinite;
+        }
+        
+        .parallax-shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .parallax-shape:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .parallax-shape:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            bottom: 10%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+        
+        @@keyframes floatShape {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+        
+        /* ===== MEDICAL AID SECTION ===== */
+        .medical-aid-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .medical-aid-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveGrid 20s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @@keyframes moveGrid {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(50px, 50px) rotate(360deg);
+            }
+        }
+        
+        .medical-aid-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .medical-aid-content h2 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .medical-aid-content > p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.15rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .medical-aid-wrapper {
+            overflow: hidden;
+            padding: 2rem 0;
+            position: relative;
+            z-index: 1;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            margin-bottom: 3rem;
+        }
+        
+        .medical-aid-track {
+            display: flex;
+            gap: 3rem;
+            width: fit-content;
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        .medical-aid-track.animate {
+            animation: scrollMedicalAids 30s linear infinite;
+        }
+        
+        .medical-aid-track:hover {
+            animation-play-state: paused;
+        }
+        
+        @@keyframes scrollMedicalAids {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(calc(-50% - 1.5rem));
+            }
+        }
+        
+        .medical-aid-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                        inset 0 0 20px rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            min-width: 320px;
+            max-width: 320px;
+            flex-shrink: 0;
+        }
+        
+        .medical-aid-item::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+        }
+        
+        .medical-aid-item:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3),
+                        inset 0 0 30px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .medical-aid-logo {
+            width: 180px;
+            height: 80px;
+            object-fit: contain;
+            margin: 0 auto 1.5rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .medical-aid-item h3 {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .medical-aid-item p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+            margin: 0;
+        }
+        
+        .btn-check-benefits {
+            background: white;
+            color: #667eea;
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: block;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            animation: pulseGlow 2s ease-in-out infinite;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            text-align: center;
+            width: fit-content;
+        }
+        
+        @@keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2),
+                            0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2),
+                            0 0 20px 5px rgba(255, 255, 255, 0.3);
+            }
+        }
+        
+        .btn-check-benefits::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-check-benefits:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-check-benefits:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            color: #5a6fd8;
+        }
+        
+        /* ===== MODAL STYLES ===== */
+        .benefits-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .benefits-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @@keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .benefits-modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            margin: auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: slideUp 0.4s ease;
+            overflow: hidden;
+        }
+        
+        .benefits-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.25rem;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+        
+        .benefits-modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .benefits-modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        }
+        
+        .benefits-modal-body {
+            padding: 1.5rem;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .benefits-modal-body h3 {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .benefits-steps {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+            counter-reset: step-counter;
+        }
+        
+        .benefits-steps li {
+            padding: 0.75rem 0 0.75rem 2.5rem;
+            position: relative;
+            margin-bottom: 0.4rem;
+            font-size: 0.95rem;
+            color: #555;
+        }
+        
+        .benefits-steps li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0.75rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .benefits-alternative {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1.25rem;
+            border-left: 3px solid #667eea;
+        }
+        
+        .benefits-alternative p {
+            margin: 0;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .benefits-modal-footer {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .btn-modal-close {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-modal-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-modal-close:active {
+            transform: translateY(0);
+        }
+        
+        .benefits-phone {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 700;
+            color: #667eea;
+            margin-top: 0.3rem;
+            font-size: 0.95rem;
+        }
+        
+        @@media (max-width: 768px) {
+            .benefits-modal-content {
+                width: 95%;
+                margin: 1rem;
+                max-width: 400px;
+            }
+            
+            .benefits-modal-header {
+                padding: 1rem;
+            }
+            
+            .benefits-modal-header h2 {
+                font-size: 1.3rem;
+            }
+            
+            .benefits-modal-body {
+                padding: 1.25rem;
+            }
+            
+            .benefits-modal-footer {
+                padding: 0.875rem 1.25rem;
+                flex-direction: column;
+            }
+            
+            .btn-modal-close {
+                width: 100%;
+            }
+        }
+        
+        /* ===== SHOP SECTION ===== */
+        .shop-section {
+            background: white;
+            color: #2c3e50;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .shop-section .container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .shop-section h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+        
+        .shop-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #666;
+            line-height: 1.7;
+        }
+        
+        .btn-shop {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-shop::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-shop:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-shop i {
+            transition: transform 0.3s ease;
+        }
+        
+        .btn-shop:hover i {
+            transform: scale(1.2) rotate(5deg);
+        }
+        
+        .btn-shop:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        /* ===== CURSOR TRAIL ===== */
+        .cursor-trail {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.8), rgba(102, 126, 234, 0.4));
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            animation: cursorPulse 1s ease-out forwards;
+        }
+        
+        @@keyframes cursorPulse {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @@media (max-width: 992px) {
+            .services-hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+            
+            .services-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .services-hero p {
+                font-size: 1.1rem;
+            }
+            
+            .services-section {
+                padding: 1.75rem 1.25rem;
+            }
+            
+            .services-grid {
+                gap: 1.25rem;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .services-hero {
+                padding: 6rem 1rem 3rem;
+                margin-top: 0;
+            }
+            
+            .services-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .services-hero p {
+                font-size: 1rem;
+            }
+            
+            .services-section {
+                padding: 1.5rem 1rem;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .section-title h2 {
+                font-size: 1.75rem;
+            }
+            
+            .medical-aid-section {
+                padding: 2rem 1rem;
+            }
+            
+            .medical-aid-item {
+                min-width: 280px;
+                max-width: 280px;
+                padding: 1.5rem 1.25rem;
+            }
+            
+            .medical-aid-track {
+                gap: 1.5rem;
+            }
+            
+            .shop-section {
+                padding: 1.5rem 1rem;
+            }
+        }
+        
+        @@media (max-width: 576px) {
+            .services-hero {
+                padding: 5rem 0.75rem 2.5rem;
+            }
+            
+            .services-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .services-hero p {
+                font-size: 0.95rem;
+            }
+            
+            .services-section {
+                padding: 1.25rem 0.75rem;
+            }
+            
+            .section-title h2 {
+                font-size: 1.5rem;
+            }
+            
+            .service-card {
+                padding: 1.25rem;
+            }
+            
+            .shop-section h2 {
+                font-size: 1.75rem;
+            }
+            
+            .medical-aid-content h2 {
+                font-size: 1.75rem;
+            }
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+}
+
+<!-- Services Hero Section -->
+<section class="services-hero">
+    <div class="container">
+        <h1>Our Services</h1>
+        <p>Comprehensive eye care services tailored to your needs, from routine check-ups to specialized treatments</p>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services-section" id="services">
+    <div class="parallax-bg">
+        <div class="parallax-shape"></div>
+        <div class="parallax-shape"></div>
+        <div class="parallax-shape"></div>
+    </div>
+    <div class="container">
+        <div class="section-title">
+            <h2>Professional Eye Care Services</h2>
+            <p>We offer a wide range of optometric services using the latest technology</p>
+        </div>
+        <div class="services-grid">
+            <!-- Comprehensive Eye Exam -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h3>Comprehensive Eye Exam</h3>
+                <p>Thorough evaluation of your eye health and vision</p>
+                <ul class="service-features">
+                    <li>Visual acuity testing</li>
+                    <li>Refraction assessment</li>
+                    <li>Eye pressure measurement</li>
+                    <li>Retinal examination</li>
+                    <li>Digital retinal photography</li>
+                </ul>
+                <div class="service-actions">
+                    <a href="/BookAppointment?service=comprehensive" class="btn-primary">
+                        Book Appointment
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contact Lens Fitting -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-glasses"></i>
+                </div>
+                <h3>Contact Lens Fitting</h3>
+                <p>Professional contact lens consultation and fitting</p>
+                <ul class="service-features">
+                    <li>Eye health evaluation</li>
+                    <li>Corneal measurements</li>
+                    <li>Trial lens fitting</li>
+                    <li>Insertion/removal training</li>
+                    <li>Ongoing support</li>
+                </ul>
+                <div class="service-actions">
+                    <a href="/BookAppointment?service=contact-fitting" class="btn-primary">
+                        Book Appointment
+                    </a>
+                </div>
+            </div>
+
+            <!-- Follow-up Consultation -->
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3>Follow-up Consultation</h3>
+                <p>Progress monitoring and treatment adjustments</p>
+                <ul class="service-features">
+                    <li>Progress evaluation</li>
+                    <li>Treatment adjustments</li>
+                    <li>Comfort assessment</li>
+                    <li>Prescription updates</li>
+                    <li>Health monitoring</li>
+                </ul>
+                <div class="service-actions">
+                    <a href="/BookAppointment?service=follow-up" class="btn-primary">
+                        Book Appointment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Medical Aid Section -->
+<section class="medical-aid-section">
+    <div class="medical-aid-content">
+        <h2>Medical Aid Accepted</h2>
+        <p>We work with most major medical aid schemes to ensure you receive the best care while maximizing your benefits</p>
+        
+        <div class="medical-aid-wrapper">
+            <div class="medical-aid-track" id="medicalAidTrack">
+                <!-- Original Set -->
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idBDiwo_Pi/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Discovery Health" class="medical-aid-logo" />
+                    <h3>Discovery Health</h3>
+                    <p>Comprehensive coverage for eye care services</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idlJnwXFZo/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Momentum Health" class="medical-aid-logo" />
+                    <h3>Momentum Health</h3>
+                    <p>Full benefits for optometric services</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/id09_HhDWT/w/258/h/100/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B" alt="Bonitas Medical Fund" class="medical-aid-logo" />
+                    <h3>Bonitas Medical Fund</h3>
+                    <p>Coverage for eye examinations and treatments</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.clearwave.co.za/wp-content/uploads/2017/05/Clientele_HELP-300x254.jpg" alt="Clientele" class="medical-aid-logo" />
+                    <h3>Clientele</h3>
+                    <p>Quality healthcare benefits for members</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idA95hh0ZP/w/358/h/358/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Bankmed" class="medical-aid-logo" />
+                    <h3>Bankmed</h3>
+                    <p>Specialized medical aid for banking sector</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://bhfglobal.com/wp-content/uploads/2023/04/gemsagain.jpg" alt="GEMS" class="medical-aid-logo" />
+                    <h3>GEMS</h3>
+                    <p>Government Employees Medical Scheme coverage</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.medicalaid-quotes.co.za/sites/default/files/styles/logo_thumbnail/public/bestmed-logo.jpg?itok=KD_YkamA" alt="Bestmed" class="medical-aid-logo" />
+                    <h3>Bestmed</h3>
+                    <p>Affordable healthcare for all South Africans</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.medicalaid-quotes.co.za/sites/default/files/styles/logo_thumbnail/public/medshield-new.jpg?itok=3RJZG3Lb" alt="Medshield" class="medical-aid-logo" />
+                    <h3>Medshield</h3>
+                    <p>Comprehensive medical aid solutions</p>
+                </div>
+                
+                <!-- Duplicate Set for Seamless Loop -->
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idBDiwo_Pi/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Discovery Health" class="medical-aid-logo" />
+                    <h3>Discovery Health</h3>
+                    <p>Comprehensive coverage for eye care services</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idlJnwXFZo/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Momentum Health" class="medical-aid-logo" />
+                    <h3>Momentum Health</h3>
+                    <p>Full benefits for optometric services</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/id09_HhDWT/w/258/h/100/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B" alt="Bonitas Medical Fund" class="medical-aid-logo" />
+                    <h3>Bonitas Medical Fund</h3>
+                    <p>Coverage for eye examinations and treatments</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.clearwave.co.za/wp-content/uploads/2017/05/Clientele_HELP-300x254.jpg" alt="Clientele" class="medical-aid-logo" />
+                    <h3>Clientele</h3>
+                    <p>Quality healthcare benefits for members</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://cdn.brandfetch.io/idA95hh0ZP/w/358/h/358/theme/dark/icon.jpeg?c=1dxbfHSJFAPEGdCLU4o5B" alt="Bankmed" class="medical-aid-logo" />
+                    <h3>Bankmed</h3>
+                    <p>Specialized medical aid for banking sector</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://bhfglobal.com/wp-content/uploads/2023/04/gemsagain.jpg" alt="GEMS" class="medical-aid-logo" />
+                    <h3>GEMS</h3>
+                    <p>Government Employees Medical Scheme coverage</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.medicalaid-quotes.co.za/sites/default/files/styles/logo_thumbnail/public/bestmed-logo.jpg?itok=KD_YkamA" alt="Bestmed" class="medical-aid-logo" />
+                    <h3>Bestmed</h3>
+                    <p>Affordable healthcare for all South Africans</p>
+                </div>
+                <div class="medical-aid-item">
+                    <img src="https://www.medicalaid-quotes.co.za/sites/default/files/styles/logo_thumbnail/public/medshield-new.jpg?itok=3RJZG3Lb" alt="Medshield" class="medical-aid-logo" />
+                    <h3>Medshield</h3>
+                    <p>Comprehensive medical aid solutions</p>
+                </div>
+            </div>
+        </div>
+        
+        <a href="#" onclick="openBenefitsModal(); return false;" class="btn-check-benefits">Check Your Benefits</a>
+    </div>
+</section>
+
+<!-- Shop Section -->
+<section class="shop-section">
+    <div class="container">
+        <h2>Shop for Frames & Lenses</h2>
+        <p>Browse our extensive collection of designer frames and high-quality lenses. We offer a wide range of styles to suit every preference and budget.</p>
+        <a href="/Shop" class="btn-shop">
+            <i class="fas fa-shopping-bag"></i> Shop Now
+        </a>
+    </div>
+</section>
+
+<!-- Benefits Check Modal -->
+<div id="benefitsModal" class="benefits-modal">
+    <div class="benefits-modal-content">
+        <div class="benefits-modal-header">
+            <h2>Check Your Benefits</h2>
+        </div>
+        <div class="benefits-modal-body">
+            <h3>How to Check Your Medical Aid Benefits</h3>
+            <ol class="benefits-steps">
+                <li>Have your membership number ready</li>
+                <li>Call us at <span class="benefits-phone">076 463 1930</span></li>
+                <li>Our staff will verify your benefits</li>
+                <li>We will explain what is covered</li>
+            </ol>
+            <div class="benefits-alternative">
+                <p><strong>Alternative:</strong> You can bring your medical aid card when you visit our practice.</p>
+            </div>
+        </div>
+        <div class="benefits-modal-footer">
+            <button type="button" class="btn-modal-close" onclick="closeBenefitsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openBenefitsModal() {
+        document.getElementById('benefitsModal').classList.add('show');
+    }
+
+    function closeBenefitsModal() {
+        document.getElementById('benefitsModal').classList.remove('show');
+    }
+
+    // Close modal on outside click
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('benefitsModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeBenefitsModal();
+                }
+            });
+        }
+    });
+
+    // Wait for page to load
+    window.addEventListener('DOMContentLoaded', function () {
+        // ===== THREE.JS SERVICES SECTION PARTICLES =====
+        if (typeof THREE !== 'undefined' && window.innerWidth > 480) {
+            const servicesSection = document.querySelector('.services-section');
+
+            if (servicesSection) {
+                const servicesCanvas = document.createElement('canvas');
+                servicesCanvas.style.position = 'absolute';
+                servicesCanvas.style.top = '0';
+                servicesCanvas.style.left = '0';
+                servicesCanvas.style.width = '100%';
+                servicesCanvas.style.height = '100%';
+                servicesCanvas.style.zIndex = '0';
+                servicesCanvas.style.pointerEvents = 'none';
+                servicesSection.style.position = 'relative';
+                servicesSection.insertBefore(servicesCanvas, servicesSection.firstChild);
+
+                const servicesScene = new THREE.Scene();
+                const servicesCamera = new THREE.PerspectiveCamera(75, servicesSection.offsetWidth / servicesSection.offsetHeight, 0.1, 1000);
+                const servicesRenderer = new THREE.WebGLRenderer({ canvas: servicesCanvas, alpha: true, antialias: true });
+                servicesRenderer.setSize(servicesSection.offsetWidth, servicesSection.offsetHeight);
+                servicesRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                let servicesParticlesCount = 300;
+                if (window.innerWidth <= 768) {
+                    servicesParticlesCount = 150;
+                }
+
+                const servicesParticlesGeometry = new THREE.BufferGeometry();
+                const servicesPositions = new Float32Array(servicesParticlesCount * 3);
+                const servicesColors = new Float32Array(servicesParticlesCount * 3);
+
+                for (let i = 0; i < servicesParticlesCount * 3; i += 3) {
+                    servicesPositions[i] = (Math.random() - 0.5) * 15;
+                    servicesPositions[i + 1] = (Math.random() - 0.5) * 15;
+                    servicesPositions[i + 2] = (Math.random() - 0.5) * 8;
+
+                    servicesColors[i] = 0.4 + Math.random() * 0.2;
+                    servicesColors[i + 1] = 0.3 + Math.random() * 0.2;
+                    servicesColors[i + 2] = 0.9 + Math.random() * 0.1;
+                }
+
+                servicesParticlesGeometry.setAttribute('position', new THREE.BufferAttribute(servicesPositions, 3));
+                servicesParticlesGeometry.setAttribute('color', new THREE.BufferAttribute(servicesColors, 3));
+
+                const servicesParticlesMaterial = new THREE.PointsMaterial({
+                    size: 0.03,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.5,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const servicesParticlesMesh = new THREE.Points(servicesParticlesGeometry, servicesParticlesMaterial);
+                servicesScene.add(servicesParticlesMesh);
+
+                servicesCamera.position.z = 5;
+
+                const servicesClock = new THREE.Clock();
+                function animateServices() {
+                    requestAnimationFrame(animateServices);
+                    const elapsed = servicesClock.getElapsedTime();
+                    servicesParticlesMesh.rotation.y = elapsed * 0.02;
+                    servicesParticlesMesh.rotation.x = elapsed * 0.01;
+                    servicesRenderer.render(servicesScene, servicesCamera);
+                }
+
+                animateServices();
+
+                window.addEventListener('resize', function () {
+                    servicesCamera.aspect = servicesSection.offsetWidth / servicesSection.offsetHeight;
+                    servicesCamera.updateProjectionMatrix();
+                    servicesRenderer.setSize(servicesSection.offsetWidth, servicesSection.offsetHeight);
+                });
+            }
+        }
+
+        // ===== CURSOR TRAIL EFFECT =====
+        let cursorTrailTimeout;
+        document.addEventListener('mousemove', function (e) {
+            clearTimeout(cursorTrailTimeout);
+            cursorTrailTimeout = setTimeout(function () {
+                const trail = document.createElement('div');
+                trail.className = 'cursor-trail';
+                trail.style.left = e.pageX + 'px';
+                trail.style.top = e.pageY + 'px';
+                document.body.appendChild(trail);
+
+                setTimeout(function () {
+                    trail.remove();
+                }, 1000);
+            }, 50);
+        });
+
+        // ===== PARALLAX SCROLLING =====
+        window.addEventListener('scroll', function () {
+            const scrolled = window.pageYOffset;
+            const parallaxShapes = document.querySelectorAll('.parallax-shape');
+
+            parallaxShapes.forEach(function (shape, index) {
+                const speed = 0.5 + (index * 0.2);
+                const yPos = -(scrolled * speed);
+                shape.style.transform = 'translateY(' + yPos + 'px)';
+            });
+        });
+
+        // ===== SCROLL REVEAL ANIMATION =====
+        const serviceCards = document.querySelectorAll('.service-card');
+
+        function revealOnScroll() {
+            const windowHeight = window.innerHeight;
+            const revealPoint = 100;
+
+            serviceCards.forEach(function (card, index) {
+                const cardTop = card.getBoundingClientRect().top;
+                if (cardTop < windowHeight - revealPoint) {
+                    setTimeout(function () {
+                        card.classList.add('active');
+                    }, index * 150);
+                }
+            });
+        }
+
+        revealOnScroll();
+        window.addEventListener('scroll', revealOnScroll);
+
+        // ===== MEDICAL AID AUTOSCROLL INITIALIZATION =====
+        const medicalAidTrack = document.getElementById('medicalAidTrack');
+        if (medicalAidTrack) {
+            const medicalAidImages = medicalAidTrack.querySelectorAll('img');
+            let imagesLoaded = 0;
+            const totalImages = medicalAidImages.length;
+
+            function initializeMedicalAidScroll() {
+                const trackWidth = medicalAidTrack.scrollWidth;
+                medicalAidTrack.style.width = trackWidth + 'px';
+                medicalAidTrack.classList.add('animate');
+            }
+
+            if (totalImages === 0) {
+                setTimeout(initializeMedicalAidScroll, 100);
+            } else {
+                medicalAidImages.forEach(function(img) {
+                    if (img.complete) {
+                        imagesLoaded++;
+                    } else {
+                        img.addEventListener('load', function() {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                setTimeout(initializeMedicalAidScroll, 500);
+                            }
+                        });
+                        img.addEventListener('error', function() {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                setTimeout(initializeMedicalAidScroll, 500);
+                            }
+                        });
+                    }
+                });
+                if (imagesLoaded === totalImages) {
+                    setTimeout(initializeMedicalAidScroll, 500);
+                }
+            }
+        }
+    });
+</script>
