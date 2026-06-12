@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Emonti Optometrist</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Font Awesome - Multiple CDN sources for reliability -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.0/css/all.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v6.4.0/css/all.css" crossorigin="anonymous" />
+
+    <!-- Add your custom Emonti styles -->
+    <link href="/css/EmontiStyles.css" rel="stylesheet" />
+
+    <!-- Chatbot Styles -->
+    <link href="/css/ChatbotStyles.css" rel="stylesheet" />
+
+    <style>
+        /* Profile Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.75rem);
+            left: 0;
+            z-index: 1001;
+            display: none;
+            min-width: 220px;
+            padding: 0.75rem 0;
+            margin: 0;
+            font-size: 0.9375rem;
+            color: #212529;
+            text-align: left;
+            list-style: none;
+            background-color: #ffffff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1.25rem;
+            clear: both;
+            font-weight: 500;
+            color: #2d2d2d;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            color: #1a1a1a;
+            background-color: rgba(44, 90, 160, 0.08);
+        }
+
+        .dropdown-item:active {
+            background-color: rgba(44, 90, 160, 0.12);
+        }
+
+        .dropdown-item i {
+            margin-right: 0.75rem;
+            width: 18px;
+            font-size: 0.875rem;
+            color: rgba(45, 45, 45, 0.7);
+            flex-shrink: 0;
+            transition: color 0.2s ease;
+        }
+
+        .dropdown-item:hover i {
+            color: #2c5aa0;
+        }
+
+        .dropdown-item[style*="color: #dc3545"],
+        .dropdown-item.logout-item {
+            color: #dc3545;
+        }
+
+        .dropdown-item[style*="color: #dc3545"]:hover,
+        .dropdown-item.logout-item:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #c82333 !important;
+        }
+
+        .dropdown-item[style*="color: #dc3545"]:hover i,
+        .dropdown-item.logout-item:hover i {
+            color: #c82333;
+        }
+
+        /* Divider styling */
+        .dropdown-divider {
+            height: 1px;
+            margin: 0.5rem 0;
+            background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
+            border: none;
+        }
+
+        /* Ensure Font Awesome icons display properly */
+        .fas, .far, .fab, .fal, .fad {
+            font-family: "Font Awesome 6 Free", "FontAwesome", sans-serif;
+            font-weight: 900;
+            font-style: normal;
+        }
+
+        /* Immediate emoji fallbacks for key service icons */
+        .fa-eye:before { content: "👁"; }
+        .fa-eye-dropper:before { content: "💧"; }
+        .fa-clipboard-check:before { content: "✓"; }
+
+        /* Staff nav styling - small and aligned */
+        .staff-nav { list-style: none; margin: 0; padding: 0; display: flex; gap: 1rem; align-items: center; }
+        .staff-nav li a { display: inline-block; padding: 0.5rem 0.75rem; border-radius: 12px; background: transparent; color: #333; text-decoration: none; }
+        .staff-nav li a:hover { background: rgba(0,0,0,0.05); }
+    </style>
+
+    @await RenderSectionAsync("HeadContent", required: false)
+</head>
+<body>
+    <!-- Custom Header - Floating Pill Nav Bar (Stitch.money style) -->
+    <header class="header navbar-pill_component" role="banner">
+        <div class="navbar-pill_container">
+            <a href="/" class="navbar-pill_logo-link logo">
+                <span class="logo-brand">EMONTI</span>
+                <span class="logo-profession">OPTOMETRIST</span>
+            </a>
+            <h1 class="logo navbar-pill_logo-link" style="display:none; margin:0;">
+                <span class="logo-brand">EMONTI</span>
+                <span class="logo-profession">OPTOMETRIST</span>
+            </h1>
+            <nav class="navbar-pill_menu" role="navigation">
+                <div class="nav-menu-wrapper">
+                    <div id="navPill" class="nav-pill-slider"></div>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="/" class="nav-item"><i class="fas fa-home"></i> Home</a></li>
+                        <li><a href="/Services" class="nav-item"><i class="fas fa-stethoscope"></i> Services</a></li>
+                        <li><a href="/Shop" class="nav-item"><i class="fas fa-shopping-bag"></i> Shop</a></li>
+                        <li><a href="/AppointmentStart" class="nav-item"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+                        <li><a href="/About" class="nav-item"><i class="fas fa-info-circle"></i> About</a></li>
+                        <li><a href="/Contact" class="nav-item"><i class="fas fa-phone"></i> Contact</a></li>
+                        <li><a href="/Help" class="nav-item"><i class="fas fa-question-circle"></i> Help</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Staff specific nav (visible only on staff pages when staff logged in) -->
+            <ul class="staff-nav" id="staffNav" style="display:none;">
+                <li><a href="/Shop"><i class="fas fa-shopping-bag"></i> Shop</a></li>
+                <li><a href="/AppointmentStart"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+                <li><a href="/Reports"><i class="fas fa-chart-bar"></i> View Report</a></li>
+            </ul>
+
+            <div class="navbar-pill_menu-right">
+                <div class="nav-actions">
+                    <a href="/Cart" class="cart-button">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count">0</span>
+                    </a>
+                    <!-- Login/Register buttons (shown when not logged in) -->
+                    <div id="phAuth">
+                        <a href="/Account/Login" class="auth-button">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                        <a href="/Account/Register" class="auth-button">
+                            <i class="fas fa-user-plus"></i> Register
+                        </a>
+                    </div>
+
+                    <!-- My Account Dropdown (shown when logged in) -->
+                    <div class="dropdown" style="position: relative; display: inline-block;">
+                        <a href="#" class="auth-button dropdown-toggle" onclick="toggleMyAccountDropdown(event); return false;" style="display:none;">
+                            <i class="fas fa-user-circle"></i> My Account <i class="fas fa-chevron-down"></i>
+                        </a>
+
+                        <!-- Dropdown Menu -->
+                        <div id="myAccountDropdown" class="dropdown-menu" style="display: none;">
+                            <a href="/PersonalDetails" class="dropdown-item">
+                                <i class="fas fa-user"></i> Personal Details
+                            </a>
+                            <a href="/Orders" class="dropdown-item">
+                                <i class="fas fa-shopping-bag"></i> Orders
+                            </a>
+                            <a href="/Appointments" class="dropdown-item">
+                                <i class="fas fa-calendar"></i> Appointments
+                            </a>
+                            <a href="/Wishlist" class="dropdown-item">
+                                <i class="fas fa-heart"></i> Wishlist
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="/Account/Logout" class="dropdown-item logout-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-menu-toggle" id="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    @RenderBody()
+
+    <!-- Custom Footer -->
+    <footer id="mainFooter" class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Contact Information</h3>
+                <p>📍 Shop 7 New Colonnade<br>Devereaux Ave, Vincent<br>East London 5247</p>
+                <p>📞 076 463 1930</p>
+                <p>✉️ emontioptom@gmail.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/Services">Our Services</a></li>
+                    <li><a href="/Shop">Shop Eyewear</a></li>
+                    <li><a href="/AppointmentStart">Book Appointment</a></li>
+                    <li><a href="/About">About Us</a></li>
+                    <li><a href="/Contact">Contact</a></li>
+                    <li><a href="/Help">Help & Support</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Services</h3>
+                <ul>
+                    <li>Eye Examinations</li>
+                    <li>Prescription Glasses</li>
+                    <li>Contact Lenses</li>
+                    <li>Medical Aid Claims</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Opening Hours</h3>
+                <p>Monday - Friday: 8:00 AM - 5:00 PM<br>
+                Saturday: 8:00 AM - 2:00 PM<br>
+                Sunday: Closed</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; @DateTime.Now.Year Emonti Optometrist. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Three.js Library for 3D Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- jQuery and Bootstrap JavaScript -->
+    <script src="/lib/jquery/jquery.min.js"></script>
+    <script src="/lib/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="/js/EmontiScripts.js"></script>
+
+    <!-- My Account Dropdown JavaScript -->
+    <script>
+        function toggleMyAccountDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var dropdown = document.getElementById('myAccountDropdown');
+            
+            if (dropdown) {
+                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                    dropdown.style.display = 'block';
+                    dropdown.style.opacity = '1';
+                    dropdown.style.visibility = 'visible';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            }
+        }
+
+        document.addEventListener('click', function (event) {
+            var dropdown = document.getElementById('myAccountDropdown');
+            var myAccountBtn = document.querySelector('.auth-button.dropdown-toggle');
+
+            if (myAccountBtn && dropdown && !myAccountBtn.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Checking Font Awesome loading...');
+
+            setTimeout(function() {
+                var icons = document.querySelectorAll('.fas, .far, .fab');
+                console.log('Found ' + icons.length + ' Font Awesome icons');
+
+                if (icons.length > 0) {
+                    var testIcon = icons[0];
+                    var computedStyle = window.getComputedStyle(testIcon, ':before');
+                    var content = computedStyle.getPropertyValue('content');
+                    var fontFamily = computedStyle.getPropertyValue('font-family');
+
+                    console.log('Test icon content:', content);
+                    console.log('Test icon font-family:', fontFamily);
+
+                    var hasFontAwesome = content && content !== 'none' && content !== '""' && content !== '""';
+
+                    if (!hasFontAwesome) {
+                        console.log('Font Awesome not working, applying emoji fallbacks');
+                        var fallbackCSS = `
+                            .fa-eye:before { content: "👁" !important; }
+                            .fa-eye-dropper:before { content: "💧" !important; }
+                            .fa-clipboard-check:before { content: "✓" !important; }
+                            .fa-home:before { content: "🏠" !important; }
+                            .fa-stethoscope:before { content: "🩺" !important; }
+                            .fa-shopping-bag:before { content: "🛍" !important; }
+                            .fa-calendar-plus:before { content: "📅" !important; }
+                            .fa-info-circle:before { content: "ℹ" !important; }
+                            .fa-phone:before { content: "📞" !important; }
+                            .fa-question-circle:before { content: "❓" !important; }
+                            .fa-shopping-cart:before { content: "🛒" !important; }
+                            .fa-sign-in-alt:before { content: "🔑" !important; }
+                            .fa-user-plus:before { content: "👤" !important; }
+                            .fa-user-circle:before { content: "👤" !important; }
+                            .fa-chevron-down:before { content: "▼" !important; }
+                            .fa-user:before { content: "👤" !important; }
+                            .fa-calendar:before { content: "📅" !important; }
+                            .fa-heart:before { content: "❤" !important; }
+                            .fa-sign-out-alt:before { content: "🚪" !important; }
+                            .fa-user-md:before { content: "👨‍⚕️" !important; }
+                        `;
+                        var style = document.createElement('style');
+                        style.textContent = fallbackCSS;
+                        document.head.appendChild(style);
+                    } else {
+                        console.log('Font Awesome is working correctly');
+                    }
+                }
+            }, 2000);
+        });
+    </script>
+
+    <!-- FAQ Chatbot -->
+    <div id="chatbot-container" class="chatbot-container"
+         data-enable-typing="1"
+         data-typing-delay="1000"
+         data-enable-suggestions="1"
+         data-enable-sound="0">
+        <div id="chatbot-toggle" class="chatbot-toggle">
+            <i class="fas fa-comments"></i>
+            <span>FAQ Assistant</span>
+        </div>
+        <div id="chatbot-window" class="chatbot-window" style="display: none;">
+            <div class="chatbot-header">
+                <h5><i class="fas fa-robot"></i> FAQ Assistant</h5>
+                <button id="chatbot-close" class="chatbot-close" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="chatbot-messages" class="chatbot-messages"></div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbot-input" placeholder="Ask a question..." maxlength="500" />
+                <button id="chatbot-send" class="chatbot-send" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Configuration -->
+    <script src="/js/ChatbotConfig.js"></script>
+
+    <!-- Chatbot JavaScript -->
+    <script src="/js/Chatbot.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

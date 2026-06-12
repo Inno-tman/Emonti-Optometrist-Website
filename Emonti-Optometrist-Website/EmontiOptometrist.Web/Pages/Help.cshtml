@@ -1,0 +1,651 @@
+@@page
+@model HelpModel
+@{
+    ViewData["Title"] = "Help & Support";
+}
+
+@section HeadContent {
+    <style>
+        /* ===== HERO SECTION ===== */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* Hero Section */
+        .help-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            margin-top: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .help-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+        
+        .help-hero .container {
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+        }
+        
+        .help-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.5px;
+        }
+        
+        .help-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        /* ===== MAIN CONTAINER ===== */
+        .help-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        .help-section {
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .help-section:nth-child(1) { animation-delay: 0.1s; }
+        .help-section:nth-child(2) { animation-delay: 0.2s; }
+        
+        .help-section h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 0.75rem;
+        }
+        
+        .help-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            animation: expandLine 0.6s ease-out 0.3s both;
+        }
+        
+        @@keyframes expandLine {
+            from { width: 0; }
+            to { width: 60px; }
+        }
+        
+        /* ===== FAQ SECTION ===== */
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        .faq-item.animated {
+            opacity: 1;
+            transform: translateX(0);
+            animation: slideInLeft 0.5s ease-out forwards;
+        }
+        
+        @@keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .faq-item:hover {
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+            transform: translateX(0) translateY(-2px);
+        }
+        
+        .faq-item.animated:hover {
+            transform: translateX(0) translateY(-2px);
+        }
+        
+        .faq-question {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #333;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .faq-question:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+            color: #667eea;
+        }
+        
+        .faq-question::after {
+            content: '+';
+            font-size: 1.75rem;
+            font-weight: 300;
+            color: #667eea;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            margin-left: 1rem;
+        }
+        
+        .faq-question.active {
+            color: #667eea;
+        }
+        
+        .faq-question.active::after {
+            content: '-';
+            transform: none;
+        }
+        
+        .faq-answer {
+            padding: 0 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            border-top: 1px solid transparent;
+            background: white;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .faq-answer.show {
+            padding: 1.25rem 1.5rem;
+            max-height: 500px;
+            border-top-color: #e9ecef;
+            animation: expandAnswer 0.4s ease-out;
+        }
+        
+        @@keyframes expandAnswer {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .faq-answer p {
+            margin: 0;
+            line-height: 1.7;
+            color: #555;
+        }
+        
+        /* ===== POLICY SECTIONS ===== */
+        .policy-section {
+            background: #ffffff;
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-top: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .policy-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .policy-section:hover::before {
+            left: 100%;
+        }
+        
+        .policy-section:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+            transform: translateY(-3px);
+        }
+        
+        .policy-section h3 {
+            color: #333;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .policy-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .policy-section li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f3f4;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            transition: padding-left 0.3s ease;
+        }
+        
+        .policy-section li:hover {
+            padding-left: 8px;
+            color: #667eea;
+        }
+        
+        .policy-section li:last-child {
+            border-bottom: none;
+        }
+        
+        .policy-section strong {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        /* ===== POLICIES CONTAINER ===== */
+        .policies-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 0.75rem;
+        }
+        
+        .policies-container .row {
+            margin: 0;
+        }
+        
+        .policies-container .col-md-6 {
+            padding: 0 0.75rem;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @@media (max-width: 992px) {
+            .help-hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+            
+            .help-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .help-hero p {
+                font-size: 1.1rem;
+            }
+            
+            .help-container {
+                padding: 1.75rem 1.25rem;
+            }
+            
+            .help-section {
+                margin-bottom: 2rem;
+            }
+            
+            .help-section h2 {
+                font-size: 1.75rem;
+                margin-bottom: 1.25rem;
+            }
+            
+            .policies-container {
+                padding: 1.25rem;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .help-hero {
+                padding: 6rem 1rem 3rem;
+                margin-top: 0;
+            }
+            
+            .help-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .help-hero p {
+                font-size: 1rem;
+            }
+            
+            .help-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .help-section {
+                margin-bottom: 1.75rem;
+            }
+            
+            .help-section h2 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .faq-question {
+                padding: 1rem 1.25rem;
+                font-size: 1rem;
+            }
+            
+            .faq-answer.show {
+                padding: 1rem 1.25rem;
+            }
+            
+            .policies-container {
+                padding: 1rem;
+            }
+            
+            .policies-container .col-md-6 {
+                padding: 0;
+                margin-bottom: 0.75rem;
+            }
+            
+            .policy-section {
+                padding: 1rem;
+                margin-top: 0.5rem;
+            }
+        }
+        
+        @@media (max-width: 576px) {
+            .help-hero {
+                padding: 5rem 0.75rem 2.5rem;
+            }
+            
+            .help-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .help-hero p {
+                font-size: 0.95rem;
+            }
+            
+            .help-container {
+                padding: 1.25rem 0.75rem;
+            }
+            
+            .help-section h2 {
+                font-size: 1.35rem;
+            }
+            
+            .faq-question {
+                padding: 0.875rem 1rem;
+                font-size: 0.95rem;
+            }
+            
+            .faq-answer.show {
+                padding: 0.875rem 1rem;
+            }
+            
+            .faq-answer p {
+                font-size: 0.9rem;
+            }
+            
+            .policy-section {
+                padding: 0.875rem;
+            }
+            
+            .policy-section h3 {
+                font-size: 1rem;
+            }
+            
+            .policy-section li {
+                font-size: 0.85rem;
+                padding: 0.4rem 0;
+            }
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+}
+
+<!-- Hero Section -->
+<section class="help-hero">
+    <div class="container">
+        <h1>Help & Support</h1>
+        <p>Find answers to common questions and learn about our policies</p>
+    </div>
+</section>
+
+<div class="help-container">
+    <!-- FAQ Section -->
+    <section class="help-section" aria-labelledby="faq-heading">
+        <h2 id="faq-heading">Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-1">
+                How do I book an appointment?
+            </button>
+            <div class="faq-answer" id="faq-1" role="region" aria-labelledby="faq-1">
+                <p>You can book an appointment by visiting our "Book Appointment" page. Simply select your preferred service, date, and time slot. You'll need to be logged in to your account to complete the booking.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-2">
+                What payment methods do you accept?
+            </button>
+            <div class="faq-answer" id="faq-2" role="region" aria-labelledby="faq-2">
+                <p>We accept all major credit cards (Visa, MasterCard, American Express), debit cards, and cash payments. We also work with most medical aid schemes for covered services.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-3">
+                How long does an eye test take?
+            </button>
+            <div class="faq-answer" id="faq-3" role="region" aria-labelledby="faq-3">
+                <p>A comprehensive eye test typically takes between 30-45 minutes. This includes a thorough examination of your eye health, vision assessment, and consultation with our optometrist.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-4">
+                Do you offer home visits?
+            </button>
+            <div class="faq-answer" id="faq-4" role="region" aria-labelledby="faq-4">
+                <p>Yes, we offer home visits for elderly patients or those with mobility issues. Please contact us to arrange a home visit appointment.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-5">
+                What is your cancellation policy?
+            </button>
+            <div class="faq-answer" id="faq-5" role="region" aria-labelledby="faq-5">
+                <p>We require 24 hours notice for appointment cancellations. Late cancellations may incur a fee. You can cancel or reschedule appointments through your profile page or by contacting us directly.</p>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button type="button" class="faq-question" onclick="toggleFAQ(this); return false;" aria-expanded="false" aria-controls="faq-6">
+                How do I know if I need new glasses?
+            </button>
+            <div class="faq-answer" id="faq-6" role="region" aria-labelledby="faq-6">
+                <p>Common signs include frequent headaches, eye strain, difficulty reading, or blurry vision. We recommend annual eye tests to monitor your vision health and determine if prescription changes are needed.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Policies Section -->
+    <section class="help-section" aria-labelledby="policies-heading">
+        <h2 id="policies-heading">Policies & Information</h2>
+        
+        <div class="policies-container">
+            <div class="row">
+                <div class="col-md-6">
+                    <article class="policy-section">
+                        <h3>Return & Exchange Policy</h3>
+                        <ul>
+                            <li><strong>Frames:</strong> 30-day return policy for unused frames</li>
+                            <li><strong>Lenses:</strong> Custom lenses cannot be returned</li>
+                            <li><strong>Accessories:</strong> 14-day return policy</li>
+                            <li><strong>Conditions:</strong> Items must be in original condition</li>
+                        </ul>
+                    </article>
+                </div>
+                
+                <div class="col-md-6">
+                    <article class="policy-section">
+                        <h3>Warranty Information</h3>
+                        <ul>
+                            <li><strong>Frames:</strong> 1-year manufacturer warranty</li>
+                            <li><strong>Lenses:</strong> 1-year scratch warranty</li>
+                            <li><strong>Repairs:</strong> Free adjustments for 6 months</li>
+                            <li><strong>Coverage:</strong> Normal wear and tear excluded</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <article class="policy-section">
+                        <h3>Privacy Policy</h3>
+                        <ul>
+                            <li>Your personal information is kept confidential</li>
+                            <li>We do not share data with third parties</li>
+                            <li>Medical records are protected by law</li>
+                            <li>You can request data deletion anytime</li>
+                        </ul>
+                    </article>
+                </div>
+                
+                <div class="col-md-6">
+                    <article class="policy-section">
+                        <h3>Medical Aid Claims</h3>
+                        <ul>
+                            <li>We submit claims on your behalf</li>
+                            <li>Coverage varies by medical aid scheme</li>
+                            <li>Gap payments may apply</li>
+                            <li>Contact us for specific scheme information</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    function toggleFAQ(button) {
+        // Prevent page refresh and form submission
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Get the answer div that comes right after the button
+        var answer = button.nextElementSibling;
+        
+        // Check if this FAQ is already open
+        var isOpen = answer.classList.contains('show');
+        
+        // Close all FAQ answers first
+        var allAnswers = document.getElementsByClassName('faq-answer');
+        for (var i = 0; i < allAnswers.length; i++) {
+            allAnswers[i].classList.remove('show');
+        }
+        
+        // Remove active class from all buttons
+        var allButtons = document.getElementsByClassName('faq-question');
+        for (var i = 0; i < allButtons.length; i++) {
+            allButtons[i].classList.remove('active');
+        }
+        
+        // If it wasn't open, open it. If it was open, keep it closed.
+        if (!isOpen) {
+            answer.classList.add('show');
+            button.classList.add('active');
+        }
+        
+        return false; // Prevent any default behavior
+    }
+    
+    // Intersection Observer for scroll animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -30px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        
+        // Observe FAQ items for scroll animations
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(function(item, index) {
+            // Add staggered delay
+            item.style.animationDelay = (index * 0.1) + 's';
+            observer.observe(item);
+        });
+    });
+</script>
