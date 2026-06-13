@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.SqlClient;
@@ -6,6 +7,7 @@ using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
+[Authorize]
 public class CheckoutModel : PageModel
 {
     private readonly CartDatabase _cartDb;
