@@ -1,0 +1,332 @@
+@page
+@model BookAppointmentModel
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @@keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .booking-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .booking-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .booking-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        .booking-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .booking-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+
+        .booking-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        .booking-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            padding: 2.5rem;
+            margin-top: -3rem;
+            position: relative;
+            z-index: 3;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        .booking-card h2 {
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 2rem;
+            padding-bottom: 0.75rem;
+            position: relative;
+            font-weight: 700;
+        }
+        .booking-card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .form-group .required { color: #dc3545; margin-left: 2px; }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.85rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+        }
+        .form-group input.input-validation-error,
+        .form-group select.input-validation-error,
+        .form-group textarea.input-validation-error {
+            border-color: #dc3545;
+        }
+        .form-group .field-validation-error {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 0.35rem;
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        optgroup { font-weight: 600; color: #667eea; }
+
+        .validation-summary-errors ul {
+            list-style: none;
+            padding: 1rem 1.25rem;
+            margin: 0 0 1.5rem;
+            background: #fff5f5;
+            border: 1px solid #fcc;
+            border-radius: 10px;
+            color: #dc3545;
+            font-size: 0.9rem;
+        }
+        .validation-summary-errors ul li { margin: 0.3rem 0; }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-error, .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .form-actions {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102,126,234,0.5);
+        }
+        .btn-submit:active {
+            transform: translateY(-1px);
+        }
+
+        @@media (max-width: 768px) {
+            .booking-hero { padding: 6rem 1rem 3rem; }
+            .booking-card { padding: 1.75rem; margin-top: -2rem; }
+            .form-row { grid-template-columns: 1fr; gap: 1rem; }
+            .btn-submit { width: 100%; padding: 1rem 2rem; }
+        }
+        @@media (max-width: 480px) {
+            .booking-hero { padding: 5rem 0.75rem 2.5rem; }
+            .booking-card { padding: 1.25rem; }
+            .booking-card h2 { font-size: 1.3rem; }
+        }
+    </style>
+}
+
+<section class="booking-hero">
+    <div class="container">
+        <h1>Book an Appointment</h1>
+        <p>Fill in your details below and we'll confirm your booking. All fields marked with <span style="color:#ff9999;">*</span> are required.</p>
+    </div>
+</section>
+
+<section class="booking-section">
+    <div class="container">
+        <div class="booking-card">
+            <h2>Appointment Details</h2>
+
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success">@Model.SuccessMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-error">@Model.ErrorMessage</div>
+            }
+
+            <form method="post">
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Input.AppointmentType"><span class="required">*</span></label>
+                        <select asp-for="Input.AppointmentType">
+                            <option value="">-- Select Type --</option>
+                            <option value="Eye Exam">Eye Exam</option>
+                            <option value="Contact Lens Fitting">Contact Lens Fitting</option>
+                            <option value="Follow-up">Follow-up</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="Input.AppointmentType"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.PreferredDate"><span class="required">*</span></label>
+                        <input asp-for="Input.PreferredDate" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="Input.PreferredDate"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Input.PreferredTime"><span class="required">*</span></label>
+                        <select asp-for="Input.PreferredTime">
+                            <option value="">-- Select Time --</option>
+                            <optgroup label="Morning">
+                                @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Morning"))
+                                {
+                                    <option value="@slot.Value">@slot.Text</option>
+                                }
+                            </optgroup>
+                            <optgroup label="Afternoon">
+                                @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Afternoon"))
+                                {
+                                    <option value="@slot.Value">@slot.Text</option>
+                                }
+                            </optgroup>
+                        </select>
+                        <span asp-validation-for="Input.PreferredTime"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.PatientName"><span class="required">*</span></label>
+                        <input asp-for="Input.PatientName" placeholder="Your full name" />
+                        <span asp-validation-for="Input.PatientName"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Input.Email"><span class="required">*</span></label>
+                        <input asp-for="Input.Email" type="email" placeholder="your@email.com" />
+                        <span asp-validation-for="Input.Email"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.Phone"><span class="required">*</span></label>
+                        <input asp-for="Input.Phone" type="tel" placeholder="+27 XX XXX XXXX" />
+                        <span asp-validation-for="Input.Phone"></span>
+                    </div>
+                </div>
+
+                <div class="form-row" style="grid-template-columns:1fr;">
+                    <div class="form-group">
+                        <label asp-for="Input.Notes"></label>
+                        <textarea asp-for="Input.Notes" placeholder="Any special requests or information..."></textarea>
+                        <span asp-validation-for="Input.Notes"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit"><i class="fas fa-calendar-check"></i> Book Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var dateInput = document.querySelector('input[type="date"]');
+        if (dateInput) {
+            var today = new Date();
+            var yyyy = today.getFullYear();
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var dd = String(today.getDate()).padStart(2, '0');
+            dateInput.setAttribute('min', yyyy + '-' + mm + '-' + dd);
+        }
+    });
+</script>
