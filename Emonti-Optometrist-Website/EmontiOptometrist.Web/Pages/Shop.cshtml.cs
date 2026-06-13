@@ -35,8 +35,8 @@ public class ShopModel : PageModel
     public void OnGet()
     {
         Products = _productDb.GetAllProducts();
-        Categories = _productDb.GetCategories();
-        Brands = _productDb.GetBrands();
+        Categories = Products.Select(p => p.Category).Where(c => !string.IsNullOrEmpty(c)).Distinct().OrderBy(c => c).ToList();
+        Brands = Products.Select(p => p.Brand).Where(b => !string.IsNullOrEmpty(b)).Distinct().OrderBy(b => b).ToList();
     }
 
     public IActionResult OnPostFilter(string? searchTerm, string? category, string? brand,

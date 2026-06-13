@@ -9,7 +9,17 @@ namespace EmontiOptometrist.Web.Services
 
         public WishlistDatabase(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("ProductConnection") ?? "";
+            var connStr = configuration.GetConnectionString("ProductConnection");
+            if (!string.IsNullOrEmpty(connStr))
+            {
+                var builder = new SqlConnectionStringBuilder(connStr);
+                if (builder.ConnectTimeout > 3) builder.ConnectTimeout = 3;
+                _connectionString = builder.ConnectionString;
+            }
+            else
+            {
+                _connectionString = "";
+            }
         }
 
         public int GetOrCreateWishlist(int custId)
