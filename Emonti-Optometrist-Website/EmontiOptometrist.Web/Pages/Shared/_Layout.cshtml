@@ -208,12 +208,14 @@
                 </div>
             </nav>
 
-            <!-- Staff specific nav (visible only on staff pages when staff logged in) -->
-            <ul class="staff-nav" id="staffNav" style="display:none;">
-                <li><a href="/Shop"><i class="fas fa-shopping-bag"></i> Shop</a></li>
-                <li><a href="/AppointmentStart"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
-                <li><a href="/Reports"><i class="fas fa-chart-bar"></i> View Report</a></li>
-            </ul>
+            @if (User.IsInRole("Staff") || User.IsInRole("Admin"))
+            {
+                <ul class="staff-nav" id="staffNav">
+                    <li><a href="/Shop"><i class="fas fa-shopping-bag"></i> Shop</a></li>
+                    <li><a href="/AppointmentStart"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+                    <li><a href="/Reports"><i class="fas fa-chart-bar"></i> View Report</a></li>
+                </ul>
+            }
 
             <div class="navbar-pill_menu-right">
                 <div class="nav-actions">
@@ -253,6 +255,35 @@
                                 <a href="/Wishlist" class="dropdown-item">
                                     <i class="fas fa-heart"></i> Wishlist
                                 </a>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-user-info" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+                                        <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">Admin</span>
+                                    </div>
+                                    <a href="/Admin/Dashboard" class="dropdown-item">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                    <a href="/Admin/ManageOrders" class="dropdown-item">
+                                        <i class="fas fa-truck"></i> Manage Orders
+                                    </a>
+                                    <a href="/Admin/ManageProducts" class="dropdown-item">
+                                        <i class="fas fa-boxes"></i> Manage Products
+                                    </a>
+                                    <a href="/Admin/ManageStaff" class="dropdown-item">
+                                        <i class="fas fa-users-cog"></i> Manage Staff
+                                    </a>
+                                }
+                                @if (User.IsInRole("Staff"))
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-user-info" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+                                        <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">Staff</span>
+                                    </div>
+                                    <a href="/Staff/Dashboard" class="dropdown-item">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                }
                                 <div class="dropdown-divider"></div>
                                 <a href="/Account/Logout" class="dropdown-item logout-item">
                                     <i class="fas fa-sign-out-alt"></i> Logout
