@@ -689,6 +689,199 @@ section[style*="margin-top"] {
     font-size: 0.85rem;
 }
 
+/* Identity Pages (Login / Register) */
+.identity-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 6rem 1rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.identity-container::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>') repeat;
+    animation: float 20s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.identity-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem 2.5rem 2rem;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    z-index: 1;
+    animation: slideUp 0.6s ease forwards;
+}
+
+.identity-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.identity-logo .logo-brand {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.75rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: #2c5aa0;
+}
+
+.identity-logo .logo-profession {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 0.55rem;
+    letter-spacing: 6px;
+    color: #2c5aa0;
+    font-weight: normal;
+    margin-top: 0.15rem;
+}
+
+.identity-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.identity-header h2 {
+    font-size: 1.5rem;
+    color: #2d2d2d;
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+}
+
+.identity-header p {
+    color: #666;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.identity-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.identity-form label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.4rem;
+}
+
+.identity-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.identity-input:focus {
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.15);
+    background: #fff;
+}
+
+.identity-input::placeholder {
+    color: #aaa;
+}
+
+.checkbox-group {
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+    cursor: pointer;
+    font-weight: 400;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2c5aa0;
+    cursor: pointer;
+}
+
+.identity-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #2c5aa0, #1e4080);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.3);
+}
+
+.identity-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
+}
+
+.identity-btn:active {
+    transform: translateY(0);
+}
+
+.identity-links {
+    text-align: center;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.identity-links a {
+    color: #2c5aa0;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.identity-links a:hover {
+    color: #1e4080;
+    text-decoration: underline;
+}
+
+.identity-form .text-danger {
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    display: block;
+    color: #dc3545;
+}
+
+@media (max-width: 480px) {
+    .identity-card {
+        padding: 2rem 1.5rem 1.5rem;
+    }
+    
+    .identity-header h2 {
+        font-size: 1.3rem;
+    }
+}
+
 /* Mobile Menu */
 .mobile-menu-toggle {
     display: none;
