@@ -52,13 +52,14 @@ using (var scope = app.Services.CreateScope())
 
     var adminEmail = "admin@emonti.com";
     var adminPassword = "Admin";
-    if (await userManager.FindByEmailAsync(adminEmail) == null)
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
     {
-        var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true, FullName = "Admin" };
-        var result = await userManager.CreateAsync(adminUser, adminPassword);
-        if (result.Succeeded)
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true, FullName = "Admin" };
+        await userManager.CreateAsync(adminUser, adminPassword);
     }
+    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+        await userManager.AddToRoleAsync(adminUser, "Admin");
 }
 
 if (app.Environment.IsDevelopment())
