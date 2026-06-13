@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.SqlClient;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize(Roles = "Admin,Staff")]
 public class ReportsModel : PageModel
 {
     private readonly IConfiguration _configuration;
