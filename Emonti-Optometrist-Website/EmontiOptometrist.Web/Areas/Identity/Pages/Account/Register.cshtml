@@ -19,6 +19,12 @@
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
             <div class="form-group">
+                <label asp-for="Input.FullName">Full name</label>
+                <input asp-for="Input.FullName" class="form-control identity-input" placeholder="John Doe" />
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
                 <label asp-for="Input.Email">Email address</label>
                 <input asp-for="Input.Email" class="form-control identity-input" autocomplete="email" placeholder="name@example.com" />
                 <span asp-validation-for="Input.Email" class="text-danger"></span>
