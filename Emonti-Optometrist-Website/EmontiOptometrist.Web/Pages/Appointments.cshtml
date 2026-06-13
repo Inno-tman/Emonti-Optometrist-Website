@@ -1,0 +1,236 @@
+@page
+@model AppointmentsModel
+@{
+    ViewData["Title"] = "My Appointments";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .appointments-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .appointments-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .appointments-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        .appointments-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .appointments-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+
+        .appointments-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 50vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .appointment-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(102,126,234,0.1);
+            animation: fadeInUp 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+        .appointment-card:hover {
+            box-shadow: 0 8px 24px rgba(102,126,234,0.15);
+            transform: translateY(-2px);
+        }
+        .appointment-card .status-indicator {
+            width: 4px;
+            align-self: stretch;
+            border-radius: 2px;
+            flex-shrink: 0;
+            margin: -1.5rem 0;
+        }
+        .appointment-card .status-indicator.upcoming { background: linear-gradient(180deg, #667eea, #764ba2); }
+        .appointment-card .status-indicator.past { background: #6c757d; }
+        .appointment-card .status-indicator.cancelled { background: #dc3545; }
+
+        .appointment-info { flex: 1; }
+        .appointment-info .date {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+        }
+        .appointment-info .details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .appointment-info .details span {
+            margin-right: 1rem;
+        }
+        .appointment-info .details i {
+            color: #667eea;
+            width: 1rem;
+            margin-right: 0.3rem;
+        }
+
+        .appointment-status {
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .appointment-status.upcoming {
+            background: #e8f4fd;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .appointment-status.past {
+            background: #e9ecef;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        .appointment-status.cancelled {
+            background: #fce4e4;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #c0c0c0;
+            margin-bottom: 1.5rem;
+        }
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        .empty-state p {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.9rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+            color: white;
+        }
+
+        @@media (max-width: 768px) {
+            .appointments-hero { padding: 6rem 1rem 3rem; }
+            .appointments-section { padding: 1.5rem 1rem; }
+            .appointment-card { flex-direction: column; align-items: stretch; text-align: center; }
+            .appointment-card .status-indicator { display: none; }
+            .appointment-info .details span { display: block; margin: 0.2rem 0; }
+        }
+        @@media (max-width: 576px) {
+            .appointments-hero { padding: 5rem 0.75rem 2.5rem; }
+            .appointment-card { padding: 1.25rem; }
+        }
+    </style>
+}
+
+<section class="appointments-hero">
+    <div class="container">
+        <h1>My Appointments</h1>
+        <p>View and manage your upcoming and past appointments</p>
+    </div>
+</section>
+
+<section class="appointments-section">
+    <div class="container">
+        @if (Model.HasAppointments)
+        {
+            foreach (var appt in Model.Appointments)
+            {
+                <div class="appointment-card">
+                    <div class="status-indicator @appt.Type.ToLower()"></div>
+                    <div class="appointment-info">
+                        <div class="date">@appt.AppointmentDate.ToString("dddd, dd MMM yyyy")</div>
+                        <div class="details">
+                            @if (!string.IsNullOrEmpty(appt.TimeSlot))
+                            {
+                                <span><i class="fas fa-clock"></i> @appt.TimeSlot</span>
+                            }
+                            @if (!string.IsNullOrEmpty(appt.DoctorName))
+                            {
+                                <span><i class="fas fa-user-md"></i> @appt.DoctorName</span>
+                            }
+                            <span><i class="fas fa-calendar-alt"></i> @appt.Type</span>
+                        </div>
+                    </div>
+                    <div class="appointment-status @appt.Type.ToLower()">@appt.Status</div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Appointments Found</h3>
+                <p>You haven't booked any appointments yet. Schedule your first eye exam today.</p>
+                <a href="/BookAppointment" class="btn-primary"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
+            </div>
+        }
+    </div>
+</section>

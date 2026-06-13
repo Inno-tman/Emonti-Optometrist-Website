@@ -1,0 +1,273 @@
+@page
+@model WishlistModel
+@{
+    ViewData["Title"] = "My Wishlist";
+}
+
+@section HeadContent {
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --text-dark: #2c3e50;
+            --text-muted: #666;
+            --bg-light: #f8f9fa;
+            --danger: #e74c3c;
+        }
+
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wishlist-hero {
+            background: linear-gradient(-45deg, var(--primary), var(--secondary), var(--primary), var(--secondary));
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 7rem 1.5rem 3rem;
+            text-align: center;
+        }
+
+        .wishlist-hero h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .wishlist-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .wishlist-section {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .wishlist-empty {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .wishlist-empty i {
+            font-size: 4rem;
+            color: var(--primary);
+            opacity: 0.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .wishlist-empty h2 {
+            font-size: 1.75rem;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .wishlist-empty p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .btn-browse {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-browse:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .wishlist-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .wishlist-item:hover {
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .wishlist-item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--bg-light);
+        }
+
+        .wishlist-item-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .wishlist-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0 0 0.2rem;
+            font-size: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .wishlist-item-brand {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin: 0 0 0.2rem;
+        }
+
+        .wishlist-item-price {
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .wishlist-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.4rem;
+            transition: transform 0.2s;
+            line-height: 1;
+        }
+
+        .btn-remove:hover {
+            transform: scale(1.2);
+        }
+
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .stock-status {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 0.2rem 0 0;
+        }
+
+        .stock-status.in-stock { color: #27ae60; }
+        .stock-status.limited { color: #f39c12; }
+        .stock-status.out-of-stock { color: var(--danger); }
+
+        @@media (min-width: 600px) {
+            .wishlist-item {
+                padding: 1.25rem;
+            }
+
+            .wishlist-item-image {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        @@media (min-width: 768px) {
+            .wishlist-section {
+                padding: 0 2rem;
+            }
+        }
+    </style>
+}
+
+<section class="wishlist-hero">
+    <h1>My Wishlist</h1>
+    <p>Items you've saved for later</p>
+</section>
+
+<section class="wishlist-section">
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="message">@Model.Message</div>
+    }
+
+    @if (Model.WishlistItems.Count == 0)
+    {
+        <div class="wishlist-empty">
+            <i class="fas fa-heart"></i>
+            <h2>Your wishlist is empty</h2>
+            <p>Save items you love and come back to them anytime. Browse our collection to get started!</p>
+            <a href="/Shop" class="btn-browse">
+                <i class="fas fa-arrow-left"></i> Browse Products
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="wishlist-grid">
+            @foreach (var item in Model.WishlistItems)
+            {
+                <div class="wishlist-item">
+                    <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/Images/Products/default.png" : item.ImageUrl)"
+                         alt="@item.ProductName"
+                         class="wishlist-item-image"
+                         loading="lazy"
+                         onerror="this.src='/Images/Products/default.png'" />
+                    <div class="wishlist-item-details">
+                        <p class="wishlist-item-name">@item.ProductName</p>
+                        <p class="wishlist-item-brand">@item.Brand</p>
+                        <p class="wishlist-item-price">R @item.Price.ToString("N2")</p>
+                        <p class="stock-status @(item.StockStatus switch { "Limited stock" => "limited", "Out of stock" => "out-of-stock", _ => "in-stock" })">
+                            @item.StockStatus
+                        </p>
+                    </div>
+                    <div class="wishlist-item-actions">
+                        <form method="post" asp-page-handler="Remove">
+                            <input type="hidden" name="wishlistItemId" value="@item.WishlistItemId" />
+                            <button type="submit" class="btn-remove" title="Remove from wishlist">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
