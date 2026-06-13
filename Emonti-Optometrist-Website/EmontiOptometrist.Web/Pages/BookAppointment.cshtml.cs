@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -43,9 +43,7 @@ public class BookAppointmentModel : PageModel
     public IActionResult OnPost()
     {
         if (!ModelState.IsValid)
-        {
             return Page();
-        }
 
         try
         {
@@ -58,20 +56,19 @@ public class BookAppointmentModel : PageModel
                 return Page();
             }
 
-            var connStr = _configuration.GetConnectionString("ProductConnection");
-            using var conn = new SqlConnection(connStr);
+            var connStr = _configuration.GetConnectionString("DefaultConnection");
+            using var conn = new SqliteConnection(connStr);
             conn.Open();
 
-            string query = @"
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
                 INSERT INTO Appointment
                     (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status)
                 VALUES
                     (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
-
-            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@CustId", userId);
             cmd.Parameters.AddWithValue("@StaffId", "1");
-            cmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date);
+            cmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date.ToString("o"));
             cmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
             cmd.Parameters.AddWithValue("@Status", "Pending");
 

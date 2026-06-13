@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using System.Security.Claims;
 
 namespace EmontiOptometrist.Web.Pages.Staff;
@@ -28,7 +28,7 @@ public class DashboardModel : PageModel
 
     public void OnGet()
     {
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         var staffId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         StaffName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Staff";
         StaffRole = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role) ?? "Staff";
@@ -38,34 +38,35 @@ public class DashboardModel : PageModel
 
         try
         {
-            using (var conn = new SqlConnection(connStr))
-            {
-                conn.Open();
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
 
-                using (var cmd = new SqlCommand(@"
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
                     SELECT COUNT(*) FROM Appointment
                     WHERE Staff_ID = @StaffId
-                    AND CAST(Appointment_Date AS DATE) = CAST(GETDATE() AS DATE)
-                    AND Appoinment_Status != 'Cancelled'", conn))
-                {
-                    cmd.Parameters.AddWithValue("@StaffId", staffId);
-                    TodayAppointments = Convert.ToInt32(cmd.ExecuteScalar());
-                }
+                    AND date(Appointment_Date) = date('now')
+                    AND Appoinment_Status != 'Cancelled'";
+                cmd.Parameters.AddWithValue("@StaffId", staffId);
+                TodayAppointments = Convert.ToInt32(cmd.ExecuteScalar());
+            }
 
-                using (var cmd = new SqlCommand(@"
-                    SELECT COUNT(*) FROM [Order]
-                    WHERE Order_Status IN ('Pending', 'Processing')", conn))
-                {
-                    PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
-                }
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM [Order] WHERE Order_Status IN ('Pending', 'Processing')";
+                PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
+            }
 
-                using (var cmd = new SqlCommand(@"
-                    SELECT COUNT(DISTINCT Cust_ID) FROM Appointment", conn))
-                {
-                    TotalPatients = Convert.ToInt32(cmd.ExecuteScalar());
-                }
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT COUNT(DISTINCT Cust_ID) FROM Appointment";
+                TotalPatients = Convert.ToInt32(cmd.ExecuteScalar());
+            }
 
-                using (var cmd = new SqlCommand(@"
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
                     SELECT TOP 5
                         a.Appointment_ID,
                         a.Appointment_Date,
@@ -77,29 +78,27 @@ public class DashboardModel : PageModel
                     INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
                     LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
                     WHERE a.Staff_ID = @StaffId
-                    AND CAST(a.Appointment_Date AS DATE) >= CAST(GETDATE() AS DATE)
+                    AND date(a.Appointment_Date) >= date('now')
                     AND a.Appoinment_Status != 'Cancelled'
-                    ORDER BY a.Appointment_Date ASC, t.Timeslot ASC", conn))
+                    ORDER BY a.Appointment_Date ASC, t.Timeslot ASC";
+                cmd.Parameters.AddWithValue("@StaffId", staffId);
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("@StaffId", staffId);
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        UpcomingAppointments.Add(new UpcomingAppointment
                         {
-                            UpcomingAppointments.Add(new UpcomingAppointment
-                            {
-                                AppointmentId = Convert.ToInt32(reader["Appointment_ID"]),
-                                AppointmentDate = Convert.ToDateTime(reader["Appointment_Date"]),
-                                Status = reader["Appoinment_Status"]?.ToString() ?? "",
-                                Timeslot = reader["Timeslot"]?.ToString() ?? "N/A",
-                                PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}"
-                            });
-                        }
+                            AppointmentId = Convert.ToInt32(reader["Appointment_ID"]),
+                            AppointmentDate = DateTime.Parse(reader["Appointment_Date"].ToString()),
+                            Status = reader["Appoinment_Status"]?.ToString() ?? "",
+                            Timeslot = reader["Timeslot"]?.ToString() ?? "N/A",
+                            PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}"
+                        });
                     }
                 }
-
-                UpcomingCount = UpcomingAppointments.Count;
             }
+
+            UpcomingCount = UpcomingAppointments.Count;
         }
         catch (Exception ex)
         {

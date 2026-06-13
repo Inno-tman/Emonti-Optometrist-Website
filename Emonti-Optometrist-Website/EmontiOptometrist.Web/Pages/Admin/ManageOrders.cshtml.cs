@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
@@ -24,59 +24,52 @@ public class ManageOrdersModel : PageModel
         StatusFilter = status;
         SearchTerm = search;
 
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (string.IsNullOrEmpty(connStr))
             return;
 
         try
         {
-            using (var conn = new SqlConnection(connStr))
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+
+            string query = @"
+                SELECT o.OrderID, o.CustID, o.Order_Date, o.Order_Total, o.Order_Status, o.Delivery_Address,
+                       c.Customer_Name, c.Customer_Surname,
+                       c.Customer_Email, c.Customer_Phone
+                FROM [Order] o
+                LEFT JOIN customer c ON o.CustID = c.Cust_ID
+                WHERE 1=1";
+
+            if (!string.IsNullOrEmpty(status))
+                query += " AND o.Order_Status = @Status";
+            if (!string.IsNullOrEmpty(search))
+                query += " AND (o.CustID LIKE @Search OR CAST(o.OrderID AS TEXT) LIKE @Search OR c.Customer_Name LIKE @Search OR c.Customer_Surname LIKE @Search)";
+
+            query += " ORDER BY o.Order_Date DESC";
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = query;
+            if (!string.IsNullOrEmpty(status))
+                cmd.Parameters.AddWithValue("@Status", status);
+            if (!string.IsNullOrEmpty(search))
+                cmd.Parameters.AddWithValue("@Search", $"%{search}%");
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
             {
-                conn.Open();
-
-                string query = @"
-                    SELECT o.OrderID, o.CustID, o.Order_Date, o.Order_Total, o.Order_Status, o.Delivery_Address,
-                           ISNULL(c.Customer_Name, c.Cust_FirstName) AS Customer_Name,
-                           ISNULL(c.Customer_Surname, c.Cust_LastName) AS Customer_Surname,
-                           ISNULL(c.Customer_Email, c.Cust_Email) AS Customer_Email,
-                           ISNULL(c.Customer_Phone, c.Cust_Phone) AS Customer_Phone
-                    FROM [Order] o
-                    LEFT JOIN customer c ON o.CustID = c.Cust_ID
-                    WHERE 1=1";
-
-                if (!string.IsNullOrEmpty(status))
-                    query += " AND o.Order_Status = @Status";
-                if (!string.IsNullOrEmpty(search))
-                    query += " AND (o.CustID LIKE @Search OR CAST(o.OrderID AS NVARCHAR) LIKE @Search OR c.Customer_Name LIKE @Search OR c.Customer_Surname LIKE @Search)";
-
-                query += " ORDER BY o.Order_Date DESC";
-
-                using (var cmd = new SqlCommand(query, conn))
+                Orders.Add(new OrderListItem
                 {
-                    if (!string.IsNullOrEmpty(status))
-                        cmd.Parameters.AddWithValue("@Status", status);
-                    if (!string.IsNullOrEmpty(search))
-                        cmd.Parameters.AddWithValue("@Search", $"%{search}%");
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            Orders.Add(new OrderListItem
-                            {
-                                OrderID = Convert.ToInt32(reader["OrderID"]),
-                                CustID = reader["CustID"].ToString(),
-                                CustomerName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}",
-                                CustomerEmail = reader["Customer_Email"]?.ToString() ?? "",
-                                CustomerPhone = reader["Customer_Phone"]?.ToString() ?? "",
-                                OrderDate = Convert.ToDateTime(reader["Order_Date"]),
-                                OrderTotal = Convert.ToDecimal(reader["Order_Total"]),
-                                OrderStatus = reader["Order_Status"].ToString(),
-                                DeliveryAddress = reader["Delivery_Address"].ToString()
-                            });
-                        }
-                    }
-                }
+                    OrderID = Convert.ToInt32(reader["OrderID"]),
+                    CustID = reader["CustID"].ToString(),
+                    CustomerName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}",
+                    CustomerEmail = reader["Customer_Email"]?.ToString() ?? "",
+                    CustomerPhone = reader["Customer_Phone"]?.ToString() ?? "",
+                    OrderDate = DateTime.Parse(reader["Order_Date"].ToString()),
+                    OrderTotal = Convert.ToDecimal(reader["Order_Total"]),
+                    OrderStatus = reader["Order_Status"].ToString(),
+                    DeliveryAddress = reader["Delivery_Address"].ToString()
+                });
             }
         }
         catch (Exception ex)
@@ -87,22 +80,19 @@ public class ManageOrdersModel : PageModel
 
     public IActionResult OnPostUpdateStatus(int orderId, string status)
     {
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (!string.IsNullOrEmpty(connStr))
         {
             try
             {
-                using (var conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (var cmd = new SqlCommand(
-                        "UPDATE [Order] SET Order_Status = @Status WHERE OrderID = @OrderID", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Status", status);
-                        cmd.Parameters.AddWithValue("@OrderID", orderId);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
+                using var conn = new SqliteConnection(connStr);
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "UPDATE [Order] SET Order_Status = @Status WHERE OrderID = @OrderID";
+                cmd.Parameters.AddWithValue("@Status", status);
+                cmd.Parameters.AddWithValue("@OrderID", orderId);
+                cmd.ExecuteNonQuery();
+
                 TempData["SuccessMessage"] = $"Order #EL-{orderId:D6} status updated to {status}.";
             }
             catch (Exception ex)

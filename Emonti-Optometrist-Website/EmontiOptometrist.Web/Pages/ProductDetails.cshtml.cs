@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
 using System.Security.Claims;
@@ -57,30 +57,24 @@ public class ProductDetailsModel : PageModel
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (int.TryParse(userIdClaim, out var custId))
-            {
                 IsInWishlist = _wishlistDb.IsInWishlist(custId, productId);
-            }
         }
     }
 
     private string GetProductDescription(int productId)
     {
-        var connStr = _configuration.GetConnectionString("ProductConnection");
+        var connStr = _configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrEmpty(connStr)) return "";
 
         try
         {
-            using (var conn = new SqlConnection(connStr))
-            {
-                var query = "SELECT Product_Description FROM Products2 WHERE Product_ID = @Id";
-                using (var cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@Id", productId);
-                    conn.Open();
-                    var result = cmd.ExecuteScalar();
-                    return result?.ToString() ?? "";
-                }
-            }
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Product_Description FROM Products2 WHERE Product_ID = @Id";
+            cmd.Parameters.AddWithValue("@Id", productId);
+            var result = cmd.ExecuteScalar();
+            return result?.ToString() ?? "";
         }
         catch
         {
