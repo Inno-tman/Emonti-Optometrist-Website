@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -132,6 +134,49 @@
         .staff-nav { list-style: none; margin: 0; padding: 0; display: flex; gap: 1rem; align-items: center; }
         .staff-nav li a { display: inline-block; padding: 0.5rem 0.75rem; border-radius: 12px; background: transparent; color: #333; text-decoration: none; }
         .staff-nav li a:hover { background: rgba(0,0,0,0.05); }
+
+        /* User avatar in dropdown toggle */
+        .user-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2c5aa0, #1e4080);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .user-email {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #2d2d2d;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dropdown-toggle .user-email {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* User info header in dropdown menu */
+        .dropdown-user-info {
+            padding: 0.75rem 1.25rem 0.5rem;
+        }
+
+        .dropdown-user-email {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2d2d2d;
+            word-break: break-all;
+        }
     </style>
 
     @await RenderSectionAsync("HeadContent", required: false)
@@ -176,42 +221,55 @@
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-count">0</span>
                     </a>
-                    <!-- Login/Register buttons (shown when not logged in) -->
-                    <div id="phAuth">
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        var user = await UserManager.GetUserAsync(User);
+                        var displayName = !string.IsNullOrEmpty(user?.FullName) ? user.FullName : user?.Email ?? "My Account";
+                        var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "?";
+
+                        <!-- Logged In: User avatar + dropdown -->
+                        <div class="dropdown" style="position: relative; display: inline-block;">
+                            <a href="#" class="auth-button dropdown-toggle" onclick="toggleMyAccountDropdown(event); return false;">
+                                <span class="user-avatar">@initial</span>
+                                <span class="user-email">@displayName</span>
+                                <i class="fas fa-chevron-down" style="font-size:0.65rem;margin-left:0.3rem;"></i>
+                            </a>
+
+                            <div id="myAccountDropdown" class="dropdown-menu" style="display: none;">
+                                <div class="dropdown-user-info">
+                                    <span class="dropdown-user-email">@displayName</span>
+                                    <span class="dropdown-user-sub" style="display:block;font-size:0.75rem;color:#888;margin-top:0.15rem;">@user?.Email</span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <a href="/PersonalDetails" class="dropdown-item">
+                                    <i class="fas fa-user"></i> Personal Details
+                                </a>
+                                <a href="/Orders" class="dropdown-item">
+                                    <i class="fas fa-shopping-bag"></i> Orders
+                                </a>
+                                <a href="/Appointments" class="dropdown-item">
+                                    <i class="fas fa-calendar"></i> Appointments
+                                </a>
+                                <a href="/Wishlist" class="dropdown-item">
+                                    <i class="fas fa-heart"></i> Wishlist
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="/Account/Logout" class="dropdown-item logout-item">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Not Logged In: Login/Register buttons -->
                         <a href="/Identity/Account/Login" class="auth-button">
                             <i class="fas fa-sign-in-alt"></i> Login
                         </a>
                         <a href="/Identity/Account/Register" class="auth-button">
                             <i class="fas fa-user-plus"></i> Register
                         </a>
-                    </div>
-
-                    <!-- My Account Dropdown (shown when logged in) -->
-                    <div class="dropdown" style="position: relative; display: inline-block;">
-                        <a href="#" class="auth-button dropdown-toggle" onclick="toggleMyAccountDropdown(event); return false;" style="display:none;">
-                            <i class="fas fa-user-circle"></i> My Account <i class="fas fa-chevron-down"></i>
-                        </a>
-
-                        <!-- Dropdown Menu -->
-                        <div id="myAccountDropdown" class="dropdown-menu" style="display: none;">
-                            <a href="/PersonalDetails" class="dropdown-item">
-                                <i class="fas fa-user"></i> Personal Details
-                            </a>
-                            <a href="/Orders" class="dropdown-item">
-                                <i class="fas fa-shopping-bag"></i> Orders
-                            </a>
-                            <a href="/Appointments" class="dropdown-item">
-                                <i class="fas fa-calendar"></i> Appointments
-                            </a>
-                            <a href="/Wishlist" class="dropdown-item">
-                                <i class="fas fa-heart"></i> Wishlist
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="/Account/Logout" class="dropdown-item logout-item">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
             <div class="mobile-menu-toggle" id="mobile-menu-toggle">
