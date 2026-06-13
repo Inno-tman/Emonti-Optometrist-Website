@@ -181,7 +181,7 @@
 
     @await RenderSectionAsync("HeadContent", required: false)
 </head>
-<body>
+<body class="@(ViewContext.RouteData.Values["area"]?.ToString() == "Identity" ? "identity-page" : "")">
     <!-- Custom Header - Floating Pill Nav Bar (Stitch.money style) -->
     <header class="header navbar-pill_component" role="banner">
         <div class="navbar-pill_container">
@@ -285,7 +285,7 @@
                                     </a>
                                 }
                                 <div class="dropdown-divider"></div>
-                                <a href="/Account/Logout" class="dropdown-item logout-item">
+                                <a href="/Identity/Account/Logout" class="dropdown-item logout-item">
                                     <i class="fas fa-sign-out-alt"></i> Logout
                                 </a>
                             </div>
