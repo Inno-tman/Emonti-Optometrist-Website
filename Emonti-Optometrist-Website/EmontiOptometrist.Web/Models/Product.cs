@@ -12,5 +12,7 @@ namespace EmontiOptometrist.Web.Models
         public string Category { get; set; }
         public string Description { get; set; }
         public string ImageUrl { get; set; }
+        public string Picture1 { get; set; }
+        public string Picture2 { get; set; }
     }
 }

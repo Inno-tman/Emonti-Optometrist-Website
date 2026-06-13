@@ -19,6 +19,12 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<FAQDatabase>();
 builder.Services.AddSingleton<AIChatService>();
+builder.Services.AddSingleton<ProductDatabase>();
+builder.Services.AddSingleton<CartDatabase>();
+builder.Services.AddSingleton<WishlistDatabase>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();
 
 var app = builder.Build();
 
@@ -42,6 +48,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 
