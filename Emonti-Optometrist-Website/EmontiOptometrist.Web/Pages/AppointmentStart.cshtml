@@ -1,0 +1,507 @@
+@page
+@model AppointmentStartModel
+@{
+    ViewData["Title"] = "Book an Appointment";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Hero */
+        .appt-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .appt-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+        .appt-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .appt-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .appt-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+
+        /* Sections */
+        .appt-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 0.75rem;
+        }
+
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .section-title p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 1.5rem auto 0;
+        }
+
+        /* Process Steps */
+        .process-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .process-step {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102,126,234,0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .process-step:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(102,126,234,0.2);
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+            box-shadow: 0 8px 20px rgba(102,126,234,0.3);
+        }
+
+        .process-step h3 {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .process-step p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Appointment Types */
+        .appt-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .appt-type-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102,126,234,0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        }
+
+        .appt-type-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(102,126,234,0.2);
+            border-color: rgba(102,126,234,0.3);
+        }
+
+        .appt-type-card .service-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+            transition: all 0.4s ease;
+        }
+
+        .appt-type-card:hover .service-icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .appt-type-card h3 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+        }
+
+        .appt-type-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* Tips Section */
+        .tips-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tips-section .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .tips-section h2 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tip-item {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.15);
+            transition: all 0.4s ease;
+        }
+
+        .tip-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .tip-item i {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .tip-item h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tip-item p {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Hours & Contact */
+        .info-section {
+            padding: 2rem 1.5rem;
+            background: white;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .info-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border: 1px solid rgba(102,126,234,0.1);
+        }
+
+        .info-card h3 {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-card p {
+            color: #555;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        /* CTA */
+        .cta-section {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa, #ffffff);
+        }
+
+        .btn-cta {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1.2rem 3rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.4s ease;
+            box-shadow: 0 8px 25px rgba(102,126,234,0.3);
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102,126,234,0.4);
+            color: white;
+        }
+
+        .btn-cta i {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-cta:hover i {
+            transform: scale(1.2);
+        }
+
+        .cta-section p {
+            color: #666;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        @@media (max-width: 768px) {
+            .appt-hero { padding: 6rem 1rem 3rem; }
+            .process-steps { grid-template-columns: 1fr; }
+            .appt-types { grid-template-columns: 1fr; }
+            .tips-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr; }
+            .section-title h2 { font-size: 1.75rem; }
+            .tips-section h2 { font-size: 1.75rem; }
+        }
+    </style>
+}
+
+<!-- Hero -->
+<section class="appt-hero">
+    <div class="container">
+        <h1>Book an Appointment</h1>
+        <p>Schedule your visit with Emonti Optometrist for comprehensive eye care tailored to your needs</p>
+    </div>
+</section>
+
+<!-- Process -->
+<section class="appt-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>How It Works</h2>
+            <p>Booking your appointment is quick and easy</p>
+        </div>
+        <div class="process-steps">
+            <div class="process-step">
+                <div class="step-number">1</div>
+                <h3>Choose Service</h3>
+                <p>Select the type of appointment you need</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">2</div>
+                <h3>Pick Date & Time</h3>
+                <p>Choose a convenient slot from our availability</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">3</div>
+                <h3>Enter Details</h3>
+                <p>Provide your information and preferences</p>
+            </div>
+            <div class="process-step">
+                <div class="step-number">4</div>
+                <h3>Confirmation</h3>
+                <p>Receive instant confirmation of your booking</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Appointment Types -->
+<section class="appt-section" style="padding-top: 0;">
+    <div class="container">
+        <div class="section-title">
+            <h2>Appointment Types</h2>
+            <p>We offer a range of eye care services to suit your needs</p>
+        </div>
+        <div class="appt-types">
+            <div class="appt-type-card">
+                <div class="service-icon"><i class="fas fa-eye"></i></div>
+                <h3>Eye Examination</h3>
+                <p>Comprehensive vision and eye health assessment including visual acuity, refraction, and retinal examination</p>
+            </div>
+            <div class="appt-type-card">
+                <div class="service-icon"><i class="fas fa-glasses"></i></div>
+                <h3>Contact Lens Fitting</h3>
+                <p>Professional contact lens consultation, fitting, and training for new and existing wearers</p>
+            </div>
+            <div class="appt-type-card">
+                <div class="service-icon"><i class="fas fa-clipboard-check"></i></div>
+                <h3>Follow-up Consultation</h3>
+                <p>Progress monitoring, treatment adjustments, and prescription updates for ongoing care</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tips -->
+<section class="tips-section">
+    <div class="container">
+        <h2>Preparation Tips</h2>
+        <div class="tips-grid">
+            <div class="tip-item">
+                <i class="fas fa-glasses"></i>
+                <h3>Bring Your Glasses</h3>
+                <p>Bring your current glasses or contact lenses, including the case and solution</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-notes-medical"></i>
+                <h3>Medical History</h3>
+                <p>Have your medical history ready, including any medications and known allergies</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-id-card"></i>
+                <h3>Medical Aid Card</h3>
+                <p>Bring your medical aid membership card for benefit verification and claims</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-list"></i>
+                <h3>Questions Ready</h3>
+                <p>Prepare any questions or concerns about your vision or eye health beforehand</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-clock"></i>
+                <h3>Arrive Early</h3>
+                <p>Please arrive 10 minutes early to complete any necessary paperwork</p>
+            </div>
+            <div class="tip-item">
+                <i class="fas fa-sun"></i>
+                <h3>Sunglasses</h3>
+                <p>Bring sunglasses if you have a comprehensive exam &ndash; your eyes may be sensitive afterward</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Info -->
+<section class="info-section">
+    <div class="container">
+        <div class="info-grid">
+            <div class="info-card">
+                <h3><i class="fas fa-clock"></i> Opening Hours</h3>
+                <p>
+                    Monday - Friday: 8:00 AM - 5:00 PM<br>
+                    Saturday: 8:00 AM - 2:00 PM<br>
+                    Sunday: Closed
+                </p>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-map-marker-alt"></i> Our Location</h3>
+                <p>
+                    Shop 7 New Colonnade<br>
+                    Devereaux Ave, Vincent<br>
+                    East London 5247
+                </p>
+            </div>
+            <div class="info-card">
+                <h3><i class="fas fa-phone"></i> Contact Us</h3>
+                <p>
+                    Phone: 076 463 1930<br>
+                    Email: emontioptom@gmail.com
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container">
+        <a href="/BookAppointment" class="btn-cta">
+            <i class="fas fa-calendar-check"></i> Proceed to Booking
+        </a>
+        <p>Already have an account? <a href="/Identity/Account/Login?ReturnUrl=/BookAppointment">Sign in</a> for faster booking</p>
+    </div>
+</section>

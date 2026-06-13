@@ -1,0 +1,738 @@
+@page
+@model ShopModel
+@{
+    ViewData["Title"] = "Shop Eyewear";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @@keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @@keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .shop-hero {
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shop-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .shop-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .shop-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .shop-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+            line-height: 1.7;
+        }
+
+        /* ===== TOAST NOTIFICATION ===== */
+        .shop-toast {
+            display: none;
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
+            z-index: 10000;
+            animation: slideDown 0.4s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+            max-width: 350px;
+        }
+
+        .shop-toast.show {
+            display: block;
+        }
+
+        /* ===== FILTER BAR ===== */
+        .shop-filters {
+            background: white;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #eee;
+        }
+
+        .shop-filters .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 160px;
+            min-width: 140px;
+        }
+
+        .filter-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fafafa;
+            transition: all 0.2s;
+            color: #333;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+            background: white;
+        }
+
+        .btn-filter {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.55rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-filter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+        }
+
+        .btn-filter-reset {
+            background: #f0f0f0;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 0.55rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-filter-reset:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* ===== CATEGORY TABS ===== */
+        .category-tabs {
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e8e8e8;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .category-tabs .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .category-tab-list {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-wrap: nowrap;
+        }
+
+        .category-tab-list li a {
+            display: block;
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #666;
+            background: white;
+            border: 1px solid #e0e0e0;
+            text-decoration: none;
+            transition: all 0.25s;
+            white-space: nowrap;
+        }
+
+        .category-tab-list li a:hover {
+            color: #667eea;
+            border-color: #667eea;
+            background: rgba(102,126,234,0.05);
+        }
+
+        .category-tab-list li a.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+
+        /* ===== PRODUCT SECTION ===== */
+        .products-section {
+            padding: 2rem 1.5rem;
+            background: #f8f9fa;
+            min-height: 400px;
+        }
+
+        .products-section .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .products-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+
+        .products-header .product-count {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* ===== PRODUCT CARD ===== */
+        .product-card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+            border: 1px solid #eee;
+            position: relative;
+            animation: fadeInUp 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .product-card:nth-child(1) { animation-delay: 0.05s; }
+        .product-card:nth-child(2) { animation-delay: 0.1s; }
+        .product-card:nth-child(3) { animation-delay: 0.15s; }
+        .product-card:nth-child(4) { animation-delay: 0.2s; }
+        .product-card:nth-child(5) { animation-delay: 0.25s; }
+        .product-card:nth-child(6) { animation-delay: 0.3s; }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+            border-color: rgba(102,126,234,0.2);
+        }
+
+        .product-image-wrapper {
+            position: relative;
+            padding-top: 75%;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        .product-image-wrapper img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 1rem;
+            transition: transform 0.4s ease;
+        }
+
+        .product-card:hover .product-image-wrapper img {
+            transform: scale(1.08);
+        }
+
+        .product-stock-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stock-instock {
+            background: rgba(46,204,113,0.15);
+            color: #27ae60;
+        }
+
+        .stock-limited {
+            background: rgba(243,156,18,0.15);
+            color: #e67e22;
+        }
+
+        .stock-outofstock {
+            background: rgba(231,76,60,0.15);
+            color: #c0392b;
+        }
+
+        .product-wishlist-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: #ccc;
+            font-size: 1rem;
+        }
+
+        .product-wishlist-btn:hover {
+            color: #e74c3c;
+            transform: scale(1.15);
+            box-shadow: 0 4px 16px rgba(231,76,60,0.25);
+        }
+
+        .product-wishlist-btn.in-wishlist {
+            color: #e74c3c;
+        }
+
+        .product-details {
+            padding: 1rem 1.2rem 1.2rem;
+        }
+
+        .product-brand {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #999;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .product-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 0.4rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #667eea;
+            margin: 0.5rem 0 0.75rem;
+        }
+
+        .product-card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-add-cart {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.65rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn-add-cart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+        }
+
+        .btn-add-cart:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 1200px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+                gap: 1.25rem;
+            }
+        }
+
+        @@media (max-width: 992px) {
+            .shop-hero { padding: 6rem 1.5rem 3rem; }
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            .filter-group { flex: 1 1 140px; min-width: 120px; }
+        }
+
+        @@media (max-width: 768px) {
+            .shop-hero { padding: 6rem 1rem 3rem; }
+            .shop-hero h1 { font-size: 2.2rem; }
+            .shop-hero p { font-size: 1rem; }
+
+            .shop-filters { padding: 1rem; }
+            .filter-row { gap: 0.5rem; }
+            .filter-group { flex: 1 1 calc(50% - 0.5rem); min-width: 0; }
+
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .product-details { padding: 0.75rem; }
+            .product-name { font-size: 0.9rem; }
+            .product-price { font-size: 1.1rem; }
+            .btn-add-cart { font-size: 0.78rem; padding: 0.55rem 0.75rem; }
+
+            .category-tab-list li a { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+        }
+
+        @@media (max-width: 576px) {
+            .shop-hero { padding: 5rem 0.75rem 2.5rem; }
+            .shop-hero h1 { font-size: 1.8rem; }
+
+            .filter-group { flex: 1 1 100%; }
+            .btn-filter, .btn-filter-reset { flex: 1; text-align: center; }
+
+            .product-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+            }
+
+            .products-section { padding: 1rem 0.75rem; }
+            .product-card { border-radius: 10px; }
+
+            .shop-toast {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        html { scroll-behavior: smooth; }
+    </style>
+}
+
+<!-- Toast Notification -->
+<div id="shopToast" class="shop-toast @(!string.IsNullOrEmpty(Model.ResultMessage) ? "show" : "")">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">@Model.ResultMessage</span>
+</div>
+
+<!-- Hero Section -->
+<section class="shop-hero">
+    <div class="container">
+        <h1><i class="fas fa-shopping-bag"></i> Eyewear Shop</h1>
+        <p>Browse our curated collection of premium frames and lenses. Find the perfect pair for every style and budget.</p>
+    </div>
+</section>
+
+<!-- Category Tabs -->
+<section class="category-tabs">
+    <div class="container">
+        <ul class="category-tab-list">
+            <li>
+                <a href="#"
+                   class="@(string.IsNullOrEmpty(Model.SelectedCategory) || Model.SelectedCategory == "All" ? "active" : "")"
+                   onclick="filterByCategory('')">All</a>
+            </li>
+            @foreach (var cat in Model.Categories)
+            {
+                <li>
+                    <a href="#"
+                       class="@(Model.SelectedCategory == cat ? "active" : "")"
+                       onclick="filterByCategory('@cat.Replace("'", "\\'")')">@cat</a>
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+
+<!-- Filter Bar -->
+<section class="shop-filters">
+    <div class="container">
+        <form method="post" asp-page-handler="Filter" id="filterForm">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i></label>
+                    <input type="text" name="searchTerm" placeholder="Search products..."
+                           value="@Model.SearchTerm" />
+                </div>
+                <div class="filter-group">
+                    <label>Category</label>
+                    <select name="category" onchange="this.form.submit()">
+                        <option value="All">All Categories</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat" selected="@(Model.SelectedCategory == cat ? "selected" : null)">@cat</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Brand</label>
+                    <select name="brand" onchange="this.form.submit()">
+                        <option value="All">All Brands</option>
+                        @foreach (var brand in Model.Brands)
+                        {
+                            <option value="@brand" selected="@(Model.SelectedBrand == brand ? "selected" : null)">@brand</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Price</label>
+                    <select name="priceRange" onchange="this.form.submit()">
+                        <option value="All">All Prices</option>
+                        <option value="R0-R500" selected="@(Model.SelectedPriceRange == "R0-R500" ? "selected" : null)">R0 - R500</option>
+                        <option value="R500-R1000" selected="@(Model.SelectedPriceRange == "R500-R1000" ? "selected" : null)">R500 - R1000</option>
+                        <option value="R1000-R2000" selected="@(Model.SelectedPriceRange == "R1000-R2000" ? "selected" : null)">R1000 - R2000</option>
+                        <option value="R2000+" selected="@(Model.SelectedPriceRange == "R2000+" ? "selected" : null)">R2000+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sort</label>
+                    <select name="sortBy" onchange="this.form.submit()">
+                        <option value="name_asc" selected="@(Model.SortBy == "name_asc" || Model.SortBy == null ? "selected" : null)">Name A-Z</option>
+                        <option value="name_desc" selected="@(Model.SortBy == "name_desc" ? "selected" : null)">Name Z-A</option>
+                        <option value="price_asc" selected="@(Model.SortBy == "price_asc" ? "selected" : null)">Price Low-High</option>
+                        <option value="price_desc" selected="@(Model.SortBy == "price_desc" ? "selected" : null)">Price High-Low</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="flex: 0 1 auto;">
+                    <a href="/Shop" class="btn-filter-reset"><i class="fas fa-times"></i> Reset</a>
+                </div>
+            </div>
+            <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
+            <input type="hidden" name="category" value="@Model.SelectedCategory" />
+            <input type="hidden" name="brand" value="@Model.SelectedBrand" />
+            <input type="hidden" name="priceRange" value="@Model.SelectedPriceRange" />
+            <input type="hidden" name="sortBy" value="@Model.SortBy" />
+            <button type="submit" style="display:none;">Filter</button>
+        </form>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="products-section">
+    <div class="container">
+        <div class="products-header">
+            <h2>@(string.IsNullOrEmpty(Model.SelectedCategory) || Model.SelectedCategory == "All" ? "All Products" : Model.SelectedCategory)</h2>
+            <span class="product-count">@Model.Products.Count product@(Model.Products.Count != 1 ? "s" : "") found</span>
+        </div>
+
+        @if (Model.Products.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <h3>No products found</h3>
+                <p>Try adjusting your search or filter criteria.</p>
+                <a href="/Shop" class="btn-filter-reset" style="display:inline-block;margin-top:1rem;">Clear Filters</a>
+            </div>
+        }
+        else
+        {
+            <div class="product-grid">
+                @foreach (var product in Model.Products)
+                {
+                    var stockClass = product.Stock > 5 ? "stock-instock" : product.Stock >= 1 ? "stock-limited" : "stock-outofstock";
+                    var stockLabel = product.Stock > 5 ? "In Stock" : product.Stock >= 1 ? "Limited Stock" : "Out of Stock";
+                    var isOutOfStock = product.Stock <= 0;
+
+                    <div class="product-card">
+                        <div class="product-image-wrapper">
+                            <img src="@Url.Content(product.ImageUrl)"
+                                 alt="@product.Name"
+                                 loading="lazy"
+                                 onerror="this.src='/Images/Products/default.png'" />
+                            <span class="product-stock-badge @stockClass">@stockLabel</span>
+                        </div>
+                        <div class="product-details">
+                            <div class="product-brand">@product.Brand</div>
+                            <h3 class="product-name">@product.Name</h3>
+                            <div class="product-price">R @product.Price.ToString("N2")</div>
+                            <div class="product-card-actions">
+                                @if (isOutOfStock)
+                                {
+                                    <button class="btn-add-cart" disabled>
+                                        <i class="fas fa-ban"></i> Out of Stock
+                                    </button>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="AddToCart" style="flex:1;">
+                                        <input type="hidden" name="productId" value="@product.ProductId" />
+                                        <input type="hidden" name="brand" value="@product.Brand" />
+                                        <input type="hidden" name="name" value="@product.Name" />
+                                        <input type="hidden" name="price" value="@product.Price" />
+                                        <input type="hidden" name="picture1" value="@product.ImageUrl" />
+                                        <button type="submit" class="btn-add-cart">
+                                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                                        </button>
+                                    </form>
+                                }
+                                <form method="post" asp-page-handler="ToggleWishlist" style="flex-shrink:0;">
+                                    <input type="hidden" name="productId" value="@product.ProductId" />
+                                    <button type="submit" class="product-wishlist-btn" title="Add to wishlist">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<script>
+    (function() {
+        // Toast auto-hide
+        var toast = document.getElementById('shopToast');
+        if (toast && toast.classList.contains('show')) {
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Category tab filtering
+        window.filterByCategory = function(category) {
+            var form = document.getElementById('filterForm');
+            if (form) {
+                var catInput = form.querySelector('select[name="category"]');
+                if (catInput) {
+                    catInput.value = category || 'All';
+                }
+                form.submit();
+            }
+        };
+    })();
+</script>

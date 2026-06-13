@@ -1,0 +1,689 @@
+@page
+@model ProductDetailsModel
+@{
+    ViewData["Title"] = Model.Product?.Name ?? "Product Details";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toast */
+        .pd-toast {
+            display: none;
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
+            z-index: 10000;
+            animation: slideDown 0.4s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+            max-width: 350px;
+        }
+
+        .pd-toast.show {
+            display: block;
+        }
+
+        /* Hero Breadcrumb */
+        .pd-hero {
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .pd-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .pd-breadcrumb {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+
+        .pd-breadcrumb a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .pd-breadcrumb a:hover {
+            color: white;
+        }
+
+        .pd-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Main Detail Section */
+        .pd-section {
+            padding: 3rem 1.5rem;
+            background: #f8f9fa;
+        }
+
+        .pd-section .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pd-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* Image Gallery */
+        .pd-image-wrapper {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid #eee;
+            position: relative;
+            aspect-ratio: 1 / 1;
+            max-width: 550px;
+        }
+
+        .pd-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 2rem;
+            transition: transform 0.4s ease;
+        }
+
+        .pd-image-wrapper:hover img {
+            transform: scale(1.05);
+        }
+
+        .pd-stock-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stock-instock {
+            background: rgba(46,204,113,0.15);
+            color: #27ae60;
+        }
+
+        .stock-limited {
+            background: rgba(243,156,18,0.15);
+            color: #e67e22;
+        }
+
+        .stock-outofstock {
+            background: rgba(231,76,60,0.15);
+            color: #c0392b;
+        }
+
+        /* Product Info */
+        .pd-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .pd-brand {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            font-weight: 600;
+        }
+
+        .pd-name {
+            font-size: clamp(1.4rem, 3vw, 2rem);
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .pd-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .pd-divider {
+            height: 1px;
+            background: linear-gradient(to right, #e0e0e0, transparent);
+            margin: 0.5rem 0;
+        }
+
+        .pd-description {
+            color: #555;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .pd-meta {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .pd-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .pd-meta-item span:first-child {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #999;
+            font-weight: 600;
+        }
+
+        .pd-meta-item span:last-child {
+            font-size: 0.95rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .pd-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .btn-add-cart {
+            flex: 1;
+            min-width: 180px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add-cart:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+            color: white;
+        }
+
+        .btn-add-cart:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-wishlist {
+            min-width: 50px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            padding: 1rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+        }
+
+        .btn-wishlist:hover {
+            border-color: #e74c3c;
+            color: #e74c3c;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(231,76,60,0.15);
+        }
+
+        .btn-wishlist.in-wishlist {
+            border-color: #e74c3c;
+            color: #e74c3c;
+            background: rgba(231,76,60,0.05);
+        }
+
+        /* Related Products */
+        .pd-related {
+            padding: 3rem 1.5rem 4rem;
+            background: white;
+        }
+
+        .pd-related .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pd-related h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .related-card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+            border: 1px solid #eee;
+            text-decoration: none;
+            display: block;
+            animation: fadeInUp 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .related-card:nth-child(1) { animation-delay: 0.05s; }
+        .related-card:nth-child(2) { animation-delay: 0.1s; }
+        .related-card:nth-child(3) { animation-delay: 0.15s; }
+        .related-card:nth-child(4) { animation-delay: 0.2s; }
+
+        .related-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+            border-color: rgba(102,126,234,0.2);
+        }
+
+        .related-img-wrap {
+            position: relative;
+            padding-top: 75%;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        .related-img-wrap img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 1rem;
+            transition: transform 0.4s ease;
+        }
+
+        .related-card:hover .related-img-wrap img {
+            transform: scale(1.08);
+        }
+
+        .related-details {
+            padding: 0.9rem 1rem 1rem;
+        }
+
+        .related-brand {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #999;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .related-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 0.35rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .related-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .related-stock {
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 0.3rem;
+        }
+
+        /* Not Found */
+        .pd-notfound {
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+
+        .pd-notfound i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 1.5rem;
+        }
+
+        .pd-notfound h2 {
+            font-size: 1.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .pd-notfound p {
+            color: #999;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .pd-layout {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .pd-image-wrapper {
+                max-width: 100%;
+                aspect-ratio: 4 / 3;
+            }
+
+            .pd-hero {
+                padding: 6rem 1.5rem 2rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .pd-hero {
+                padding: 6rem 1rem 2rem;
+            }
+
+            .pd-hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .pd-section {
+                padding: 2rem 1rem;
+            }
+
+            .pd-price {
+                font-size: 1.6rem;
+            }
+
+            .pd-actions {
+                flex-direction: column;
+            }
+
+            .btn-add-cart {
+                min-width: 0;
+            }
+
+            .btn-wishlist {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .pd-meta {
+                gap: 1rem;
+            }
+
+            .pd-related {
+                padding: 2rem 1rem 3rem;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .related-details {
+                padding: 0.6rem 0.75rem 0.75rem;
+            }
+
+            .related-name {
+                font-size: 0.8rem;
+            }
+
+            .related-price {
+                font-size: 0.95rem;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .pd-hero {
+                padding: 5rem 0.75rem 1.5rem;
+            }
+
+            .pd-section {
+                padding: 1.5rem 0.75rem;
+            }
+
+            .pd-image-wrapper {
+                border-radius: 10px;
+            }
+
+            .pd-image-wrapper img {
+                padding: 1rem;
+            }
+
+            .pd-toast {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        html { scroll-behavior: smooth; }
+    </style>
+}
+
+<!-- Toast Notification -->
+<div id="pdToast" class="pd-toast @(!string.IsNullOrEmpty(Model.ResultMessage) ? "show" : "")">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">@Model.ResultMessage</span>
+</div>
+
+@if (Model.Product == null)
+{
+    <section class="pd-hero">
+        <div class="container">
+            <h1>Product Not Found</h1>
+        </div>
+    </section>
+    <section class="pd-section">
+        <div class="container">
+            <div class="pd-notfound">
+                <i class="fas fa-box-open"></i>
+                <h2>Product Not Found</h2>
+                <p>The product you are looking for does not exist or has been removed.</p>
+                <a href="/Shop" class="btn-add-cart" style="display:inline-flex;width:auto;text-decoration:none;">
+                    <i class="fas fa-arrow-left"></i> Back to Shop
+                </a>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    var product = Model.Product;
+    var stockClass = product.Stock > 5 ? "stock-instock" : product.Stock >= 1 ? "stock-limited" : "stock-outofstock";
+    var stockLabel = product.Stock > 5 ? "In Stock" : product.Stock >= 1 ? "Limited Stock" : "Out of Stock";
+    var isOutOfStock = product.Stock <= 0;
+
+    <!-- Hero / Breadcrumb -->
+    <section class="pd-hero">
+        <div class="container">
+            <div class="pd-breadcrumb">
+                <a href="/">Home</a>
+                <span>/</span>
+                <a href="/Shop">Shop</a>
+                <span>/</span>
+                <span>@product.Name</span>
+            </div>
+            <h1>@product.Name</h1>
+        </div>
+    </section>
+
+    <!-- Product Detail -->
+    <section class="pd-section">
+        <div class="container">
+            <div class="pd-layout">
+                <div class="pd-image-wrapper">
+                    <span class="pd-stock-badge @stockClass">@stockLabel</span>
+                    <img src="@Url.Content(product.ImageUrl)"
+                         alt="@product.Name"
+                         onerror="this.src='/Images/Products/default.png'" />
+                </div>
+
+                <div class="pd-info">
+                    <div class="pd-brand">@product.Brand</div>
+                    <h1 class="pd-name">@product.Name</h1>
+                    <div class="pd-price">R @product.Price.ToString("N2")</div>
+
+                    <div class="pd-divider"></div>
+
+                    <div class="pd-meta">
+                        <div class="pd-meta-item">
+                            <span>Category</span>
+                            <span>@product.Category</span>
+                        </div>
+                        <div class="pd-meta-item">
+                            <span>Brand</span>
+                            <span>@product.Brand</span>
+                        </div>
+                        <div class="pd-meta-item">
+                            <span>Stock</span>
+                            <span>@(product.Stock > 0 ? $"{product.Stock} available" : "Out of stock")</span>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(product.Description))
+                    {
+                        <div class="pd-divider"></div>
+                        <div class="pd-description">
+                            @product.Description
+                        </div>
+                    }
+
+                    <div class="pd-divider"></div>
+
+                    <div class="pd-actions">
+                        @if (isOutOfStock)
+                        {
+                            <button class="btn-add-cart" disabled>
+                                <i class="fas fa-ban"></i> Out of Stock
+                            </button>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="AddToCart" style="flex:1;">
+                                <input type="hidden" name="productId" value="@product.ProductId" />
+                                <button type="submit" class="btn-add-cart">
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </button>
+                            </form>
+                        }
+                        <form method="post" asp-page-handler="AddToWishlist" style="flex-shrink:0;">
+                            <input type="hidden" name="productId" value="@product.ProductId" />
+                            <button type="submit" class="btn-wishlist @(Model.IsInWishlist ? "in-wishlist" : "")"
+                                    title="@(isAuthenticated ? "Add to wishlist" : "Login to add to wishlist")">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Products -->
+    if (Model.RelatedProducts.Count > 0)
+    {
+        <section class="pd-related">
+            <div class="container">
+                <h2>Related Products</h2>
+                <div class="related-grid">
+                    @foreach (var related in Model.RelatedProducts)
+                    {
+                        var relStockClass = related.Stock > 5 ? "stock-instock" : related.Stock >= 1 ? "stock-limited" : "stock-outofstock";
+                        var relStockLabel = related.Stock > 5 ? "In Stock" : related.Stock >= 1 ? "Limited" : "Sold Out";
+
+                        <a href="/ProductDetails?productId=@related.ProductId" class="related-card">
+                            <div class="related-img-wrap">
+                                <img src="@Url.Content(related.ImageUrl)"
+                                     alt="@related.Name"
+                                     loading="lazy"
+                                     onerror="this.src='/Images/Products/default.png'" />
+                            </div>
+                            <div class="related-details">
+                                <div class="related-brand">@related.Brand</div>
+                                <div class="related-name">@related.Name</div>
+                                <div class="related-price">R @related.Price.ToString("N2")</div>
+                                <div class="related-stock @relStockClass">@relStockLabel</div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+}
+
+<script>
+    (function() {
+        var toast = document.getElementById('pdToast');
+        if (toast && toast.classList.contains('show')) {
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+    })();
+</script>

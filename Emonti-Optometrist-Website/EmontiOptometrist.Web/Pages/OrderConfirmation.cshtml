@@ -1,0 +1,438 @@
+@page
+@model OrderConfirmationModel
+@{
+    ViewData["Title"] = Model.OrderNotFound ? "Order Not Found" : "Order Confirmation";
+}
+
+@section HeadContent {
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg-light: #f8f9fa;
+            --text-dark: #2c3e50;
+            --text-muted: #666;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --border: #e0e0e0;
+        }
+
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .confirmation-hero {
+            background: linear-gradient(-45deg, var(--primary), var(--secondary), var(--primary), var(--secondary));
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 7rem 1.5rem 3rem;
+            text-align: center;
+        }
+
+        .confirmation-hero h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .confirmation-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .confirmation-section {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .confirmation-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            animation: fadeInUp 0.5s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .confirmation-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0 0 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--bg-light);
+        }
+
+        .confirmation-card h2 i {
+            color: var(--primary);
+            margin-right: 0.5rem;
+        }
+
+        .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(39, 174, 96, 0.1);
+            color: #155724;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .success-badge i {
+            font-size: 1.4rem;
+        }
+
+        .order-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        @@media (min-width: 600px) {
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-item .label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.2rem;
+        }
+
+        .detail-item .value {
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .detail-item .value.status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .value.status.pending {
+            background: #fff8e1;
+            color: #856404;
+            border: 1px solid #ffe082;
+        }
+
+        .value.status.confirmed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .value.status.shipped {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .value.status.delivered {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .value.status.cancelled {
+            background: #fce4e4;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table thead th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 2px solid var(--bg-light);
+            text-align: left;
+        }
+
+        .items-table tbody td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--bg-light);
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        .items-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .items-table .text-right {
+            text-align: right;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0.75rem 0 0;
+            margin-top: 0.5rem;
+            border-top: 2px solid var(--bg-light);
+        }
+
+        .total-row .total-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-right: 2rem;
+        }
+
+        .total-row .total-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn-continue {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.9rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .error-card {
+            text-align: center;
+            padding: 3rem 1.5rem;
+        }
+
+        .error-card i {
+            font-size: 3rem;
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
+
+        .error-card h2 {
+            border-bottom: none;
+            color: var(--danger);
+        }
+
+        .error-card p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        @@media (max-width: 768px) {
+            .confirmation-hero {
+                padding: 6rem 1rem 2.5rem;
+            }
+
+            .confirmation-section {
+                padding: 0 1rem;
+            }
+
+            .confirmation-card {
+                padding: 1.25rem;
+            }
+
+            .items-table thead {
+                display: none;
+            }
+
+            .items-table tbody tr {
+                display: block;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid var(--bg-light);
+            }
+
+            .items-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.3rem 0;
+                border-bottom: none;
+            }
+
+            .items-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .items-table tbody td.text-right::before {
+                text-align: left;
+            }
+
+            .items-table tbody td.text-right {
+                text-align: right;
+            }
+
+            .total-row {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.25rem;
+            }
+
+            .btn-continue {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .confirmation-hero {
+                padding: 5rem 0.75rem 2rem;
+            }
+
+            .confirmation-card {
+                padding: 1rem;
+            }
+
+            .order-number {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+}
+
+<section class="confirmation-hero">
+    <h1>@(Model.OrderNotFound ? "Order Not Found" : "Order Confirmed")</h1>
+    <p>@(Model.OrderNotFound ? "We couldn't find an order with that ID" : "Thank you for your purchase! Your order has been placed successfully.")</p>
+</section>
+
+<section class="confirmation-section">
+    @if (Model.OrderNotFound)
+    {
+        <div class="confirmation-card error-card">
+            <i class="fas fa-exclamation-circle"></i>
+            <h2>Order Not Found</h2>
+            <p>The order you are looking for does not exist or the link may be invalid.</p>
+            <a href="/Shop" class="btn-continue"><i class="fas fa-shopping-bag"></i> Continue Shopping</a>
+        </div>
+    }
+    else
+    {
+        <div class="confirmation-card">
+            <div class="success-badge">
+                <i class="fas fa-check-circle"></i>
+                <span>Payment Successful</span>
+            </div>
+            <p style="margin:0 0 0.25rem; font-size:0.9rem; color:var(--text-muted)">Order Number</p>
+            <p class="order-number">@Model.Order!.Order_Number</p>
+        </div>
+
+        <div class="confirmation-card">
+            <h2><i class="fas fa-info-circle"></i> Order Details</h2>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="label">Order Date</span>
+                    <span class="value">@Model.Order.Order_Date.ToString("dd MMM yyyy HH:mm")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Status</span>
+                    <span class="value status @Model.Order.Order_Status.ToLower()">@Model.Order.Order_Status</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Payment Method</span>
+                    <span class="value">@Model.Order.Payment_Method</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Payment Status</span>
+                    <span class="value">@Model.Order.Payment_Status</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="confirmation-card">
+            <h2><i class="fas fa-truck"></i> Delivery Address</h2>
+            <p style="margin:0; color:var(--text-dark); line-height:1.6; white-space:pre-line">@Model.Order.Delivery_Address</p>
+        </div>
+
+        <div class="confirmation-card">
+            <h2><i class="fas fa-shopping-bag"></i> Items Ordered</h2>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Brand</th>
+                        <th>Qty</th>
+                        <th class="text-right">Price</th>
+                        <th class="text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr>
+                            <td data-label="Product">@item.Product_Name</td>
+                            <td data-label="Brand">@item.Product_Brand</td>
+                            <td data-label="Qty">@item.Quantity</td>
+                            <td data-label="Price" class="text-right">R @item.Unit_Price.ToString("N2")</td>
+                            <td data-label="Subtotal" class="text-right">R @item.Subtotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="total-row">
+                <span class="total-label">Total</span>
+                <span class="total-value">R @Model.Order.Order_Total.ToString("N2")</span>
+            </div>
+        </div>
+
+        <div style="text-align:center">
+            <a href="/Shop" class="btn-continue"><i class="fas fa-shopping-bag"></i> Continue Shopping</a>
+        </div>
+    }
+</section>
