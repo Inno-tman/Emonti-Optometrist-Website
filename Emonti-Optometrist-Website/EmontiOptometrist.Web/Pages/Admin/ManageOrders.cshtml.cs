@@ -35,16 +35,21 @@ public class ManageOrdersModel : PageModel
                 conn.Open();
 
                 string query = @"
-                    SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address
-                    FROM [Order]
+                    SELECT o.OrderID, o.CustID, o.Order_Date, o.Order_Total, o.Order_Status, o.Delivery_Address,
+                           ISNULL(c.Customer_Name, c.Cust_FirstName) AS Customer_Name,
+                           ISNULL(c.Customer_Surname, c.Cust_LastName) AS Customer_Surname,
+                           ISNULL(c.Customer_Email, c.Cust_Email) AS Customer_Email,
+                           ISNULL(c.Customer_Phone, c.Cust_Phone) AS Customer_Phone
+                    FROM [Order] o
+                    LEFT JOIN customer c ON o.CustID = c.Cust_ID
                     WHERE 1=1";
 
                 if (!string.IsNullOrEmpty(status))
-                    query += " AND Order_Status = @Status";
+                    query += " AND o.Order_Status = @Status";
                 if (!string.IsNullOrEmpty(search))
-                    query += " AND (CustID LIKE @Search OR CAST(OrderID AS NVARCHAR) LIKE @Search)";
+                    query += " AND (o.CustID LIKE @Search OR CAST(o.OrderID AS NVARCHAR) LIKE @Search OR c.Customer_Name LIKE @Search OR c.Customer_Surname LIKE @Search)";
 
-                query += " ORDER BY Order_Date DESC";
+                query += " ORDER BY o.Order_Date DESC";
 
                 using (var cmd = new SqlCommand(query, conn))
                 {
@@ -61,6 +66,9 @@ public class ManageOrdersModel : PageModel
                             {
                                 OrderID = Convert.ToInt32(reader["OrderID"]),
                                 CustID = reader["CustID"].ToString(),
+                                CustomerName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}",
+                                CustomerEmail = reader["Customer_Email"]?.ToString() ?? "",
+                                CustomerPhone = reader["Customer_Phone"]?.ToString() ?? "",
                                 OrderDate = Convert.ToDateTime(reader["Order_Date"]),
                                 OrderTotal = Convert.ToDecimal(reader["Order_Total"]),
                                 OrderStatus = reader["Order_Status"].ToString(),
@@ -116,6 +124,9 @@ public class OrderListItem
 {
     public int OrderID { get; set; }
     public string CustID { get; set; } = "";
+    public string CustomerName { get; set; } = "";
+    public string CustomerEmail { get; set; } = "";
+    public string CustomerPhone { get; set; } = "";
     public DateTime OrderDate { get; set; }
     public decimal OrderTotal { get; set; }
     public string OrderStatus { get; set; } = "";

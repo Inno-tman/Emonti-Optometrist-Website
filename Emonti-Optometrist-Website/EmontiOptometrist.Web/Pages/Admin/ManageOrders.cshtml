@@ -176,6 +176,8 @@
                         <tr>
                             <th>Order #</th>
                             <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
                             <th>Date</th>
                             <th>Total</th>
                             <th>Status</th>
@@ -187,7 +189,9 @@
                         {
                             <tr>
                                 <td class="order-num">@order.OrderNumber</td>
-                                <td>@order.CustID</td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.CustomerEmail</td>
+                                <td>@order.CustomerPhone</td>
                                 <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>R @order.OrderTotal.ToString("N2")</td>
                                 <td><span class="status-badge @order.OrderStatus.ToLower()">@order.OrderStatus</span></td>
