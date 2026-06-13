@@ -3,23 +3,24 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using EmontiOptometrist.Web.Models;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
 [Authorize(Roles = "Admin")]
 public class ManageStaffModel : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
-    public ManageStaffModel(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    public ManageStaffModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
     }
 
     public List<StaffUser> StaffUsers { get; set; } = new();
-    public List<IdentityUser> AllUsers { get; set; } = new();
+    public List<ApplicationUser> AllUsers { get; set; } = new();
 
     public async Task OnGetAsync()
     {

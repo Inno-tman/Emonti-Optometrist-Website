@@ -27,74 +27,83 @@ public class ReportsModel : PageModel
     public void OnGet()
     {
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        if (string.IsNullOrEmpty(connStr))
+            return;
 
-        using (var conn = new SqlConnection(connStr))
+        try
         {
-            conn.Open();
-
-            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order]", conn))
+            using (var conn = new SqlConnection(connStr))
             {
-                TotalOrders = Convert.ToInt32(cmd.ExecuteScalar());
-            }
+                conn.Open();
 
-            using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Order_Total), 0) FROM [Order]", conn))
-            {
-                TotalRevenue = Convert.ToDecimal(cmd.ExecuteScalar());
-            }
-
-            using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Quantity), 0) FROM OrderItems", conn))
-            {
-                TotalProductsSold = Convert.ToInt32(cmd.ExecuteScalar());
-            }
-
-            using (var cmd = new SqlCommand("SELECT COUNT(DISTINCT CustID) FROM [Order]", conn))
-            {
-                TotalCustomers = Convert.ToInt32(cmd.ExecuteScalar());
-            }
-
-            using (var cmd = new SqlCommand(@"
-                SELECT TOP 10 OrderID, CustID, Order_Date, Order_Total, Order_Status
-                FROM [Order]
-                ORDER BY Order_Date DESC", conn))
-            {
-                using (var reader = cmd.ExecuteReader())
+                using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order]", conn))
                 {
-                    while (reader.Read())
+                    TotalOrders = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Order_Total), 0) FROM [Order]", conn))
+                {
+                    TotalRevenue = Convert.ToDecimal(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Quantity), 0) FROM OrderItems", conn))
+                {
+                    TotalProductsSold = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand("SELECT COUNT(DISTINCT CustID) FROM [Order]", conn))
+                {
+                    TotalCustomers = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT TOP 10 OrderID, CustID, Order_Date, Order_Total, Order_Status
+                    FROM [Order]
+                    ORDER BY Order_Date DESC", conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        RecentOrders.Add(new RecentOrderDisplay
+                        while (reader.Read())
                         {
-                            OrderID = Convert.ToInt32(reader["OrderID"]),
-                            CustID = reader["CustID"].ToString(),
-                            OrderDate = Convert.ToDateTime(reader["Order_Date"]),
-                            Total = Convert.ToDecimal(reader["Order_Total"]),
-                            Status = reader["Order_Status"].ToString()
-                        });
+                            RecentOrders.Add(new RecentOrderDisplay
+                            {
+                                OrderID = Convert.ToInt32(reader["OrderID"]),
+                                CustID = reader["CustID"].ToString(),
+                                OrderDate = Convert.ToDateTime(reader["Order_Date"]),
+                                Total = Convert.ToDecimal(reader["Order_Total"]),
+                                Status = reader["Order_Status"].ToString()
+                            });
+                        }
+                    }
+                }
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT TOP 5 Product_Name, Product_Brand,
+                           SUM(Quantity) AS TotalSold,
+                           SUM(Subtotal) AS TotalRevenue
+                    FROM OrderItems
+                    GROUP BY Product_Name, Product_Brand
+                    ORDER BY TotalSold DESC", conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            PopularProducts.Add(new PopularProductDisplay
+                            {
+                                ProductName = reader["Product_Name"].ToString(),
+                                Brand = reader["Product_Brand"].ToString(),
+                                TotalSold = Convert.ToInt32(reader["TotalSold"]),
+                                TotalRevenue = Convert.ToDecimal(reader["TotalRevenue"])
+                            });
+                        }
                     }
                 }
             }
-
-            using (var cmd = new SqlCommand(@"
-                SELECT TOP 5 Product_Name, Product_Brand,
-                       SUM(Quantity) AS TotalSold,
-                       SUM(Subtotal) AS TotalRevenue
-                FROM OrderItems
-                GROUP BY Product_Name, Product_Brand
-                ORDER BY TotalSold DESC", conn))
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        PopularProducts.Add(new PopularProductDisplay
-                        {
-                            ProductName = reader["Product_Name"].ToString(),
-                            Brand = reader["Product_Brand"].ToString(),
-                            TotalSold = Convert.ToInt32(reader["TotalSold"]),
-                            TotalRevenue = Convert.ToDecimal(reader["TotalRevenue"])
-                        });
-                    }
-                }
-            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Reports error: {ex.Message}");
         }
     }
 }

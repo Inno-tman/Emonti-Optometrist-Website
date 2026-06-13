@@ -25,66 +25,89 @@ public class ManageOrdersModel : PageModel
         SearchTerm = search;
 
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        if (string.IsNullOrEmpty(connStr))
+            return;
 
-        using (var conn = new SqlConnection(connStr))
+        try
         {
-            conn.Open();
-
-            string query = @"
-                SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address
-                FROM [Order]
-                WHERE 1=1";
-
-            if (!string.IsNullOrEmpty(status))
-                query += " AND Order_Status = @Status";
-            if (!string.IsNullOrEmpty(search))
-                query += " AND (CustID LIKE @Search OR CAST(OrderID AS NVARCHAR) LIKE @Search)";
-
-            query += " ORDER BY Order_Date DESC";
-
-            using (var cmd = new SqlCommand(query, conn))
+            using (var conn = new SqlConnection(connStr))
             {
-                if (!string.IsNullOrEmpty(status))
-                    cmd.Parameters.AddWithValue("@Status", status);
-                if (!string.IsNullOrEmpty(search))
-                    cmd.Parameters.AddWithValue("@Search", $"%{search}%");
+                conn.Open();
 
-                using (var reader = cmd.ExecuteReader())
+                string query = @"
+                    SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address
+                    FROM [Order]
+                    WHERE 1=1";
+
+                if (!string.IsNullOrEmpty(status))
+                    query += " AND Order_Status = @Status";
+                if (!string.IsNullOrEmpty(search))
+                    query += " AND (CustID LIKE @Search OR CAST(OrderID AS NVARCHAR) LIKE @Search)";
+
+                query += " ORDER BY Order_Date DESC";
+
+                using (var cmd = new SqlCommand(query, conn))
                 {
-                    while (reader.Read())
+                    if (!string.IsNullOrEmpty(status))
+                        cmd.Parameters.AddWithValue("@Status", status);
+                    if (!string.IsNullOrEmpty(search))
+                        cmd.Parameters.AddWithValue("@Search", $"%{search}%");
+
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        Orders.Add(new OrderListItem
+                        while (reader.Read())
                         {
-                            OrderID = Convert.ToInt32(reader["OrderID"]),
-                            CustID = reader["CustID"].ToString(),
-                            OrderDate = Convert.ToDateTime(reader["Order_Date"]),
-                            OrderTotal = Convert.ToDecimal(reader["Order_Total"]),
-                            OrderStatus = reader["Order_Status"].ToString(),
-                            DeliveryAddress = reader["Delivery_Address"].ToString()
-                        });
+                            Orders.Add(new OrderListItem
+                            {
+                                OrderID = Convert.ToInt32(reader["OrderID"]),
+                                CustID = reader["CustID"].ToString(),
+                                OrderDate = Convert.ToDateTime(reader["Order_Date"]),
+                                OrderTotal = Convert.ToDecimal(reader["Order_Total"]),
+                                OrderStatus = reader["Order_Status"].ToString(),
+                                DeliveryAddress = reader["Delivery_Address"].ToString()
+                            });
+                        }
                     }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ManageOrders error: {ex.Message}");
         }
     }
 
     public IActionResult OnPostUpdateStatus(int orderId, string status)
     {
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
-
-        using (var conn = new SqlConnection(connStr))
+        if (!string.IsNullOrEmpty(connStr))
         {
-            conn.Open();
-            using (var cmd = new SqlCommand(
-                "UPDATE [Order] SET Order_Status = @Status WHERE OrderID = @OrderID", conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@Status", status);
-                cmd.Parameters.AddWithValue("@OrderID", orderId);
-                cmd.ExecuteNonQuery();
+                using (var conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(
+                        "UPDATE [Order] SET Order_Status = @Status WHERE OrderID = @OrderID", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Status", status);
+                        cmd.Parameters.AddWithValue("@OrderID", orderId);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                TempData["SuccessMessage"] = $"Order #EL-{orderId:D6} status updated to {status}.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating order: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"ManageOrders update error: {ex.Message}");
             }
         }
+        else
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+        }
 
-        TempData["SuccessMessage"] = $"Order #EL-{orderId:D6} status updated to {status}.";
         return RedirectToPage(new { status = StatusFilter, search = SearchTerm });
     }
 }

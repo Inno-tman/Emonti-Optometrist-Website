@@ -33,67 +33,77 @@ public class DashboardModel : PageModel
         StaffName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Staff";
         StaffRole = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role) ?? "Staff";
 
-        using (var conn = new SqlConnection(connStr))
+        if (string.IsNullOrEmpty(connStr))
+            return;
+
+        try
         {
-            conn.Open();
-
-            using (var cmd = new SqlCommand(@"
-                SELECT COUNT(*) FROM Appointment
-                WHERE Staff_ID = @StaffId
-                AND CAST(Appointment_Date AS DATE) = CAST(GETDATE() AS DATE)
-                AND Appoinment_Status != 'Cancelled'", conn))
+            using (var conn = new SqlConnection(connStr))
             {
-                cmd.Parameters.AddWithValue("@StaffId", staffId);
-                TodayAppointments = Convert.ToInt32(cmd.ExecuteScalar());
-            }
+                conn.Open();
 
-            using (var cmd = new SqlCommand(@"
-                SELECT COUNT(*) FROM [Order]
-                WHERE Order_Status IN ('Pending', 'Processing')", conn))
-            {
-                PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
-            }
-
-            using (var cmd = new SqlCommand(@"
-                SELECT COUNT(DISTINCT Cust_ID) FROM Appointment", conn))
-            {
-                TotalPatients = Convert.ToInt32(cmd.ExecuteScalar());
-            }
-
-            using (var cmd = new SqlCommand(@"
-                SELECT TOP 5
-                    a.Appointment_ID,
-                    a.Appointment_Date,
-                    a.Appoinment_Status,
-                    t.Timeslot,
-                    c.Customer_Name,
-                    c.Customer_Surname
-                FROM Appointment a
-                INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
-                LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
-                WHERE a.Staff_ID = @StaffId
-                AND CAST(a.Appointment_Date AS DATE) >= CAST(GETDATE() AS DATE)
-                AND a.Appoinment_Status != 'Cancelled'
-                ORDER BY a.Appointment_Date ASC, t.Timeslot ASC", conn))
-            {
-                cmd.Parameters.AddWithValue("@StaffId", staffId);
-                using (var reader = cmd.ExecuteReader())
+                using (var cmd = new SqlCommand(@"
+                    SELECT COUNT(*) FROM Appointment
+                    WHERE Staff_ID = @StaffId
+                    AND CAST(Appointment_Date AS DATE) = CAST(GETDATE() AS DATE)
+                    AND Appoinment_Status != 'Cancelled'", conn))
                 {
-                    while (reader.Read())
+                    cmd.Parameters.AddWithValue("@StaffId", staffId);
+                    TodayAppointments = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT COUNT(*) FROM [Order]
+                    WHERE Order_Status IN ('Pending', 'Processing')", conn))
+                {
+                    PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT COUNT(DISTINCT Cust_ID) FROM Appointment", conn))
+                {
+                    TotalPatients = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT TOP 5
+                        a.Appointment_ID,
+                        a.Appointment_Date,
+                        a.Appoinment_Status,
+                        t.Timeslot,
+                        c.Customer_Name,
+                        c.Customer_Surname
+                    FROM Appointment a
+                    INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
+                    LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
+                    WHERE a.Staff_ID = @StaffId
+                    AND CAST(a.Appointment_Date AS DATE) >= CAST(GETDATE() AS DATE)
+                    AND a.Appoinment_Status != 'Cancelled'
+                    ORDER BY a.Appointment_Date ASC, t.Timeslot ASC", conn))
+                {
+                    cmd.Parameters.AddWithValue("@StaffId", staffId);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        UpcomingAppointments.Add(new UpcomingAppointment
+                        while (reader.Read())
                         {
-                            AppointmentId = Convert.ToInt32(reader["Appointment_ID"]),
-                            AppointmentDate = Convert.ToDateTime(reader["Appointment_Date"]),
-                            Status = reader["Appoinment_Status"]?.ToString() ?? "",
-                            Timeslot = reader["Timeslot"]?.ToString() ?? "N/A",
-                            PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}"
-                        });
+                            UpcomingAppointments.Add(new UpcomingAppointment
+                            {
+                                AppointmentId = Convert.ToInt32(reader["Appointment_ID"]),
+                                AppointmentDate = Convert.ToDateTime(reader["Appointment_Date"]),
+                                Status = reader["Appoinment_Status"]?.ToString() ?? "",
+                                Timeslot = reader["Timeslot"]?.ToString() ?? "N/A",
+                                PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}"
+                            });
+                        }
                     }
                 }
-            }
 
-            UpcomingCount = UpcomingAppointments.Count;
+                UpcomingCount = UpcomingAppointments.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Staff Dashboard error: {ex.Message}");
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.SqlClient;
+using EmontiOptometrist.Web.Models;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
@@ -10,9 +11,9 @@ namespace EmontiOptometrist.Web.Pages.Admin;
 public class DashboardModel : PageModel
 {
     private readonly IConfiguration _configuration;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public DashboardModel(IConfiguration configuration, UserManager<IdentityUser> userManager)
+    public DashboardModel(IConfiguration configuration, UserManager<ApplicationUser> userManager)
     {
         _configuration = configuration;
         _userManager = userManager;
@@ -28,45 +29,54 @@ public class DashboardModel : PageModel
     public void OnGet()
     {
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
-
-        using (var conn = new SqlConnection(connStr))
+        if (!string.IsNullOrEmpty(connStr))
         {
-            conn.Open();
-
-            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order] WHERE CAST(Order_Date AS DATE) = CAST(GETDATE() AS DATE)", conn))
-                TotalOrdersToday = Convert.ToInt32(cmd.ExecuteScalar());
-
-            using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Order_Total), 0) FROM [Order]", conn))
-                TotalRevenue = Convert.ToDecimal(cmd.ExecuteScalar());
-
-            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order] WHERE Order_Status IN ('Pending', 'Processing')", conn))
-                PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
-
-            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Products2", conn))
-                TotalProducts = Convert.ToInt32(cmd.ExecuteScalar());
-
-            using (var cmd = new SqlCommand(@"
-                SELECT TOP 5 OrderID, CustID, Order_Date, Order_Total, Order_Status
-                FROM [Order] ORDER BY Order_Date DESC", conn))
+            try
             {
-                using (var reader = cmd.ExecuteReader())
+                using (var conn = new SqlConnection(connStr))
                 {
-                    while (reader.Read())
+                    conn.Open();
+
+                    using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order] WHERE CAST(Order_Date AS DATE) = CAST(GETDATE() AS DATE)", conn))
+                        TotalOrdersToday = Convert.ToInt32(cmd.ExecuteScalar());
+
+                    using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Order_Total), 0) FROM [Order]", conn))
+                        TotalRevenue = Convert.ToDecimal(cmd.ExecuteScalar());
+
+                    using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order] WHERE Order_Status IN ('Pending', 'Processing')", conn))
+                        PendingOrders = Convert.ToInt32(cmd.ExecuteScalar());
+
+                    using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Products2", conn))
+                        TotalProducts = Convert.ToInt32(cmd.ExecuteScalar());
+
+                    using (var cmd = new SqlCommand(@"
+                        SELECT TOP 5 OrderID, CustID, Order_Date, Order_Total, Order_Status
+                        FROM [Order] ORDER BY Order_Date DESC", conn))
                     {
-                        RecentOrders.Add(new RecentOrderItem
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            OrderID = Convert.ToInt32(reader["OrderID"]),
-                            CustID = reader["CustID"].ToString(),
-                            OrderDate = Convert.ToDateTime(reader["Order_Date"]),
-                            Total = Convert.ToDecimal(reader["Order_Total"]),
-                            Status = reader["Order_Status"].ToString()
-                        });
+                            while (reader.Read())
+                            {
+                                RecentOrders.Add(new RecentOrderItem
+                                {
+                                    OrderID = Convert.ToInt32(reader["OrderID"]),
+                                    CustID = reader["CustID"].ToString(),
+                                    OrderDate = Convert.ToDateTime(reader["Order_Date"]),
+                                    Total = Convert.ToDecimal(reader["Order_Total"]),
+                                    Status = reader["Order_Status"].ToString()
+                                });
+                            }
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Admin Dashboard error: {ex.Message}");
+            }
         }
 
-        TotalStaff = _userManager.Users.Count();
+        try { TotalStaff = _userManager.Users.Count(); } catch { }
     }
 }
 

@@ -29,42 +29,58 @@ public class ManageProductsModel : PageModel
     [BindProperty]
     public ProductInput EditProduct { get; set; } = new();
 
-    public void OnGet()
+    private void LoadProducts()
     {
         Products = _productDb.GetAllProducts();
-        Categories = _productDb.GetCategories();
-        Brands = _productDb.GetBrands();
+        Categories = Products.Select(p => p.Category).Where(c => !string.IsNullOrEmpty(c)).Distinct().OrderBy(c => c).ToList();
+        Brands = Products.Select(p => p.Brand).Where(b => !string.IsNullOrEmpty(b)).Distinct().OrderBy(b => b).ToList();
+    }
+
+    public void OnGet()
+    {
+        LoadProducts();
     }
 
     public IActionResult OnPostAdd()
     {
         if (!ModelState.IsValid)
         {
-            Products = _productDb.GetAllProducts();
-            Categories = _productDb.GetCategories();
-            Brands = _productDb.GetBrands();
+            LoadProducts();
             return Page();
         }
 
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
-
-        using (var conn = new SqlConnection(connStr))
+        if (!string.IsNullOrEmpty(connStr))
         {
-            conn.Open();
-            using (var cmd = new SqlCommand(@"
-                INSERT INTO Products2 (Product_Name, Product_Brand, Product_Category, Product_Price, QuantityOnHand)
-                VALUES (@Name, @Brand, @Category, @Price, @Stock)", conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@Name", NewProduct.Name);
-                cmd.Parameters.AddWithValue("@Brand", NewProduct.Brand);
-                cmd.Parameters.AddWithValue("@Category", NewProduct.Category);
-                cmd.Parameters.AddWithValue("@Price", NewProduct.Price);
-                cmd.Parameters.AddWithValue("@Stock", NewProduct.Stock);
-                cmd.ExecuteNonQuery();
+                using (var conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(@"
+                        INSERT INTO Products2 (Product_Name, Product_Brand, Product_Category, Product_Price, QuantityOnHand)
+                        VALUES (@Name, @Brand, @Category, @Price, @Stock)", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Name", NewProduct.Name);
+                        cmd.Parameters.AddWithValue("@Brand", NewProduct.Brand);
+                        cmd.Parameters.AddWithValue("@Category", NewProduct.Category);
+                        cmd.Parameters.AddWithValue("@Price", NewProduct.Price);
+                        cmd.Parameters.AddWithValue("@Stock", NewProduct.Stock);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                TempData["SuccessMessage"] = $"Product \"{NewProduct.Name}\" added successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error adding product: {ex.Message}";
             }
         }
+        else
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+        }
 
-        TempData["SuccessMessage"] = $"Product \"{NewProduct.Name}\" added successfully.";
         return RedirectToPage();
     }
 
@@ -72,52 +88,76 @@ public class ManageProductsModel : PageModel
     {
         if (!ModelState.IsValid)
         {
-            Products = _productDb.GetAllProducts();
-            Categories = _productDb.GetCategories();
-            Brands = _productDb.GetBrands();
+            LoadProducts();
             return Page();
         }
 
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
-
-        using (var conn = new SqlConnection(connStr))
+        if (!string.IsNullOrEmpty(connStr))
         {
-            conn.Open();
-            using (var cmd = new SqlCommand(@"
-                UPDATE Products2
-                SET Product_Name = @Name, Product_Brand = @Brand, Product_Category = @Category,
-                    Product_Price = @Price, QuantityOnHand = @Stock
-                WHERE Product_ID = @Id", conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@Id", EditProduct.Id);
-                cmd.Parameters.AddWithValue("@Name", EditProduct.Name);
-                cmd.Parameters.AddWithValue("@Brand", EditProduct.Brand);
-                cmd.Parameters.AddWithValue("@Category", EditProduct.Category);
-                cmd.Parameters.AddWithValue("@Price", EditProduct.Price);
-                cmd.Parameters.AddWithValue("@Stock", EditProduct.Stock);
-                cmd.ExecuteNonQuery();
+                using (var conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(@"
+                        UPDATE Products2
+                        SET Product_Name = @Name, Product_Brand = @Brand, Product_Category = @Category,
+                            Product_Price = @Price, QuantityOnHand = @Stock
+                        WHERE Product_ID = @Id", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", EditProduct.Id);
+                        cmd.Parameters.AddWithValue("@Name", EditProduct.Name);
+                        cmd.Parameters.AddWithValue("@Brand", EditProduct.Brand);
+                        cmd.Parameters.AddWithValue("@Category", EditProduct.Category);
+                        cmd.Parameters.AddWithValue("@Price", EditProduct.Price);
+                        cmd.Parameters.AddWithValue("@Stock", EditProduct.Stock);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                TempData["SuccessMessage"] = $"Product \"{EditProduct.Name}\" updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating product: {ex.Message}";
             }
         }
+        else
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+        }
 
-        TempData["SuccessMessage"] = $"Product \"{EditProduct.Name}\" updated successfully.";
         return RedirectToPage();
     }
 
     public IActionResult OnPostDelete(int id)
     {
         var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
-
-        using (var conn = new SqlConnection(connStr))
+        if (!string.IsNullOrEmpty(connStr))
         {
-            conn.Open();
-            using (var cmd = new SqlCommand("DELETE FROM Products2 WHERE Product_ID = @Id", conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@Id", id);
-                cmd.ExecuteNonQuery();
+                using (var conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand("DELETE FROM Products2 WHERE Product_ID = @Id", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", id);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                TempData["SuccessMessage"] = $"Product #{id} deleted.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting product: {ex.Message}";
             }
         }
+        else
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+        }
 
-        TempData["SuccessMessage"] = $"Product #{id} deleted.";
         return RedirectToPage();
     }
 }
