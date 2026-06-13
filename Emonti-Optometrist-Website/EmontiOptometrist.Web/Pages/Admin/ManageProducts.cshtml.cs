@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
 
@@ -49,26 +49,24 @@ public class ManageProductsModel : PageModel
             return Page();
         }
 
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (!string.IsNullOrEmpty(connStr))
         {
             try
             {
-                using (var conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (var cmd = new SqlCommand(@"
-                        INSERT INTO Products2 (Product_Name, Product_Brand, Product_Category, Product_Price, QuantityOnHand)
-                        VALUES (@Name, @Brand, @Category, @Price, @Stock)", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Name", NewProduct.Name);
-                        cmd.Parameters.AddWithValue("@Brand", NewProduct.Brand);
-                        cmd.Parameters.AddWithValue("@Category", NewProduct.Category);
-                        cmd.Parameters.AddWithValue("@Price", NewProduct.Price);
-                        cmd.Parameters.AddWithValue("@Stock", NewProduct.Stock);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
+                using var conn = new SqliteConnection(connStr);
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO Products2 (Product_Name, Product_Brand, Product_Category, Product_Price, QuantityOnHand)
+                    VALUES (@Name, @Brand, @Category, @Price, @Stock)";
+                cmd.Parameters.AddWithValue("@Name", NewProduct.Name);
+                cmd.Parameters.AddWithValue("@Brand", NewProduct.Brand);
+                cmd.Parameters.AddWithValue("@Category", NewProduct.Category);
+                cmd.Parameters.AddWithValue("@Price", NewProduct.Price);
+                cmd.Parameters.AddWithValue("@Stock", NewProduct.Stock);
+                cmd.ExecuteNonQuery();
+
                 TempData["SuccessMessage"] = $"Product \"{NewProduct.Name}\" added successfully.";
             }
             catch (Exception ex)
@@ -92,29 +90,27 @@ public class ManageProductsModel : PageModel
             return Page();
         }
 
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (!string.IsNullOrEmpty(connStr))
         {
             try
             {
-                using (var conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (var cmd = new SqlCommand(@"
-                        UPDATE Products2
-                        SET Product_Name = @Name, Product_Brand = @Brand, Product_Category = @Category,
-                            Product_Price = @Price, QuantityOnHand = @Stock
-                        WHERE Product_ID = @Id", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Id", EditProduct.Id);
-                        cmd.Parameters.AddWithValue("@Name", EditProduct.Name);
-                        cmd.Parameters.AddWithValue("@Brand", EditProduct.Brand);
-                        cmd.Parameters.AddWithValue("@Category", EditProduct.Category);
-                        cmd.Parameters.AddWithValue("@Price", EditProduct.Price);
-                        cmd.Parameters.AddWithValue("@Stock", EditProduct.Stock);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
+                using var conn = new SqliteConnection(connStr);
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE Products2
+                    SET Product_Name = @Name, Product_Brand = @Brand, Product_Category = @Category,
+                        Product_Price = @Price, QuantityOnHand = @Stock
+                    WHERE Product_ID = @Id";
+                cmd.Parameters.AddWithValue("@Id", EditProduct.Id);
+                cmd.Parameters.AddWithValue("@Name", EditProduct.Name);
+                cmd.Parameters.AddWithValue("@Brand", EditProduct.Brand);
+                cmd.Parameters.AddWithValue("@Category", EditProduct.Category);
+                cmd.Parameters.AddWithValue("@Price", EditProduct.Price);
+                cmd.Parameters.AddWithValue("@Stock", EditProduct.Stock);
+                cmd.ExecuteNonQuery();
+
                 TempData["SuccessMessage"] = $"Product \"{EditProduct.Name}\" updated successfully.";
             }
             catch (Exception ex)
@@ -132,20 +128,18 @@ public class ManageProductsModel : PageModel
 
     public IActionResult OnPostDelete(int id)
     {
-        var connStr = _configuration.GetConnectionString("ProductConnection") ?? "";
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (!string.IsNullOrEmpty(connStr))
         {
             try
             {
-                using (var conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (var cmd = new SqlCommand("DELETE FROM Products2 WHERE Product_ID = @Id", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
+                using var conn = new SqliteConnection(connStr);
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM Products2 WHERE Product_ID = @Id";
+                cmd.Parameters.AddWithValue("@Id", id);
+                cmd.ExecuteNonQuery();
+
                 TempData["SuccessMessage"] = $"Product #{id} deleted.";
             }
             catch (Exception ex)

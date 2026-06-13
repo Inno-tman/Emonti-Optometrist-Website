@@ -24,6 +24,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddRazorPages();
 
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<DatabaseInit>();
 builder.Services.AddSingleton<FAQDatabase>();
 builder.Services.AddSingleton<AIChatService>();
 builder.Services.AddSingleton<ProductDatabase>();
@@ -39,6 +40,9 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+
+    var dbInit = scope.ServiceProvider.GetRequiredService<DatabaseInit>();
+    dbInit.Initialize();
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

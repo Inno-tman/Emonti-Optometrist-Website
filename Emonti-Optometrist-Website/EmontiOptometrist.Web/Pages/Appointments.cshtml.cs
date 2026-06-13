@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -28,8 +28,8 @@ public class AppointmentsModel : PageModel
         if (string.IsNullOrEmpty(custId))
             return;
 
-        var connStr = _configuration.GetConnectionString("ProductConnection");
-        using var conn = new SqlConnection(connStr);
+        var connStr = _configuration.GetConnectionString("DefaultConnection");
+        using var conn = new SqliteConnection(connStr);
         conn.Open();
 
         string query = @"
@@ -41,13 +41,14 @@ public class AppointmentsModel : PageModel
             WHERE a.Cust_ID = @CustId
             ORDER BY a.Appointment_Date DESC";
 
-        using var cmd = new SqlCommand(query, conn);
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = query;
         cmd.Parameters.AddWithValue("@CustId", custId);
 
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
-            var date = Convert.ToDateTime(reader["Appointment_Date"]);
+            var date = DateTime.Parse(reader["Appointment_Date"].ToString());
             var now = DateTime.Now;
 
             string type;

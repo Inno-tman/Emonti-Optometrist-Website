@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -53,20 +53,23 @@ public class PersonalDetailsModel : PageModel
 
         try
         {
-            var connStr = _configuration.GetConnectionString("ProductConnection");
-            using var conn = new SqlConnection(connStr);
+            var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
+            using var conn = new SqliteConnection(connStr);
             conn.Open();
+            using var cmd = conn.CreateCommand();
 
-            string query = @"
+            cmd.CommandText = @"
                 UPDATE customer
-                SET Cust_FirstName = @FirstName,
+                SET Customer_Name = @FirstName,
+                    Customer_Surname = @LastName,
+                    Customer_Email = @Email,
+                    Customer_Phone = @Phone,
+                    Cust_Address = @Address,
+                    Cust_FirstName = @FirstName,
                     Cust_LastName = @LastName,
                     Cust_Email = @Email,
-                    Cust_Phone = @Phone,
-                    Cust_Address = @Address
+                    Cust_Phone = @Phone
                 WHERE Cust_ID = @CustId";
-
-            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@FirstName", FirstName);
             cmd.Parameters.AddWithValue("@LastName", LastName);
             cmd.Parameters.AddWithValue("@Email", Email);
@@ -95,25 +98,23 @@ public class PersonalDetailsModel : PageModel
 
         try
         {
-            var connStr = _configuration.GetConnectionString("ProductConnection");
-            using var conn = new SqlConnection(connStr);
+            var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
+            using var conn = new SqliteConnection(connStr);
             conn.Open();
-
-            string query = @"
-                SELECT Cust_FirstName, Cust_LastName, Cust_Email, Cust_Phone, Cust_Address
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone, Cust_Address
                 FROM customer
                 WHERE Cust_ID = @CustId";
-
-            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@CustId", userId);
 
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
-                FirstName = reader["Cust_FirstName"]?.ToString() ?? "";
-                LastName = reader["Cust_LastName"]?.ToString() ?? "";
-                Email = reader["Cust_Email"]?.ToString() ?? "";
-                Phone = reader["Cust_Phone"]?.ToString() ?? "";
+                FirstName = reader["Customer_Name"]?.ToString() ?? "";
+                LastName = reader["Customer_Surname"]?.ToString() ?? "";
+                Email = reader["Customer_Email"]?.ToString() ?? "";
+                Phone = reader["Customer_Phone"]?.ToString() ?? "";
                 Address = reader["Cust_Address"]?.ToString() ?? "";
             }
         }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
 
@@ -53,7 +53,7 @@ public class CheckoutModel : PageModel
         _cartDb = cartDb;
         _orderDb = orderDb;
         _httpContextAccessor = httpContextAccessor;
-        _connectionString = configuration.GetConnectionString("ProductConnection") ?? "";
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
     }
 
     public IActionResult OnGet()
@@ -128,19 +128,18 @@ public class CheckoutModel : PageModel
         try
         {
             var custId = User.Identity!.Name ?? "";
-            using var conn = new SqlConnection(_connectionString);
-            string query = @"
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
                 SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone,
                        Street_Number, Street_Name, Complex_Name, Unit_Number,
                        City, Postal_Code
                 FROM customer
                 WHERE Cust_ID = @CustID";
-
-            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@CustID", custId);
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
 
+            using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
                 FirstName = reader["Customer_Name"]?.ToString() ?? "";
@@ -176,20 +175,13 @@ public class CheckoutModel : PageModel
 
     private bool ValidateInput()
     {
-        if (string.IsNullOrWhiteSpace(FirstName))
-        { Message = "First name is required."; return false; }
-        if (string.IsNullOrWhiteSpace(LastName))
-        { Message = "Last name is required."; return false; }
-        if (string.IsNullOrWhiteSpace(Email))
-        { Message = "Email is required."; return false; }
-        if (string.IsNullOrWhiteSpace(Phone))
-        { Message = "Phone number is required."; return false; }
-        if (string.IsNullOrWhiteSpace(Address))
-        { Message = "Delivery address is required."; return false; }
-        if (string.IsNullOrWhiteSpace(City))
-        { Message = "City is required."; return false; }
-        if (string.IsNullOrWhiteSpace(PostalCode))
-        { Message = "Postal code is required."; return false; }
+        if (string.IsNullOrWhiteSpace(FirstName)) { Message = "First name is required."; return false; }
+        if (string.IsNullOrWhiteSpace(LastName)) { Message = "Last name is required."; return false; }
+        if (string.IsNullOrWhiteSpace(Email)) { Message = "Email is required."; return false; }
+        if (string.IsNullOrWhiteSpace(Phone)) { Message = "Phone number is required."; return false; }
+        if (string.IsNullOrWhiteSpace(Address)) { Message = "Delivery address is required."; return false; }
+        if (string.IsNullOrWhiteSpace(City)) { Message = "City is required."; return false; }
+        if (string.IsNullOrWhiteSpace(PostalCode)) { Message = "Postal code is required."; return false; }
 
         if (PaymentMethod != "credit_card" && PaymentMethod != "cash_on_delivery" && PaymentMethod != "medical_aid")
         { Message = "Please select a valid payment method."; return false; }
@@ -226,7 +218,7 @@ public class CheckoutModel : PageModel
                 Notes = ""
             };
 
-            using var conn = new SqlConnection(_connectionString);
+            using var conn = new SqliteConnection(_connectionString);
             conn.Open();
             using var transaction = conn.BeginTransaction();
 
@@ -257,7 +249,9 @@ public class CheckoutModel : PageModel
                     int custIdInt = 0;
                     int.TryParse(custId, out custIdInt);
                     string transNumber = DateTime.Now.ToString("yyMMddHHmmss") + new Random().Next(0, 10);
-                    string insertPayment = @"
+                    using var pmtCmd = conn.CreateCommand();
+                    pmtCmd.Transaction = transaction;
+                    pmtCmd.CommandText = @"
                         INSERT INTO Payments (
                             Cust_ID, Order_ID, Appointment_ID, Transaction_Number, Payment_Date,
                             Consultation_Fee, Order_Payment, Total_Payable, Payment_Method,
@@ -271,14 +265,13 @@ public class CheckoutModel : PageModel
                             0, NULL, @Created_Date, @Created_By, 'Pending',
                             NULL, NULL, NULL, NULL, NULL, NULL
                         )";
-                    using var pmtCmd = new SqlCommand(insertPayment, conn, transaction);
                     pmtCmd.Parameters.AddWithValue("@Cust_ID", custIdInt);
                     pmtCmd.Parameters.AddWithValue("@Order_ID", orderId);
                     pmtCmd.Parameters.AddWithValue("@Transaction_Number", transNumber);
                     pmtCmd.Parameters.AddWithValue("@Order_Payment", Total);
                     pmtCmd.Parameters.AddWithValue("@Total_Payable", Total);
                     pmtCmd.Parameters.AddWithValue("@Payment_Method", order.Payment_Method);
-                    pmtCmd.Parameters.AddWithValue("@Created_Date", DateTime.Now);
+                    pmtCmd.Parameters.AddWithValue("@Created_Date", DateTime.Now.ToString("o"));
                     pmtCmd.Parameters.AddWithValue("@Created_By", "WEBSITE");
                     pmtCmd.ExecuteNonQuery();
                 }
