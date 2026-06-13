@@ -1,0 +1,402 @@
+@page
+@model ReportsModel
+@{
+    ViewData["Title"] = "Reports Dashboard";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @@keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .reports-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .reports-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .reports-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        .reports-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .reports-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.95;
+        }
+
+        .reports-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 60vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.1);
+            transition: all 0.3s ease;
+            animation: countUp 0.6s ease-out;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(102,126,234,0.15);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .stat-card .stat-value.revenue {
+            color: #27ae60;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .section-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+        .section-header h2 i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        th {
+            padding: 0.9rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:hover td {
+            background: rgba(102,126,234,0.03);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .status-badge.completed, .status-badge.delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.pending, .status-badge.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-badge.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-badge.shipped {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .popular-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .popular-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102,126,234,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+        .popular-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+        }
+        .popular-rank {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .popular-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .popular-info h4 {
+            margin: 0 0 0.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .popular-info .brand {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .popular-stats {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .popular-stats .sold {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        .popular-stats .revenue {
+            font-size: 0.8rem;
+            color: #27ae60;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+
+        @@media (max-width: 768px) {
+            .reports-hero {
+                padding: 6rem 1rem 3rem;
+            }
+            .reports-section {
+                padding: 1.5rem 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .stat-card {
+                padding: 1rem;
+            }
+            .stat-card .stat-value {
+                font-size: 1.5rem;
+            }
+            .popular-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @@media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<section class="reports-hero">
+    <div class="container">
+        <h1><i class="fas fa-chart-bar"></i> Reports Dashboard</h1>
+        <p>Overview of sales, orders, and product performance</p>
+    </div>
+</section>
+
+<section class="reports-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                <h3>Total Orders</h3>
+                <div class="stat-value">@Model.TotalOrders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                <h3>Total Revenue</h3>
+                <div class="stat-value revenue">R @Model.TotalRevenue.ToString("N2")</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-box"></i></div>
+                <h3>Products Sold</h3>
+                <div class="stat-value">@Model.TotalProductsSold</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <h3>Total Customers</h3>
+                <div class="stat-value">@Model.TotalCustomers</div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-clock"></i> Recent Orders</h2>
+        </div>
+        <div class="table-wrapper">
+            @if (Model.RecentOrders.Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td>#@order.OrderID</td>
+                                <td>@order.CustID</td>
+                                <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>R @order.Total.ToString("N2")</td>
+                                <td><span class="status-badge @order.Status.ToLower()">@order.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No orders found.</p>
+                </div>
+            }
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-star"></i> Popular Products</h2>
+        </div>
+        <div class="popular-grid">
+            @if (Model.PopularProducts.Count > 0)
+            {
+                var rank = 1;
+                foreach (var product in Model.PopularProducts)
+                {
+                    <div class="popular-card">
+                        <div class="popular-rank">@rank</div>
+                        <div class="popular-info">
+                            <h4>@product.ProductName</h4>
+                            <span class="brand">@product.Brand</span>
+                        </div>
+                        <div class="popular-stats">
+                            <div class="sold">@product.TotalSold sold</div>
+                            <div class="revenue">R @product.TotalRevenue.ToString("N2")</div>
+                        </div>
+                    </div>
+                    rank++;
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>No product data available.</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>

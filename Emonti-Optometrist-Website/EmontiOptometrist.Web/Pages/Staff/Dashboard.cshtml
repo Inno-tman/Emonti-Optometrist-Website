@@ -1,0 +1,390 @@
+@page
+@model EmontiOptometrist.Web.Pages.Staff.DashboardModel
+@{
+    ViewData["Title"] = "Staff Dashboard";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @@keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .staff-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 8rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .staff-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .staff-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        .staff-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .staff-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        .staff-hero .greeting {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            margin-top: 0.75rem;
+        }
+
+        .dashboard-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 60vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.1);
+            transition: all 0.3s ease;
+            animation: countUp 0.6s ease-out;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(102,126,234,0.15);
+        }
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.3rem;
+            color: white;
+        }
+        .stat-card h3 {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .stat-card .stat-value.warning {
+            color: #e67e22;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .section-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+        .section-header h2 i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        th {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:hover td {
+            background: rgba(102,126,234,0.03);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .status-badge.scheduled {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .status-badge.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-badge.missed {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .quick-link {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid rgba(102,126,234,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .quick-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+            border-color: rgba(102,126,234,0.3);
+        }
+        .quick-link-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .quick-link-info h4 {
+            margin: 0 0 0.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .quick-link-info span {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            color: #ddd;
+        }
+
+        @@media (max-width: 768px) {
+            .staff-hero {
+                padding: 6rem 1rem 2.5rem;
+            }
+            .dashboard-section {
+                padding: 1.5rem 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .stat-card {
+                padding: 1rem;
+            }
+            .stat-card .stat-value {
+                font-size: 1.5rem;
+            }
+            .quick-links {
+                grid-template-columns: 1fr;
+            }
+        }
+        @@media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<section class="staff-hero">
+    <div class="container">
+        <h1><i class="fas fa-clinic-medical"></i> Staff Dashboard</h1>
+        <p>Manage your appointments and daily tasks</p>
+        <div class="greeting">Welcome back, @Model.StaffName</div>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                <h3>Today's Appointments</h3>
+                <div class="stat-value">@Model.TodayAppointments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <h3>Pending Orders</h3>
+                <div class="stat-value warning">@Model.PendingOrders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <h3>Total Patients</h3>
+                <div class="stat-value">@Model.TotalPatients</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-list"></i></div>
+                <h3>Upcoming</h3>
+                <div class="stat-value">@Model.UpcomingCount</div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
+        </div>
+        <div class="table-wrapper">
+            @if (Model.UpcomingAppointments.Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var apt in Model.UpcomingAppointments)
+                        {
+                            <tr>
+                                <td>@apt.PatientName</td>
+                                <td>@apt.AppointmentDate.ToString("MMM dd, yyyy")</td>
+                                <td>@apt.Timeslot</td>
+                                <td><span class="status-badge @apt.Status.ToLower()">@apt.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-calendar-alt"></i>
+                    <p>No upcoming appointments.</p>
+                </div>
+            }
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-link"></i> Quick Links</h2>
+        </div>
+        <div class="quick-links">
+            <a href="/Orders" class="quick-link">
+                <div class="quick-link-icon"><i class="fas fa-shopping-cart"></i></div>
+                <div class="quick-link-info">
+                    <h4>Manage Orders</h4>
+                    <span>View and update customer orders</span>
+                </div>
+            </a>
+            <a href="/Reports" class="quick-link">
+                <div class="quick-link-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="quick-link-info">
+                    <h4>Reports</h4>
+                    <span>Sales and performance reports</span>
+                </div>
+            </a>
+            <a href="/Appointments" class="quick-link">
+                <div class="quick-link-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="quick-link-info">
+                    <h4>Appointments</h4>
+                    <span>View all appointments</span>
+                </div>
+            </a>
+            <a href="/Profile" class="quick-link">
+                <div class="quick-link-icon"><i class="fas fa-user-cog"></i></div>
+                <div class="quick-link-info">
+                    <h4>My Profile</h4>
+                    <span>Update your account settings</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
