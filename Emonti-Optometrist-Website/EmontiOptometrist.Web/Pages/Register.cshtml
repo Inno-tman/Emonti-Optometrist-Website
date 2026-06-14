@@ -96,7 +96,7 @@
             </div>
 
             <div class="form-section">
-                <h3 class="section-title">Medical Information</h3>
+                <h3 class="section-title">Medical Information <span style="color:#888;font-weight:400;font-size:0.85rem;">(optional)</span></h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Medical Aid Provider</label>
@@ -107,34 +107,36 @@
                         <input asp-for="Input.MedicalAidNumber" placeholder="Enter your medical aid number" />
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Are you the main member on this medical aid? <span class="required">*</span></label>
-                        <div style="display:flex;gap:1rem;margin-top:0.5rem;">
-                            <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
-                                <input type="radio" asp-for="Input.IsMainMember" value="true" id="IsMainMemberYes" /> Yes
-                            </label>
-                            <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
-                                <input type="radio" asp-for="Input.IsMainMember" value="false" id="IsMainMemberNo" /> No
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div id="mainMemberDetails" style="display:none;">
+                <div id="medicalAidFields" style="display:none;">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Main Member First Name</label>
-                            <input asp-for="Input.MainMemberName" placeholder="Enter main member's first name" />
-                        </div>
-                        <div class="form-group">
-                            <label>Main Member Last Name</label>
-                            <input asp-for="Input.MainMemberSurname" placeholder="Enter main member's last name" />
+                            <label>Are you the main member?</label>
+                            <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+                                <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
+                                    <input type="radio" asp-for="Input.IsMainMember" value="true" id="IsMainMemberYes" /> Yes
+                                </label>
+                                <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
+                                    <input type="radio" asp-for="Input.IsMainMember" value="false" id="IsMainMemberNo" /> No
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Main Member ID Number (13 digits)</label>
-                            <input asp-for="Input.MainMemberID" placeholder="e.g., 1234567890123" />
+                    <div id="mainMemberDetails" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Main Member First Name</label>
+                                <input asp-for="Input.MainMemberName" placeholder="Enter main member's first name" />
+                            </div>
+                            <div class="form-group">
+                                <label>Main Member Last Name</label>
+                                <input asp-for="Input.MainMemberSurname" placeholder="Enter main member's last name" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Main Member ID Number (13 digits)</label>
+                                <input asp-for="Input.MainMemberID" placeholder="e.g., 1234567890123" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -228,13 +230,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        var medicalAid = document.getElementById('Input_MedicalAid');
+        var medicalAidNum = document.getElementById('Input_MedicalAidNumber');
+        var medicalAidFields = document.getElementById('medicalAidFields');
         var yesRadio = document.getElementById('IsMainMemberYes');
         var noRadio = document.getElementById('IsMainMemberNo');
         var mainMemberDetails = document.getElementById('mainMemberDetails');
-        function toggleFields() { mainMemberDetails.style.display = (noRadio && noRadio.checked) ? 'block' : 'none'; }
-        if (yesRadio) yesRadio.addEventListener('change', toggleFields);
-        if (noRadio) noRadio.addEventListener('change', toggleFields);
-        toggleFields();
+
+        function toggleMedicalAid() {
+            var hasMed = (medicalAid && medicalAid.value.trim() !== '') || (medicalAidNum && medicalAidNum.value.trim() !== '');
+            if (medicalAidFields) medicalAidFields.style.display = hasMed ? 'block' : 'none';
+            if (!hasMed && yesRadio) yesRadio.checked = false;
+            if (!hasMed && noRadio) noRadio.checked = false;
+            toggleMainMember();
+        }
+
+        function toggleMainMember() {
+            if (mainMemberDetails) mainMemberDetails.style.display = (noRadio && noRadio.checked) ? 'block' : 'none';
+        }
+
+        if (medicalAid) medicalAid.addEventListener('input', toggleMedicalAid);
+        if (medicalAidNum) medicalAidNum.addEventListener('input', toggleMedicalAid);
+        if (yesRadio) yesRadio.addEventListener('change', toggleMainMember);
+        if (noRadio) noRadio.addEventListener('change', toggleMainMember);
+        toggleMedicalAid();
     });
 </script>
 

@@ -121,7 +121,8 @@ public class RegisterModel : PageModel
             }
         }
 
-        bool isMainMember = string.IsNullOrEmpty(Input.IsMainMember) || Input.IsMainMember == "true";
+        bool hasMedicalAid = !string.IsNullOrWhiteSpace(Input.MedicalAid) || !string.IsNullOrWhiteSpace(Input.MedicalAidNumber);
+        bool isMainMember = !hasMedicalAid || string.IsNullOrEmpty(Input.IsMainMember) || Input.IsMainMember == "true";
         if (!isMainMember)
         {
             if (string.IsNullOrWhiteSpace(Input.MainMemberName) || !Regex.IsMatch(Input.MainMemberName, @"^[a-zA-Z\s\-']{2,50}$"))
