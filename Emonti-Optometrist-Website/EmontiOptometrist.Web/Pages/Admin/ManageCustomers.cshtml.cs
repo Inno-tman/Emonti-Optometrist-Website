@@ -37,10 +37,10 @@ public class ManageCustomersModel : PageModel
 
         var sql = @"
             SELECT c.Cust_ID, c.Customer_Name, c.Customer_Surname, c.Customer_Email,
-                   c.Customer_Phone, c.City, c.Province, c.Customer_Create_Date,
+                   c.Customer_Phone, c.City, c.Province,
                    COALESCE(o.OrderCount, 0) AS OrderCount
             FROM customer c
-            LEFT JOIN (SELECT Cust_ID, COUNT(*) AS OrderCount FROM [Order] GROUP BY Cust_ID) o ON c.Cust_ID = o.Cust_ID";
+            LEFT JOIN (SELECT CustID, COUNT(*) AS OrderCount FROM [Order] GROUP BY CustID) o ON c.Cust_ID = o.CustID";
 
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
@@ -66,7 +66,6 @@ public class ManageCustomersModel : PageModel
                 Phone = reader["Customer_Phone"]?.ToString() ?? "",
                 City = reader["City"]?.ToString() ?? "",
                 Province = reader["Province"]?.ToString() ?? "",
-                CreateDate = reader["Customer_Create_Date"]?.ToString() ?? "",
                 OrderCount = Convert.ToInt32(reader["OrderCount"])
             });
         }
@@ -84,6 +83,5 @@ public class CustomerListItem
     public string Phone { get; set; } = "";
     public string City { get; set; } = "";
     public string Province { get; set; } = "";
-    public string CreateDate { get; set; } = "";
     public int OrderCount { get; set; }
 }
