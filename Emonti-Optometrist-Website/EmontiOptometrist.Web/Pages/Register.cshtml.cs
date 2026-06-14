@@ -213,10 +213,9 @@ public class RegisterModel : PageModel
 
         cmd.ExecuteNonQuery();
 
-        AuthSession.SignInCustomer(HttpContext, custId, Input.Email.Trim(), Input.FirstName.Trim(), Input.LastName.Trim());
-        _logger.LogInformation("Customer {Email} registered and logged in.", Input.Email);
+        TempData["RegistrationSuccess"] = "Account created successfully! You can now log in.";
 
-        return RedirectToPage("/Index");
+        return RedirectToPage("/Login");
     }
 
     private string BuildAddress()
