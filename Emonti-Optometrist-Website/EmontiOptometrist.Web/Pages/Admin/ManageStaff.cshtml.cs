@@ -1,105 +1,143 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using EmontiOptometrist.Web.Models;
+using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
-[Authorize(Roles = "Admin")]
 public class ManageStaffModel : PageModel
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly string _connectionString;
 
-    public ManageStaffModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public ManageStaffModel(IConfiguration configuration)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
     }
 
     public List<StaffUser> StaffUsers { get; set; } = new();
-    public List<ApplicationUser> AllUsers { get; set; } = new();
 
-    public async Task OnGetAsync()
+    public IActionResult OnGet()
     {
-        await LoadData();
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
+
+        LoadData();
+        return Page();
     }
 
-    public async Task<IActionResult> OnPostAddStaffAsync(string userId)
+    public IActionResult OnPostAddStaff(string staffEmail, string staffName, string staffSurname, string staffPassword, string staffRole)
     {
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
+
+        if (string.IsNullOrWhiteSpace(staffEmail) || string.IsNullOrWhiteSpace(staffName))
         {
-            if (!await _roleManager.RoleExistsAsync("Staff"))
-                await _roleManager.CreateAsync(new IdentityRole("Staff"));
-
-            if (!await _roleManager.RoleExistsAsync("Admin"))
-                await _roleManager.CreateAsync(new IdentityRole("Admin"));
-
-            await _userManager.AddToRoleAsync(user, "Staff");
-            TempData["SuccessMessage"] = $"{user.Email} added as staff.";
+            TempData["ErrorMessage"] = "Email and name are required.";
+            LoadData();
+            return Page();
         }
 
-        return RedirectToPage();
-    }
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
 
-    public async Task<IActionResult> OnPostRemoveStaffAsync(string userId)
-    {
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
+        using var checkCmd = conn.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM Staff WHERE Staff_Email = @Email";
+        checkCmd.Parameters.AddWithValue("@Email", staffEmail.Trim());
+        if ((long)checkCmd.ExecuteScalar() > 0)
         {
-            await _userManager.RemoveFromRoleAsync(user, "Staff");
-            await _userManager.RemoveFromRoleAsync(user, "Admin");
-            TempData["SuccessMessage"] = $"{user.Email} removed from staff.";
+            TempData["ErrorMessage"] = "A staff member with this email already exists.";
+            LoadData();
+            return Page();
         }
 
-        return RedirectToPage();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO Staff (Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Password, Staff_Role)
+            VALUES (@id, @name, @surname, @email, @password, @role)";
+        cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+        cmd.Parameters.AddWithValue("@name", staffName.Trim());
+        cmd.Parameters.AddWithValue("@surname", string.IsNullOrWhiteSpace(staffSurname) ? "" : staffSurname.Trim());
+        cmd.Parameters.AddWithValue("@email", staffEmail.Trim());
+        cmd.Parameters.AddWithValue("@password", string.IsNullOrWhiteSpace(staffPassword) ? "Staff123" : staffPassword);
+        cmd.Parameters.AddWithValue("@role", string.IsNullOrWhiteSpace(staffRole) ? "Staff" : staffRole);
+        cmd.ExecuteNonQuery();
+
+        TempData["SuccessMessage"] = $"{staffEmail} added as staff.";
+        LoadData();
+        return Page();
     }
 
-    public async Task<IActionResult> OnPostMakeAdminAsync(string userId)
+    public IActionResult OnPostRemoveStaff(string staffId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
-        {
-            if (!await _roleManager.RoleExistsAsync("Admin"))
-                await _roleManager.CreateAsync(new IdentityRole("Admin"));
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
 
-            await _userManager.AddToRoleAsync(user, "Admin");
-            TempData["SuccessMessage"] = $"{user.Email} promoted to admin.";
-        }
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM Staff WHERE Staff_ID = @Id AND Staff_Role != 'Admin'";
+        cmd.Parameters.AddWithValue("@Id", staffId);
+        cmd.ExecuteNonQuery();
 
-        return RedirectToPage();
+        TempData["SuccessMessage"] = "Staff member removed.";
+        LoadData();
+        return Page();
     }
 
-    private async Task LoadData()
+    public IActionResult OnPostMakeAdmin(string staffId)
     {
-        AllUsers = await _userManager.Users.OrderBy(u => u.Email).ToListAsync();
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
 
-        var staffUsers = new List<StaffUser>();
-        foreach (var user in AllUsers)
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE Staff SET Staff_Role = 'Admin' WHERE Staff_ID = @Id";
+        cmd.Parameters.AddWithValue("@Id", staffId);
+        cmd.ExecuteNonQuery();
+
+        TempData["SuccessMessage"] = "Staff member promoted to admin.";
+        LoadData();
+        return Page();
+    }
+
+    private void LoadData()
+    {
+        var users = new List<StaffUser>();
+
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            SELECT Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Role
+            FROM Staff
+            ORDER BY Staff_Name";
+
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            if (roles.Any(r => r == "Staff" || r == "Admin"))
+            var role = reader["Staff_Role"]?.ToString() ?? "Staff";
+            users.Add(new StaffUser
             {
-                staffUsers.Add(new StaffUser
-                {
-                    UserId = user.Id,
-                    Email = user.Email ?? "",
-                    Roles = roles.ToList(),
-                    IsAdmin = roles.Contains("Admin")
-                });
-            }
+                StaffId = reader["Staff_ID"].ToString(),
+                Name = reader["Staff_Name"]?.ToString() ?? "",
+                Surname = reader["Staff_Surname"]?.ToString() ?? "",
+                Email = reader["Staff_Email"]?.ToString() ?? "",
+                Role = role,
+                IsAdmin = role == "Admin"
+            });
         }
-        StaffUsers = staffUsers;
+
+        StaffUsers = users;
     }
 }
 
 public class StaffUser
 {
-    public string UserId { get; set; } = "";
+    public string StaffId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Surname { get; set; } = "";
     public string Email { get; set; } = "";
-    public List<string> Roles { get; set; } = new();
+    public string Role { get; set; } = "";
     public bool IsAdmin { get; set; }
 }

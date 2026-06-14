@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using EmontiOptometrist.Web.Models;
@@ -6,19 +5,16 @@ using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class WishlistModel : PageModel
 {
     private readonly WishlistDatabase _wishlistDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public List<WishlistItem> WishlistItems { get; set; } = new();
     public string Message { get; set; } = "";
 
-    public WishlistModel(WishlistDatabase wishlistDb, IHttpContextAccessor httpContextAccessor)
+    public WishlistModel(WishlistDatabase wishlistDb)
     {
         _wishlistDb = wishlistDb;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public void OnGet()
@@ -43,9 +39,7 @@ public class WishlistModel : PageModel
 
     private void LoadWishlist()
     {
-        var userId = _httpContextAccessor.HttpContext?.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+        var userId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(userId))
         {
             Message = "Could not identify user.";

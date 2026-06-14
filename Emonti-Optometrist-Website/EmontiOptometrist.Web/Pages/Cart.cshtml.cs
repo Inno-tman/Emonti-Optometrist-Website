@@ -8,16 +8,14 @@ namespace EmontiOptometrist.Web.Pages;
 public class CartModel : PageModel
 {
     private readonly CartDatabase _cartDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public List<CartItem> CartItems { get; set; } = new();
     public decimal CartTotal { get; set; }
     public string Message { get; set; } = "";
 
-    public CartModel(CartDatabase cartDb, IHttpContextAccessor httpContextAccessor)
+    public CartModel(CartDatabase cartDb)
     {
         _cartDb = cartDb;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public void OnGet()
@@ -27,7 +25,7 @@ public class CartModel : PageModel
 
     public IActionResult OnPostUpdateQuantity(int cartItemId, string productId, int quantity)
     {
-        if (User.Identity?.IsAuthenticated == true)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             if (cartItemId > 0)
             {
@@ -39,7 +37,7 @@ public class CartModel : PageModel
         }
         else
         {
-            var sessionId = _httpContextAccessor.HttpContext?.Session?.Id ?? "";
+            var sessionId = HttpContext.Session?.Id ?? "";
             var cartItems = CartTransfer.GetCart(sessionId);
             var item = cartItems.FirstOrDefault(c => c.ProductId == productId);
             if (item != null)
@@ -58,14 +56,14 @@ public class CartModel : PageModel
 
     public IActionResult OnPostRemoveItem(int cartItemId, string productId)
     {
-        if (User.Identity?.IsAuthenticated == true)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             if (cartItemId > 0)
                 _cartDb.RemoveCartItem(cartItemId);
         }
         else
         {
-            var sessionId = _httpContextAccessor.HttpContext?.Session?.Id ?? "";
+            var sessionId = HttpContext.Session?.Id ?? "";
             var cartItems = CartTransfer.GetCart(sessionId);
             cartItems.RemoveAll(c => c.ProductId == productId);
             CartTransfer.SaveCart(sessionId, cartItems);
@@ -77,11 +75,11 @@ public class CartModel : PageModel
 
     private void LoadCart()
     {
-        if (User.Identity?.IsAuthenticated == true)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             try
             {
-                var custId = User.Identity.Name ?? "guest";
+                var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
                 CartItems = _cartDb.GetCartItems(cartId);
             }
@@ -92,7 +90,7 @@ public class CartModel : PageModel
         }
         else
         {
-            var sessionId = _httpContextAccessor.HttpContext?.Session?.Id ?? "";
+            var sessionId = HttpContext.Session?.Id ?? "";
             CartItems = CartTransfer.GetCart(sessionId);
         }
 

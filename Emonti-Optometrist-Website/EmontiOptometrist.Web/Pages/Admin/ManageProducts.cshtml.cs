@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -7,7 +6,6 @@ using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
-[Authorize(Roles = "Admin")]
 public class ManageProductsModel : PageModel
 {
     private readonly IConfiguration _configuration;
@@ -36,9 +34,12 @@ public class ManageProductsModel : PageModel
         Brands = Products.Select(p => p.Brand).Where(b => !string.IsNullOrEmpty(b)).Distinct().OrderBy(b => b).ToList();
     }
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
         LoadProducts();
+        return Page();
     }
 
     public IActionResult OnPostAdd()

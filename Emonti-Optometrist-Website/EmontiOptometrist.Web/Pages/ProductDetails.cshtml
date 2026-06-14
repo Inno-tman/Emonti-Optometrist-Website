@@ -2,7 +2,7 @@
 @model ProductDetailsModel
 @{
     ViewData["Title"] = Model.Product?.Name ?? "Product Details";
-    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAuthenticated = AuthSession.IsCustomerLoggedIn(HttpContext) || AuthSession.IsStaffLoggedInCheck(HttpContext);
 }
 
 @section HeadContent {

@@ -44,14 +44,25 @@ public class DatabaseInit
                 Cust_ID TEXT PRIMARY KEY,
                 Customer_Name TEXT,
                 Customer_Surname TEXT,
+                Customer_DOB TEXT,
+                Customer_Gender TEXT,
                 Customer_Email TEXT,
                 Customer_Phone TEXT,
+                Customer_Address TEXT,
+                Medical_Aid TEXT,
+                Medical_Aid_Number TEXT,
+                Main_Member_Name TEXT,
+                Main_Member_Surname TEXT,
+                Main_Member_ID TEXT,
                 Street_Number TEXT,
                 Street_Name TEXT,
                 Complex_Name TEXT,
                 Unit_Number TEXT,
                 City TEXT,
+                Province TEXT,
                 Postal_Code TEXT,
+                Is_Archive INTEGER DEFAULT 0,
+                Customer_Password TEXT,
                 Cust_FirstName TEXT,
                 Cust_LastName TEXT,
                 Cust_Email TEXT,
@@ -147,7 +158,10 @@ public class DatabaseInit
             CREATE TABLE IF NOT EXISTS Staff (
                 Staff_ID TEXT PRIMARY KEY,
                 Staff_Name TEXT,
-                Staff_Surname TEXT
+                Staff_Surname TEXT,
+                Staff_Email TEXT,
+                Staff_Password TEXT,
+                Staff_Role TEXT
             )";
         cmd.ExecuteNonQuery();
 

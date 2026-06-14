@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using EmontiOptometrist.Web.Models;
@@ -6,16 +5,13 @@ using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class OrdersModel : PageModel
 {
     private readonly OrderDatabase _orderDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public OrdersModel(OrderDatabase orderDb, IHttpContextAccessor httpContextAccessor)
+    public OrdersModel(OrderDatabase orderDb)
     {
         _orderDb = orderDb;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public List<OrderDisplay> Orders { get; set; } = new();
@@ -23,9 +19,7 @@ public class OrdersModel : PageModel
 
     public void OnGet()
     {
-        var custId = _httpContextAccessor.HttpContext?.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+        var custId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(custId))
             return;
 

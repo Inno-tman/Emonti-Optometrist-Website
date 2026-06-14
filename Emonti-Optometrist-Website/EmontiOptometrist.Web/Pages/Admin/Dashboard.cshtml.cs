@@ -1,22 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
-using EmontiOptometrist.Web.Models;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
-[Authorize(Roles = "Admin")]
 public class DashboardModel : PageModel
 {
     private readonly IConfiguration _configuration;
-    private readonly UserManager<ApplicationUser> _userManager;
 
-    public DashboardModel(IConfiguration configuration, UserManager<ApplicationUser> userManager)
+    public DashboardModel(IConfiguration configuration)
     {
         _configuration = configuration;
-        _userManager = userManager;
     }
 
     public int TotalOrdersToday { get; set; }
@@ -26,8 +21,11 @@ public class DashboardModel : PageModel
     public int TotalStaff { get; set; }
     public List<RecentOrderItem> RecentOrders { get; set; } = new();
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
+        if (!AuthSession.IsAdmin(HttpContext))
+            return RedirectToPage("/Login");
+
         var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (!string.IsNullOrEmpty(connStr))
         {
@@ -62,6 +60,12 @@ public class DashboardModel : PageModel
 
                 using (var cmd = conn.CreateCommand())
                 {
+                    cmd.CommandText = "SELECT COUNT(*) FROM Staff";
+                    TotalStaff = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = conn.CreateCommand())
+                {
                     cmd.CommandText = @"
                         SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status
                         FROM [Order] ORDER BY Order_Date DESC
@@ -88,7 +92,7 @@ public class DashboardModel : PageModel
             }
         }
 
-        try { TotalStaff = _userManager.Users.Count(); } catch { }
+        return Page();
     }
 }
 
