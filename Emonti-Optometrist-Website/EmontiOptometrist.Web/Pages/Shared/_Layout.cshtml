@@ -1,4 +1,6 @@
 ﻿@using EmontiOptometrist.Web.Services
+@using EmontiOptometrist.Web.Models
+@inject CartDatabase CartDb
 @{
     var isCustomerLoggedIn = AuthSession.IsCustomerLoggedIn(Context);
     var isStaffLoggedIn = AuthSession.IsStaffLoggedInCheck(Context);
@@ -7,6 +9,27 @@
     var displayName = Context.Session.GetString("FirstName") ?? Context.Session.GetString("StaffName") ?? "My Account";
     var userEmail = Context.Session.GetString("UserEmail") ?? "";
     var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "?";
+
+    // Compute cart count
+    int cartCount = 0;
+    try
+    {
+        if (isCustomerLoggedIn)
+        {
+            var custId = AuthSession.GetCustId(Context);
+            if (!string.IsNullOrEmpty(custId))
+            {
+                int cartId = CartDb.GetOrCreateCart(custId);
+                cartCount = CartDb.GetCartItemCount(cartId);
+            }
+        }
+        else
+        {
+            var sessionId = Context.Session?.Id ?? "";
+            cartCount = CartTransfer.GetTotalItems(sessionId);
+        }
+    }
+    catch { }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -227,7 +250,7 @@
                 <div class="nav-actions">
                     <a href="/Cart" class="cart-button">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="cart-count">0</span>
+                        <span class="cart-count">@cartCount</span>
                     </a>
                     @if (isLoggedIn)
                     {

@@ -66,8 +66,19 @@ public class DashboardModel : PageModel
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"
+                    SELECT COUNT(*) FROM Appointment
+                    WHERE Staff_ID = @StaffId
+                    AND date(Appointment_Date) >= date('now')
+                    AND Appoinment_Status != 'Cancelled'";
+                cmd.Parameters.AddWithValue("@StaffId", staffId);
+                UpcomingCount = Convert.ToInt32(cmd.ExecuteScalar());
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
                     SELECT a.Appointment_ID, a.Appointment_Date, a.Appoinment_Status,
-                           t.Timeslot, c.Customer_Name, c.Customer_Surname
+                           t.Timeslot, c.Customer_Name, c.Customer_Surname, c.Customer_Phone
                     FROM Appointment a
                     INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
                     LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
@@ -87,13 +98,12 @@ public class DashboardModel : PageModel
                             AppointmentDate = DateTime.Parse(reader["Appointment_Date"].ToString()),
                             Status = reader["Appoinment_Status"]?.ToString() ?? "",
                             Timeslot = reader["Timeslot"]?.ToString() ?? "N/A",
-                            PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}"
+                            PatientName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}",
+                            PatientPhone = reader["Customer_Phone"]?.ToString() ?? ""
                         });
                     }
                 }
             }
-
-            UpcomingCount = UpcomingAppointments.Count;
         }
         catch (Exception ex)
         {
@@ -111,4 +121,5 @@ public class UpcomingAppointment
     public string Status { get; set; } = "";
     public string Timeslot { get; set; } = "";
     public string PatientName { get; set; } = "";
+    public string PatientPhone { get; set; } = "";
 }

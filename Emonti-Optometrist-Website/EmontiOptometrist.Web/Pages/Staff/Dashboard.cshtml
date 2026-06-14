@@ -25,7 +25,7 @@
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: white;
-            padding: 8rem 2rem 3rem;
+            padding: 5rem 2rem 3rem;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -288,6 +288,11 @@
         <h1><i class="fas fa-clinic-medical"></i> Staff Dashboard</h1>
         <p>Manage your appointments and daily tasks</p>
         <div class="greeting">Welcome back, @Model.StaffName</div>
+        <div style="margin-top: 1.25rem;">
+            <a href="/Logout" class="btn btn-light btn-sm" style="padding: 0.5rem 1.5rem; border-radius: 8px; text-decoration: none; color: #667eea; background: white; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
     </div>
 </section>
 
@@ -326,6 +331,7 @@
                     <thead>
                         <tr>
                             <th>Patient</th>
+                            <th>Contact</th>
                             <th>Date</th>
                             <th>Time</th>
                             <th>Status</th>
@@ -336,6 +342,7 @@
                         {
                             <tr>
                                 <td>@apt.PatientName</td>
+                                <td><a href="tel:@apt.PatientPhone" style="color: #667eea; text-decoration: none;">@apt.PatientPhone</a></td>
                                 <td>@apt.AppointmentDate.ToString("MMM dd, yyyy")</td>
                                 <td>@apt.Timeslot</td>
                                 <td><span class="status-badge @apt.Status.ToLower()">@apt.Status</span></td>
