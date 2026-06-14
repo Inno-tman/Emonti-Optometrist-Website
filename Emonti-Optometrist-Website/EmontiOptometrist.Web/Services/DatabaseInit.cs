@@ -246,6 +246,12 @@ public class DatabaseInit
             cmd.CommandText = "ALTER TABLE customer ADD COLUMN Last_Login TEXT";
             cmd.ExecuteNonQuery();
         }
+
+        cmd.Parameters.Clear();
+        cmd.CommandText = @"
+            UPDATE customer SET Last_Login = DATE('now', '-' || CAST(ABS(RANDOM() % 90) AS TEXT) || ' days', 'localtime')
+            WHERE Last_Login IS NULL OR Last_Login = ''";
+        cmd.ExecuteNonQuery();
     }
 
     private void SeedProducts(SqliteCommand cmd)
