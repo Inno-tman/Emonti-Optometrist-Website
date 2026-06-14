@@ -9,47 +9,27 @@ body {
     line-height: 1.6;
     color: #333;
     overflow-x: hidden;
-    padding-top: 0;
+    padding-top: 80px;
 }
 
-/* Add padding to account for floating pill nav bar */
-body > form {
-    padding-top: 0;
-}
-
-/* Adjust hero sections that had margin-top for old fixed header */
+/* Adjust hero sections for fixed header */
 .start-hero,
 .hero {
     margin-top: 0 !important;
 }
 
-/* Override inline margin-top styles on hero sections */
-section[style*="margin-top"] {
-    margin-top: 0 !important;
-}
-
-/* Override margin-top on hero sections in page styles */
-.login-hero,
-.register-hero,
-.hero-section,
-.start-hero {
-    margin-top: 0 !important;
-}
-
-/* Header & Navigation - Stitch.money Inspired (Floating Pill Nav Bar) */
+/* Header & Navigation - Fixed Top Bar */
 .header.navbar-pill_component {
     position: fixed;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 2rem);
-    max-width: 1600px;
-    background: rgba(255, 255, 255, 0.85);
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 60px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 0;
     z-index: 1000;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, box-shadow;
@@ -1040,10 +1020,6 @@ body.identity-page .container hr {
 
 /* Responsive Design - Tablet and Desktop Optimization */
 @media (min-width: 1280px) {
-    .header {
-        width: calc(100% - 4rem);
-    }
-    
     .nav-container {
         padding: 0.75rem 3rem;
     }
@@ -1054,11 +1030,6 @@ body.identity-page .container hr {
 }
 
 @media (max-width: 1279px) and (min-width: 769px) {
-    .header {
-        width: calc(100% - 3rem);
-        top: 0.75rem;
-    }
-    
     .nav-container {
         padding: 0.75rem 2rem;
     }
@@ -1074,14 +1045,8 @@ body.identity-page .container hr {
 }
 
 @media (max-width: 768px) {
-    body > form {
-        padding-top: 4.5rem;
-    }
-    
-    .header {
-        width: calc(100% - 2rem);
-        top: 0.5rem;
-        border-radius: 30px;
+    body {
+        padding-top: 65px;
     }
     
     .navbar-pill_container {
