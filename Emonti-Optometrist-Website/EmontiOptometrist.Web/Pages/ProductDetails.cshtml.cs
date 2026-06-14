@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
-using System.Security.Claims;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -12,7 +11,6 @@ public class ProductDetailsModel : PageModel
     private readonly ProductDatabase _productDb;
     private readonly CartDatabase _cartDb;
     private readonly WishlistDatabase _wishlistDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
 
     public Product? Product { get; set; }
@@ -21,13 +19,11 @@ public class ProductDetailsModel : PageModel
     public bool IsInWishlist { get; set; }
 
     public ProductDetailsModel(ProductDatabase productDb, CartDatabase cartDb,
-                                WishlistDatabase wishlistDb, IHttpContextAccessor httpContextAccessor,
-                                IConfiguration configuration)
+                                WishlistDatabase wishlistDb, IConfiguration configuration)
     {
         _productDb = productDb;
         _cartDb = cartDb;
         _wishlistDb = wishlistDb;
-        _httpContextAccessor = httpContextAccessor;
         _configuration = configuration;
     }
 
@@ -53,9 +49,9 @@ public class ProductDetailsModel : PageModel
                 .ToList();
         }
 
-        if (User.Identity?.IsAuthenticated == true && Product != null)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext) && Product != null)
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = AuthSession.GetCustId(HttpContext);
             if (int.TryParse(userIdClaim, out var custId))
                 IsInWishlist = _wishlistDb.IsInWishlist(custId, productId);
         }
@@ -88,11 +84,11 @@ public class ProductDetailsModel : PageModel
         var product = allProducts.FirstOrDefault(p => p.ProductId == productId);
         var displayName = product?.Name ?? "Product";
 
-        if (User.Identity?.IsAuthenticated == true)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             try
             {
-                var custId = User.Identity.Name ?? "guest";
+                var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
                 _cartDb.AddItemToCart(cartId, productId, 1, product?.Price ?? 0);
                 ResultMessage = $"{displayName} added to cart!";
@@ -104,8 +100,7 @@ public class ProductDetailsModel : PageModel
         }
         else
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-            var sessionId = httpContext?.Session?.Id ?? Guid.NewGuid().ToString();
+            var sessionId = HttpContext.Session?.Id ?? Guid.NewGuid().ToString();
 
             var cartItems = CartTransfer.GetCart(sessionId);
             var productIdStr = productId.ToString();
@@ -139,7 +134,7 @@ public class ProductDetailsModel : PageModel
 
     public IActionResult OnPostAddToWishlist(int productId)
     {
-        if (User.Identity?.IsAuthenticated != true)
+        if (!AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             ResultMessage = "Please log in to manage your wishlist.";
             LoadProduct(productId);
@@ -148,7 +143,7 @@ public class ProductDetailsModel : PageModel
 
         try
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = AuthSession.GetCustId(HttpContext);
             if (!int.TryParse(userIdClaim, out var custId))
             {
                 ResultMessage = "Unable to manage wishlist with your account.";

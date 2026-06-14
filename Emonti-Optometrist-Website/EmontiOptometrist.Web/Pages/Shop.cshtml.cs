@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
-using System.Security.Claims;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -11,7 +10,6 @@ public class ShopModel : PageModel
     private readonly ProductDatabase _productDb;
     private readonly CartDatabase _cartDb;
     private readonly WishlistDatabase _wishlistDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public List<Product> Products { get; set; } = new();
     public List<string> Categories { get; set; } = new();
@@ -23,13 +21,11 @@ public class ShopModel : PageModel
     public string? SortBy { get; set; }
     public string ResultMessage { get; set; } = "";
 
-    public ShopModel(ProductDatabase productDb, CartDatabase cartDb,
-                     WishlistDatabase wishlistDb, IHttpContextAccessor httpContextAccessor)
+    public ShopModel(ProductDatabase productDb, CartDatabase cartDb, WishlistDatabase wishlistDb)
     {
         _productDb = productDb;
         _cartDb = cartDb;
         _wishlistDb = wishlistDb;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public void OnGet()
@@ -104,11 +100,11 @@ public class ShopModel : PageModel
     {
         var displayName = name ?? "Product";
 
-        if (User.Identity?.IsAuthenticated == true)
+        if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             try
             {
-                var custId = User.Identity.Name ?? "guest";
+                var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
                 _cartDb.AddItemToCart(cartId, productId, 1, price);
                 ResultMessage = $"{displayName} added to cart!";
@@ -120,8 +116,7 @@ public class ShopModel : PageModel
         }
         else
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-            var sessionId = httpContext?.Session?.Id ?? Guid.NewGuid().ToString();
+            var sessionId = HttpContext.Session?.Id ?? Guid.NewGuid().ToString();
 
             var cartItems = CartTransfer.GetCart(sessionId);
             var productIdStr = productId.ToString();
@@ -161,7 +156,7 @@ public class ShopModel : PageModel
 
     public IActionResult OnPostToggleWishlist(int productId)
     {
-        if (User.Identity?.IsAuthenticated != true)
+        if (!AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             ResultMessage = "Please log in to manage your wishlist.";
             OnGet();
@@ -170,7 +165,7 @@ public class ShopModel : PageModel
 
         try
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = AuthSession.GetCustId(HttpContext);
             if (!int.TryParse(userIdClaim, out var custId))
             {
                 ResultMessage = "Unable to manage wishlist with your account.";

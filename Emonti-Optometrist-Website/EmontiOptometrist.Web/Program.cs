@@ -1,26 +1,17 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using EmontiOptometrist.Web.Data;
 using EmontiOptometrist.Web.Services;
-using EmontiOptometrist.Web.Models;
-using System.Text.Json;
+using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
+// On Azure App Service, use persistent path so DB survives redeploys
+if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 {
-    options.SignIn.RequireConfirmedAccount = false;
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 4;
-}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+    var home = Environment.GetEnvironmentVariable("HOME") ?? "/home";
+    connectionString = $"DataSource={home}/site/wwwroot/app.db;Cache=Shared";
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+}
+
 builder.Services.AddRazorPages();
 
 builder.Services.AddHttpClient();
@@ -39,37 +30,14 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
-
     var dbInit = scope.ServiceProvider.GetRequiredService<DatabaseInit>();
     dbInit.Initialize();
 
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-    string[] roles = { "Admin", "Staff" };
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole(role));
-    }
-
-    var adminEmail = "admin@emonti.com";
-    var adminPassword = "Admin";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true, FullName = "Admin" };
-        await userManager.CreateAsync(adminUser, adminPassword);
-    }
-    if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
-        await userManager.AddToRoleAsync(adminUser, "Admin");
+    SeedAdminAndStaff(connectionString);
 }
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseMigrationsEndPoint();
 }
 else
 {
@@ -149,6 +117,42 @@ app.MapPost("/api/chatbot/chat", async (HttpContext http) =>
 
 app.Run();
 
+static void SeedAdminAndStaff(string connectionString)
+{
+    using var conn = new SqliteConnection(connectionString);
+    conn.Open();
+
+    // Seed admin user in Staff table
+    using var checkAdmin = conn.CreateCommand();
+    checkAdmin.CommandText = "SELECT COUNT(*) FROM Staff WHERE Staff_Role = 'Admin'";
+    if ((long)checkAdmin.ExecuteScalar()! > 0) return;
+
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = @"
+        INSERT OR IGNORE INTO Staff (Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Password, Staff_Role)
+        VALUES (@id, @name, @surname, @email, @password, @role)";
+    cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+    cmd.Parameters.AddWithValue("@name", "Admin");
+    cmd.Parameters.AddWithValue("@surname", "User");
+    cmd.Parameters.AddWithValue("@email", "admin@emonti.com");
+    cmd.Parameters.AddWithValue("@password", "Admin");
+    cmd.Parameters.AddWithValue("@role", "Admin");
+    cmd.ExecuteNonQuery();
+
+    // Seed staff user
+    cmd.Parameters.Clear();
+    cmd.CommandText = @"
+        INSERT OR IGNORE INTO Staff (Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Password, Staff_Role)
+        VALUES (@id, @name, @surname, @email, @password, @role)";
+    cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+    cmd.Parameters.AddWithValue("@name", "Staff");
+    cmd.Parameters.AddWithValue("@surname", "User");
+    cmd.Parameters.AddWithValue("@email", "staff@emonti.com");
+    cmd.Parameters.AddWithValue("@password", "Staff");
+    cmd.Parameters.AddWithValue("@role", "Staff");
+    cmd.ExecuteNonQuery();
+}
+
 static string GetFallbackResponse(string message)
 {
     var fallbacks = new Dictionary<string, string>
@@ -166,9 +170,7 @@ static string GetFallbackResponse(string message)
     foreach (var fallback in fallbacks)
     {
         if (message.Contains(fallback.Key))
-        {
             return fallback.Value;
-        }
     }
 
     return "I'm sorry, I couldn't find a specific answer to your question. Please contact us directly at 076 463 1930 or email emontioptom@gmail.com for assistance. You can also visit our Help page for more information.";

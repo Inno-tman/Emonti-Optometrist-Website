@@ -2,7 +2,7 @@
 @model ShopModel
 @{
     ViewData["Title"] = "Shop Eyewear";
-    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAuthenticated = AuthSession.IsCustomerLoggedIn(HttpContext) || AuthSession.IsStaffLoggedInCheck(HttpContext);
 }
 
 @section HeadContent {
@@ -35,7 +35,7 @@
 
         /* ===== HERO SECTION ===== */
         .shop-hero {
-            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a1a2e);
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
             color: white;
@@ -100,11 +100,12 @@
         .shop-filters {
             background: white;
             padding: 1.25rem 1.5rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin: -2rem 1.5rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            z-index: 10;
         }
 
         .shop-filters .container {
@@ -121,19 +122,16 @@
 
         .filter-group {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            flex-direction: column;
             flex: 1 1 160px;
-            min-width: 140px;
+            min-width: 150px;
         }
 
         .filter-group label {
-            font-size: 0.8rem;
             font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
+            margin-bottom: 0.5rem;
+            color: #2c5aa0;
+            font-size: 0.9rem;
         }
 
         .filter-group input,
@@ -422,6 +420,30 @@
             gap: 0.5rem;
         }
 
+        .btn-view-details {
+            flex: 1;
+            padding: 0.65rem 0.75rem;
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            text-decoration: none;
+        }
+
+        .btn-view-details:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
         .btn-add-cart {
             flex: 1;
             background: linear-gradient(135deg, #667eea, #764ba2);
@@ -496,9 +518,9 @@
             .shop-hero h1 { font-size: 2.2rem; }
             .shop-hero p { font-size: 1rem; }
 
-            .shop-filters { padding: 1rem; }
-            .filter-row { gap: 0.5rem; }
-            .filter-group { flex: 1 1 calc(50% - 0.5rem); min-width: 0; }
+            .shop-filters { padding: 1.25rem; margin: -2rem 1rem 1.25rem; }
+            .filter-row { flex-direction: column; gap: 0.75rem; }
+            .filter-group { flex: 1 1 100%; min-width: 0; }
 
             .product-grid {
                 grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -583,8 +605,8 @@
         <form method="post" asp-page-handler="Filter" id="filterForm">
             <div class="filter-row">
                 <div class="filter-group">
-                    <label><i class="fas fa-search"></i></label>
-                    <input type="text" name="searchTerm" placeholder="Search products..."
+                    <label><i class="fas fa-search"></i> Search Products</label>
+                    <input type="text" name="searchTerm" placeholder="Search frames, lenses..."
                            value="@Model.SearchTerm" />
                 </div>
                 <div class="filter-group">
@@ -679,6 +701,9 @@
                             <h3 class="product-name">@product.Name</h3>
                             <div class="product-price">R @product.Price.ToString("N2")</div>
                             <div class="product-card-actions">
+                                <a href="/ProductDetails?productId=@product.ProductId" class="btn-view-details">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
                                 @if (isOutOfStock)
                                 {
                                     <button class="btn-add-cart" disabled>

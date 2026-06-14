@@ -5,153 +5,37 @@
 }
 
 <style>
-    @@keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    @@keyframes heroTitleReveal {
-        0% { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); }
-        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-    }
-    @@keyframes fadeSlideIn {
-        from { opacity: 0; transform: translateY(30px); filter: blur(5px); }
-        to { opacity: 1; transform: translateY(0); filter: blur(0); }
-    }
+    @@keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @@keyframes heroTitleReveal { 0% { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+    @@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(30px); filter: blur(5px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
 
-    .register-hero {
-        background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
-        background-size: 400% 400%;
-        animation: gradientShift 15s ease infinite;
-        color: white;
-        padding: 8rem 2rem 4rem;
-        text-align: center;
-        position: relative;
-        overflow: visible;
-    }
-
-    .register-hero::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.1);
-        z-index: 1;
-    }
-
+    .register-hero { background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2); background-size: 400% 400%; animation: gradientShift 15s ease infinite; color: white; padding: 8rem 2rem 4rem; text-align: center; position: relative; overflow: visible; }
+    .register-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.1); z-index: 1; }
     .register-hero .container { position: relative; z-index: 2; }
+    .register-hero h1 { font-size: 3rem; margin-bottom: 1rem; animation: heroTitleReveal 1.5s cubic-bezier(0.16,1,0.3,1) forwards; text-shadow: 0 4px 12px rgba(0,0,0,0.4),0 2px 4px rgba(0,0,0,0.2),0 0 30px rgba(102,126,234,0.5); }
+    .register-hero p { animation: fadeSlideIn 1.2s ease-out 0.5s backwards; text-shadow: 0 3px 10px rgba(0,0,0,0.5); }
 
-    .register-hero h1 {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        animation: heroTitleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 30px rgba(102, 126, 234, 0.5);
-    }
-
-    .register-hero p {
-        animation: fadeSlideIn 1.2s ease-out 0.5s backwards;
-        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .register-container {
-        max-width: 800px;
-        margin: -3rem auto 4rem;
-        padding: 0 2rem;
-        position: relative;
-        z-index: 10;
-    }
-
-    .register-content {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        padding: 3rem;
-    }
-
+    .register-container { max-width: 800px; margin: -3rem auto 4rem; padding: 0 2rem; position: relative; z-index: 10; }
+    .register-content { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 3rem; }
     .form-section { margin-bottom: 2rem; }
-
-    .section-title {
-        font-size: 1.5rem;
-        color: #2c5aa0;
-        margin-bottom: 1rem;
-        font-weight: 600;
-        border-bottom: 2px solid #e0e0e0;
-        padding-bottom: 0.5rem;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
+    .section-title { font-size: 1.5rem; color: #2c5aa0; margin-bottom: 1rem; font-weight: 600; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
     .form-group { display: flex; flex-direction: column; }
-
-    .form-group label {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-group input, .form-group select {
-        padding: 1rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s ease;
-    }
-
-    .form-group input:focus, .form-group select:focus {
-        border-color: #2c5aa0;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
-    }
-
+    .form-group label { font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select { padding: 1rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s ease; }
+    .form-group input:focus, .form-group select:focus { border-color: #2c5aa0; outline: none; box-shadow: 0 0 0 3px rgba(44,90,160,0.1); }
     .required { color: #dc3545; }
-
-    .btn-register {
-        background: linear-gradient(135deg, #2c5aa0, #1e4080);
-        color: white;
-        border: none;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-register:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(44, 90, 160, 0.4);
-    }
-
+    .btn-register { background: linear-gradient(135deg, #2c5aa0, #1e4080); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+    .btn-register:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(44,90,160,0.4); }
     .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
     .alert-success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
     .alert-error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
     .text-danger { color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; display: block; }
-
-    .links-section {
-        text-align: center;
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid #e0e0e0;
-    }
-
-    .links-section a {
-        color: #2c5aa0;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
+    .links-section { text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0; }
+    .links-section a { color: #2c5aa0; text-decoration: none; font-weight: 500; }
     .links-section a:hover { text-decoration: underline; }
 
-    @@media (max-width: 768px) {
-        .register-hero { padding: 6rem 1rem 3rem; }
-        .register-hero h1 { font-size: 2rem; }
-        .register-container { margin-top: -2rem; padding: 0 1rem; }
-        .register-content { padding: 2rem; }
-        .form-row { grid-template-columns: 1fr; }
-    }
+    @@media (max-width: 768px) { .register-hero { padding: 6rem 1rem 3rem; } .register-hero h1 { font-size: 2rem; } .register-container { margin-top: -2rem; padding: 0 1rem; } .register-content { padding: 2rem; } .form-row { grid-template-columns: 1fr; } }
 </style>
 
 <section class="register-hero">
@@ -165,23 +49,12 @@
     <div class="register-content">
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
-            <div class="alert alert-error">@Html.Raw(Model.ErrorMessage)</div>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-        {
-            <div class="alert alert-success">@Model.SuccessMessage</div>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.ModelOnlyError))
-        {
-            <div class="alert alert-error">@Model.ModelOnlyError</div>
+            <div class="alert alert-error">@Model.ErrorMessage</div>
         }
 
         <form method="post" id="registerForm">
-            <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert" style="@(ViewData.ModelState.ErrorCount > 0 ? "" : "display:none;")"></div>
+            <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
 
-            <!-- Personal Information -->
             <div class="form-section">
                 <h3 class="section-title">Personal Information</h3>
                 <div class="form-row">
@@ -222,7 +95,6 @@
                 </div>
             </div>
 
-            <!-- Medical Information -->
             <div class="form-section">
                 <h3 class="section-title">Medical Information</h3>
                 <div class="form-row">
@@ -238,42 +110,36 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Are you the main member on this medical aid? <span class="required">*</span></label>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                            <label style="display: flex; align-items: center; font-weight: normal; gap: 0.3rem;">
-                                <input type="radio" asp-for="Input.IsMainMember" value="true" id="IsMainMemberYes" />
-                                Yes
+                        <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+                            <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
+                                <input type="radio" asp-for="Input.IsMainMember" value="true" id="IsMainMemberYes" /> Yes
                             </label>
-                            <label style="display: flex; align-items: center; font-weight: normal; gap: 0.3rem;">
-                                <input type="radio" asp-for="Input.IsMainMember" value="false" id="IsMainMemberNo" />
-                                No
+                            <label style="display:flex;align-items:center;font-weight:normal;gap:0.3rem;">
+                                <input type="radio" asp-for="Input.IsMainMember" value="false" id="IsMainMemberNo" /> No
                             </label>
                         </div>
                     </div>
                 </div>
-                <div id="mainMemberDetails" style="display: none;">
+                <div id="mainMemberDetails" style="display:none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label>Main Member First Name</label>
                             <input asp-for="Input.MainMemberName" placeholder="Enter main member's first name" />
-                            <span asp-validation-for="Input.MainMemberName" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label>Main Member Last Name</label>
                             <input asp-for="Input.MainMemberSurname" placeholder="Enter main member's last name" />
-                            <span asp-validation-for="Input.MainMemberSurname" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Main Member ID Number (13 digits)</label>
                             <input asp-for="Input.MainMemberID" placeholder="e.g., 1234567890123" />
-                            <span asp-validation-for="Input.MainMemberID" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Address Information -->
             <div class="form-section">
                 <h3 class="section-title">Address Information <span class="required">*</span></h3>
                 <div class="form-row">
@@ -326,7 +192,6 @@
                 </div>
             </div>
 
-            <!-- Account Information -->
             <div class="form-section">
                 <h3 class="section-title">Account Information</h3>
                 <div class="form-row">
@@ -350,12 +215,12 @@
                 </div>
             </div>
 
-            <div class="form-section" style="text-align: center; margin-top: 2rem;">
-                <button type="submit" class="btn-register" style="font-size: 1.1rem; padding: 1.2rem 3rem;">Create Account</button>
+            <div class="form-section" style="text-align:center;margin-top:2rem;">
+                <button type="submit" class="btn-register" style="font-size:1.1rem;padding:1.2rem 3rem;">Create Account</button>
             </div>
 
             <div class="links-section">
-                <a asp-page="./Login"><i class="fas fa-sign-in-alt"></i> Already have an account? Sign in</a>
+                <a href="/Login"><i class="fas fa-sign-in-alt"></i> Already have an account? Sign in</a>
             </div>
         </form>
     </div>
@@ -366,18 +231,10 @@
         var yesRadio = document.getElementById('IsMainMemberYes');
         var noRadio = document.getElementById('IsMainMemberNo');
         var mainMemberDetails = document.getElementById('mainMemberDetails');
-
-        function toggleMainMemberFields() {
-            if (noRadio && noRadio.checked) {
-                mainMemberDetails.style.display = 'block';
-            } else {
-                mainMemberDetails.style.display = 'none';
-            }
-        }
-
-        if (yesRadio) yesRadio.addEventListener('change', toggleMainMemberFields);
-        if (noRadio) noRadio.addEventListener('change', toggleMainMemberFields);
-        toggleMainMemberFields();
+        function toggleFields() { mainMemberDetails.style.display = (noRadio && noRadio.checked) ? 'block' : 'none'; }
+        if (yesRadio) yesRadio.addEventListener('change', toggleFields);
+        if (noRadio) noRadio.addEventListener('change', toggleFields);
+        toggleFields();
     });
 </script>
 

@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages.Admin;
 
-[Authorize(Roles = "Admin,Staff")]
 public class ManageOrdersModel : PageModel
 {
     private readonly IConfiguration _configuration;
@@ -19,14 +18,16 @@ public class ManageOrdersModel : PageModel
     public string? StatusFilter { get; set; }
     public string? SearchTerm { get; set; }
 
-    public void OnGet(string? status, string? search)
+    public IActionResult OnGet(string? status, string? search)
     {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return RedirectToPage("/Login");
         StatusFilter = status;
         SearchTerm = search;
 
         var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (string.IsNullOrEmpty(connStr))
-            return;
+            return Page();
 
         try
         {
@@ -76,6 +77,8 @@ public class ManageOrdersModel : PageModel
         {
             System.Diagnostics.Debug.WriteLine($"ManageOrders error: {ex.Message}");
         }
+
+        return Page();
     }
 
     public IActionResult OnPostUpdateStatus(int orderId, string status)

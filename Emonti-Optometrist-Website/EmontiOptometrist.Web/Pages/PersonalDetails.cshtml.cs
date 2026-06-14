@@ -1,20 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class PersonalDetailsModel : PageModel
 {
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public PersonalDetailsModel(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+    public PersonalDetailsModel(IConfiguration configuration)
     {
         _configuration = configuration;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     [BindProperty]
@@ -42,9 +39,7 @@ public class PersonalDetailsModel : PageModel
 
     public IActionResult OnPost()
     {
-        var userId = _httpContextAccessor.HttpContext?.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+        var userId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(userId))
         {
             ErrorMessage = "Could not identify user. Please log in again.";
@@ -90,9 +85,7 @@ public class PersonalDetailsModel : PageModel
 
     private void LoadCustomer()
     {
-        var userId = _httpContextAccessor.HttpContext?.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+        var userId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(userId))
             return;
 

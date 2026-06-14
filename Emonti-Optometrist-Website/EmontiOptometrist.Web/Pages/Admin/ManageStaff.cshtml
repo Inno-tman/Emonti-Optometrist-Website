@@ -158,8 +158,9 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Name</th>
                             <th>Email</th>
-                            <th>Roles</th>
+                            <th>Role</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -167,28 +168,35 @@
                         @foreach (var staff in Model.StaffUsers)
                         {
                             <tr>
-                                <td><strong>@staff.Email</strong></td>
+                                <td><strong>@staff.Name @staff.Surname</strong></td>
+                                <td>@staff.Email</td>
                                 <td>
                                     @if (staff.IsAdmin)
                                     {
                                         <span class="role-badge admin">Admin</span>
                                     }
-                                    <span class="role-badge staff">Staff</span>
+                                    else
+                                    {
+                                        <span class="role-badge staff">Staff</span>
+                                    }
                                 </td>
                                 <td>
                                     @if (!staff.IsAdmin)
                                     {
                                         <form method="post" asp-page-handler="MakeAdmin" style="display:inline;">
-                                            <input type="hidden" name="userId" value="@staff.UserId" />
+                                            <input type="hidden" name="staffId" value="@staff.StaffId" />
                                             <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Promote @staff.Email to admin?');">
                                                 <i class="fas fa-crown"></i> Make Admin
                                             </button>
                                         </form>
                                     }
-                                    <form method="post" asp-page-handler="RemoveStaff" style="display:inline;" onsubmit="return confirm('Remove @staff.Email from staff?');">
-                                        <input type="hidden" name="userId" value="@staff.UserId" />
-                                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-user-minus"></i> Remove</button>
-                                    </form>
+                                    @if (!staff.IsAdmin)
+                                    {
+                                        <form method="post" asp-page-handler="RemoveStaff" style="display:inline;" onsubmit="return confirm('Remove @staff.Email from staff?');">
+                                            <input type="hidden" name="staffId" value="@staff.StaffId" />
+                                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-user-minus"></i> Remove</button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -208,19 +216,18 @@
             <div class="section-header">
                 <h2><i class="fas fa-user-plus"></i> Add Staff Member</h2>
             </div>
-            <form method="post" asp-page-handler="AddStaff" class="add-staff-form">
-                <select name="userId" required>
-                    <option value="">-- Select a user --</option>
-                    @foreach (var user in Model.AllUsers)
-                    {
-                        var isStaff = Model.StaffUsers.Any(s => s.UserId == user.Id);
-                        if (!isStaff)
-                        {
-                            <option value="@user.Id">@user.Email</option>
-                        }
-                    }
-                </select>
-                <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Add Staff</button>
+            <form method="post" asp-page-handler="AddStaff" class="add-staff-form" style="display:flex;flex-direction:column;gap:0.75rem;padding:1rem 1.25rem;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
+                    <input type="text" name="staffName" placeholder="First Name" required style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;" />
+                    <input type="text" name="staffSurname" placeholder="Surname" style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;" />
+                    <input type="email" name="staffEmail" placeholder="Email Address" required style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;" />
+                    <input type="password" name="staffPassword" placeholder="Password (default: Staff123)" style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;" />
+                    <select name="staffRole" style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;">
+                        <option value="Staff">Staff</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success" style="align-self:flex-start;"><i class="fas fa-plus"></i> Add Staff</button>
             </form>
         </div>
 

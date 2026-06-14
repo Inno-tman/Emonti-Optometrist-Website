@@ -259,7 +259,9 @@ window.addEventListener('scroll', () => {
 // Animate hero content on load
 window.addEventListener('load', () => {
     const heroContent = document.querySelector('.hero-content');
-    heroContent.style.transform = 'translateY(0)';
+    if (heroContent) {
+        heroContent.style.transform = 'translateY(0)';
+    }
 });
 
 // Add click handlers for CTA buttons (you'll replace these with actual functionality)

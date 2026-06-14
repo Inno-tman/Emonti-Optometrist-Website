@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -7,12 +6,10 @@ using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class CheckoutModel : PageModel
 {
     private readonly CartDatabase _cartDb;
     private readonly OrderDatabase _orderDb;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly string _connectionString;
 
     public List<CartItem> CartItems { get; set; } = new();
@@ -46,13 +43,12 @@ public class CheckoutModel : PageModel
     [BindProperty]
     public string PaymentMethod { get; set; } = "credit_card";
 
-    public bool IsLoggedIn => User.Identity?.IsAuthenticated == true;
+    public bool IsLoggedIn => AuthSession.IsCustomerLoggedIn(HttpContext);
 
-    public CheckoutModel(CartDatabase cartDb, OrderDatabase orderDb, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
+    public CheckoutModel(CartDatabase cartDb, OrderDatabase orderDb, IConfiguration configuration)
     {
         _cartDb = cartDb;
         _orderDb = orderDb;
-        _httpContextAccessor = httpContextAccessor;
         _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
     }
 
@@ -94,7 +90,7 @@ public class CheckoutModel : PageModel
         {
             try
             {
-                var custId = User.Identity!.Name ?? "guest";
+                var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
                 CartItems = _cartDb.GetCartItems(cartId);
             }
@@ -106,7 +102,7 @@ public class CheckoutModel : PageModel
         }
         else
         {
-            var sessionId = _httpContextAccessor.HttpContext?.Session?.Id ?? "";
+            var sessionId = HttpContext.Session?.Id ?? "";
             CartItems = CartTransfer.GetCart(sessionId);
         }
 
@@ -127,7 +123,7 @@ public class CheckoutModel : PageModel
     {
         try
         {
-            var custId = User.Identity!.Name ?? "";
+            var custId = AuthSession.GetCustId(HttpContext) ?? "";
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
             using var cmd = conn.CreateCommand();
@@ -193,7 +189,7 @@ public class CheckoutModel : PageModel
     {
         try
         {
-            var custId = IsLoggedIn ? User.Identity!.Name ?? "guest" : "guest";
+            var custId = IsLoggedIn ? AuthSession.GetCustId(HttpContext) ?? "guest" : "guest";
 
             var deliveryAddr = $"{FirstName} {LastName}, {Address}, {City}, {PostalCode}, Phone: {Phone}, Email: {Email}";
             if (deliveryAddr.Length > 250)
@@ -299,14 +295,14 @@ public class CheckoutModel : PageModel
         {
             if (IsLoggedIn)
             {
-                var custId = User.Identity!.Name ?? "guest";
+                var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
                 _cartDb.ClearCart(cartId);
                 HttpContext.Session.Remove("Cart_ID");
             }
             else
             {
-                var sessionId = _httpContextAccessor.HttpContext?.Session?.Id ?? "";
+                var sessionId = HttpContext.Session?.Id ?? "";
                 CartTransfer.ClearCart(sessionId);
             }
         }

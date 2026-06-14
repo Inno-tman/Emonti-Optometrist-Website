@@ -1,21 +1,18 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class BookAppointmentModel : PageModel
 {
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public BookAppointmentModel(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+    public BookAppointmentModel(IConfiguration configuration)
     {
         _configuration = configuration;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     [BindProperty]
@@ -45,17 +42,15 @@ public class BookAppointmentModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
+        var custId = AuthSession.GetCustId(HttpContext);
+        if (string.IsNullOrEmpty(custId))
+        {
+            ErrorMessage = "Please log in to book an appointment.";
+            return Page();
+        }
+
         try
         {
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst(
-                System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                ErrorMessage = "Could not identify user. Please log in again.";
-                return Page();
-            }
-
             var connStr = _configuration.GetConnectionString("DefaultConnection");
             using var conn = new SqliteConnection(connStr);
             conn.Open();
@@ -66,7 +61,7 @@ public class BookAppointmentModel : PageModel
                     (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status)
                 VALUES
                     (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
-            cmd.Parameters.AddWithValue("@CustId", userId);
+            cmd.Parameters.AddWithValue("@CustId", custId);
             cmd.Parameters.AddWithValue("@StaffId", "1");
             cmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date.ToString("o"));
             cmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);

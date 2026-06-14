@@ -1,20 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
-[Authorize]
 public class AppointmentsModel : PageModel
 {
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AppointmentsModel(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+    public AppointmentsModel(IConfiguration configuration)
     {
         _configuration = configuration;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public List<AppointmentViewModel> Appointments { get; set; } = new();
@@ -22,9 +19,7 @@ public class AppointmentsModel : PageModel
 
     public void OnGet()
     {
-        var custId = _httpContextAccessor.HttpContext?.User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+        var custId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(custId))
             return;
 
