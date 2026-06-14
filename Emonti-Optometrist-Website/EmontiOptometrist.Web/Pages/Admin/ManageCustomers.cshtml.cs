@@ -37,7 +37,7 @@ public class ManageCustomersModel : PageModel
 
         var sql = @"
             SELECT c.Cust_ID, c.Customer_Name, c.Customer_Surname, c.Customer_Email,
-                   c.Customer_Phone, c.City, c.Province, c.Last_Login,
+                   c.Customer_Phone, c.City, c.Province, IFNULL(c.Last_Login, '') AS Last_Login,
                    COALESCE(o.OrderCount, 0) AS OrderCount
             FROM customer c
             LEFT JOIN (SELECT CustID, COUNT(*) AS OrderCount FROM [Order] GROUP BY CustID) o ON c.Cust_ID = o.CustID";
