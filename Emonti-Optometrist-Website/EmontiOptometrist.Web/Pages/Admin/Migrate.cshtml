@@ -1,0 +1,34 @@
+@page
+@model MigrateModel
+@{
+    ViewData["Title"] = "Data Migration";
+}
+
+<style>
+    .migrate-container { max-width:800px; margin:2rem auto; padding:0 1rem; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:2rem; }
+    .card h1 { font-size:1.4rem; color:#1a1d23; margin-bottom:1rem; }
+    .card p { color:#666; font-size:0.9rem; margin-bottom:1.5rem; }
+    .btn-run { padding:0.75rem 2rem; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; }
+    .btn-run:hover { background:#5a67d8; }
+    .btn-run:disabled { background:#ccc; cursor:not-allowed; }
+    .log { background:#1a1d23; color:#a0f0a0; padding:1rem; border-radius:8px; font-family:monospace; font-size:0.8rem; max-height:400px; overflow-y:auto; margin-top:1rem; white-space:pre-wrap; }
+    .error { color:#ff6b6b; }
+    .success { color:#51cf66; }
+</style>
+
+<div class="migrate-container">
+    <div class="card">
+        <h1><i class="fas fa-database"></i> Data Migration</h1>
+        <p>Import legacy data from the old SQL Server database to the local SQLite database. Connect your VPN first, then click Run.</p>
+
+        @if (Model.LogOutput != null)
+        {
+            <div class="log">@Model.LogOutput</div>
+        }
+
+        <form method="post" style="margin-top:1.5rem;">
+            <button type="submit" class="btn-run" id="runBtn" onclick="this.disabled=true;this.innerHTML='Running...';"><i class="fas fa-play"></i> Run Migration</button>
+        </form>
+    </div>
+</div>
