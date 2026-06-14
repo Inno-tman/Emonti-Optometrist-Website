@@ -252,6 +252,88 @@ public class DatabaseInit
             UPDATE customer SET Last_Login = DATE('now', '-' || CAST(ABS(RANDOM() % 90) AS TEXT) || ' days', 'localtime')
             WHERE Last_Login IS NULL OR Last_Login = ''";
         cmd.ExecuteNonQuery();
+
+        SeedStaff(cmd);
+        SeedFAQ(cmd);
+        SeedTimeSlots(cmd);
+    }
+
+    private void SeedStaff(SqliteCommand cmd)
+    {
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM Staff";
+        if ((long)cmd.ExecuteScalar() > 0) return;
+
+        var staff = new[]
+        {
+            new { Id = "A001", Name = "Admin", Email = "admin@emonti.com", Password = "Admin", Role = "Admin" },
+            new { Id = "S001", Name = "Staff", Email = "staff@emonti.com", Password = "Staff", Role = "Staff" }
+        };
+
+        foreach (var s in staff)
+        {
+            cmd.CommandText = "INSERT INTO Staff (Staff_ID, Staff_Name, Staff_Email, Staff_Password, Staff_Role) VALUES (@Id, @Name, @Email, @Password, @Role)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.AddWithValue("@Id", s.Id);
+            cmd.Parameters.AddWithValue("@Name", s.Name);
+            cmd.Parameters.AddWithValue("@Email", s.Email);
+            cmd.Parameters.AddWithValue("@Password", s.Password);
+            cmd.Parameters.AddWithValue("@Role", s.Role);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private void SeedFAQ(SqliteCommand cmd)
+    {
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM FAQ_Items";
+        if ((long)cmd.ExecuteScalar() > 0) return;
+
+        var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        var faqs = new[]
+        {
+            new { Q = "What are your opening hours?", A = "We are open Monday to Friday from 8:00 AM to 5:00 PM, and Saturdays from 8:00 AM to 1:00 PM. We are closed on Sundays and public holidays.", Cat = "General", Kw = "hours,open,closing,time,schedule", Pri = 1 },
+            new { Q = "Do I need a referral to book an eye exam?", A = "No, you do not need a referral. You can book an eye exam directly with us.", Cat = "Appointments", Kw = "referral,eye exam,appointment,book", Pri = 1 },
+            new { Q = "How often should I have my eyes tested?", A = "We recommend having your eyes tested every 1-2 years, or as advised by your optometrist.", Cat = "General", Kw = "often,frequent,test,examination,checkup", Pri = 2 },
+            new { Q = "What types of payment do you accept?", A = "We accept cash, debit/credit cards, and most major medical aid schemes.", Cat = "Billing", Kw = "payment,cash,card,medical aid,accept", Pri = 1 },
+            new { Q = "Do you accept medical aid?", A = "Yes, we accept most major medical aid schemes. Please bring your medical aid details to your appointment.", Cat = "Billing", Kw = "medical aid,insurance,cover,accept", Pri = 1 },
+            new { Q = "Can I buy contact lenses online?", A = "Yes, you can browse and purchase contact lenses through our online shop. You will need a valid prescription.", Cat = "Shop", Kw = "contact lenses,buy,online,purchase,order", Pri = 2 },
+            new { Q = "How long does it take to get my glasses?", A = "Standard glasses typically take 7-14 working days. Express options may be available upon request.", Cat = "Products", Kw = "glasses,time,wait,delivery,ready", Pri = 2 },
+            new { Q = "What is your return policy?", A = "We accept returns within 14 days of purchase for unused items in original packaging. Prescription lenses are custom-made and cannot be returned.", Cat = "Shop", Kw = "return,refund,exchange,policy", Pri = 2 },
+            new { Q = "Do you offer eye tests for children?", A = "Yes, we offer comprehensive eye examinations for children of all ages.", Cat = "Appointments", Kw = "children,kids,child,eye test,examination", Pri = 2 },
+            new { Q = "What should I bring to my appointment?", A = "Please bring your ID, medical aid details, current glasses/contact lenses, and a list of any medications you are taking.", Cat = "Appointments", Kw = "bring,need,appointment,prepare", Pri = 1 }
+        };
+
+        foreach (var f in faqs)
+        {
+            cmd.CommandText = "INSERT INTO FAQ_Items (Question, Answer, Keywords, Category, Priority, IsActive, CreatedDate, UpdatedDate) VALUES (@Q, @A, @Kw, @Cat, @Pri, 1, @Now, @Now)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.AddWithValue("@Q", f.Q);
+            cmd.Parameters.AddWithValue("@A", f.A);
+            cmd.Parameters.AddWithValue("@Kw", f.Kw);
+            cmd.Parameters.AddWithValue("@Cat", f.Cat);
+            cmd.Parameters.AddWithValue("@Pri", f.Pri);
+            cmd.Parameters.AddWithValue("@Now", now);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private void SeedTimeSlots(SqliteCommand cmd)
+    {
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM tblTime";
+        if ((long)cmd.ExecuteScalar() > 0) return;
+
+        var slots = new[] { "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30" };
+
+        foreach (var s in slots)
+        {
+            cmd.CommandText = "INSERT INTO tblTime (TimeID, Timeslot) VALUES (@Id, @Slot)";
+            cmd.Parameters.Clear();
+            cmd.Parameters.AddWithValue("@Id", s.Replace(":", ""));
+            cmd.Parameters.AddWithValue("@Slot", s);
+            cmd.ExecuteNonQuery();
+        }
     }
 
     private void SeedProducts(SqliteCommand cmd)

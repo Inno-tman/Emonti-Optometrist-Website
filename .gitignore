@@ -43,7 +43,8 @@ x86/
 
 # Publish Web Output
 *.[Pp]ublish.xml
-# SQLite journal files (WAL and SHM)
+# SQLite database and journal files
+app.db
 *.db-wal
 *.db-shm
 
