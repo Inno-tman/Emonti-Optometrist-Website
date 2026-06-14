@@ -59,6 +59,7 @@ public class PersonalDetailsModel : PageModel
                     Customer_Surname = @LastName,
                     Customer_Email = @Email,
                     Customer_Phone = @Phone,
+                    Customer_Address = @Address,
                     Cust_Address = @Address,
                     Cust_FirstName = @FirstName,
                     Cust_LastName = @LastName,
@@ -96,7 +97,8 @@ public class PersonalDetailsModel : PageModel
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone, Cust_Address
+                SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone,
+                       IFNULL(Customer_Address, Cust_Address) AS DisplayAddress
                 FROM customer
                 WHERE Cust_ID = @CustId";
             cmd.Parameters.AddWithValue("@CustId", userId);
@@ -108,7 +110,7 @@ public class PersonalDetailsModel : PageModel
                 LastName = reader["Customer_Surname"]?.ToString() ?? "";
                 Email = reader["Customer_Email"]?.ToString() ?? "";
                 Phone = reader["Customer_Phone"]?.ToString() ?? "";
-                Address = reader["Cust_Address"]?.ToString() ?? "";
+                Address = reader["DisplayAddress"]?.ToString() ?? "";
             }
         }
         catch (Exception ex)
