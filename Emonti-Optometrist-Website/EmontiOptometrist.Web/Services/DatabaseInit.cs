@@ -237,6 +237,15 @@ public class DatabaseInit
         cmd.ExecuteNonQuery();
 
         SeedProducts(cmd);
+
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('customer') WHERE name='Last_Login'";
+        var hasLastLogin = (long)cmd.ExecuteScalar() > 0;
+        if (!hasLastLogin)
+        {
+            cmd.CommandText = "ALTER TABLE customer ADD COLUMN Last_Login TEXT";
+            cmd.ExecuteNonQuery();
+        }
     }
 
     private void SeedProducts(SqliteCommand cmd)
@@ -296,15 +305,6 @@ public class DatabaseInit
             cmd.Parameters.AddWithValue("@Price", p.Price);
             cmd.Parameters.AddWithValue("@Stock", p.Stock);
             cmd.Parameters.AddWithValue("@Image", p.Image);
-            cmd.ExecuteNonQuery();
-        }
-
-        cmd.Parameters.Clear();
-        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('customer') WHERE name='Last_Login'";
-        var hasLastLogin = (long)cmd.ExecuteScalar() > 0;
-        if (!hasLastLogin)
-        {
-            cmd.CommandText = "ALTER TABLE customer ADD COLUMN Last_Login TEXT";
             cmd.ExecuteNonQuery();
         }
     }
