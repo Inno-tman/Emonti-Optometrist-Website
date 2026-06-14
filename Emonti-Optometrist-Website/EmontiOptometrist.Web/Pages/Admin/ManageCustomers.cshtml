@@ -1,0 +1,188 @@
+@page
+@model ManageCustomersModel
+@{
+    ViewData["Title"] = "Manage Customers";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
+
+        .admin-wrapper { display: flex; min-height: 100vh; }
+
+        .admin-sidebar {
+            width: 250px; background: #1a1d23; color: #fff;
+            padding: 1.5rem 0; flex-shrink: 0;
+            position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem; }
+        .sidebar-brand h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .sidebar-brand small { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+        .sidebar-nav { list-style: none; padding: 0; }
+        .sidebar-nav li a {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1.25rem; color: rgba(255,255,255,0.65);
+            text-decoration: none; font-size: 0.9rem; font-weight: 500;
+            transition: all 0.2s ease; border-left: 3px solid transparent;
+        }
+        .sidebar-nav li a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .sidebar-nav li a.active { background: rgba(102,126,234,0.15); color: #667eea; border-left-color: #667eea; }
+        .sidebar-nav li a i { width: 20px; text-align: center; }
+
+        .admin-main { margin-left: 250px; flex: 1; padding: 2rem; min-height: 100vh; }
+
+        .admin-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
+        .admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+
+        .section-card {
+            background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden; margin-bottom: 1.5rem; animation: fadeInUp 0.5s ease-out;
+        }
+        .section-header {
+            padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .section-header h2 { font-size: 1rem; font-weight: 700; color: #1a1d23; display: flex; align-items: center; gap: 0.5rem; }
+        .section-header h2 i { color: #667eea; }
+
+        .search-box {
+            display: flex; gap: 0.5rem; align-items: center;
+        }
+        .search-box input {
+            padding: 0.4rem 0.75rem; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 0.85rem; font-family: inherit; min-width: 220px;
+        }
+        .search-box button {
+            padding: 0.4rem 0.75rem; border: none; border-radius: 8px;
+            background: #667eea; color: #fff; font-size: 0.85rem; cursor: pointer;
+        }
+        .search-box button:hover { background: #5a67d8; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f8f9fa; }
+        th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+        td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        tr:hover td { background: rgba(102,126,234,0.02); }
+
+        .order-count {
+            display: inline-block; padding: 0.15rem 0.55rem; border-radius: 10px;
+            font-size: 0.75rem; font-weight: 600; background: #e9ecef; color: #555;
+        }
+
+        .empty-state { text-align: center; padding: 2.5rem 1rem; color: #999; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 0.5rem; color: #ddd; }
+
+        .admin-footer { text-align: center; padding: 1.5rem; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+
+        @@media (max-width: 768px) {
+            .admin-sidebar { width: 60px; }
+            .sidebar-brand h2, .sidebar-brand small, .sidebar-nav li a span { display: none; }
+            .sidebar-nav li a { justify-content: center; padding: 0.75rem; }
+            .admin-main { margin-left: 60px; padding: 1rem; }
+            .search-box input { min-width: 140px; }
+        }
+    </style>
+}
+
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <h2>EMONTI</h2>
+            <small>Admin Panel</small>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="/Admin/Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <li><a href="/Admin/ManageOrders"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
+            <li><a href="/Admin/ManageProducts"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <li><a href="/Admin/ManageCustomers" class="active"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <li><a href="/Admin/ManageStaff"><i class="fas fa-users"></i><span>Staff</span></a></li>
+            <li><a href="/Reports"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+            <li style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem;">
+                <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+            </li>
+            <li>
+                <a href="/Logout" style="color: #ff6b6b;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <h1><i class="fas fa-address-book"></i> Manage Customers</h1>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header">
+                <h2><i class="fas fa-users"></i> All Customers</h2>
+                <span style="font-size:0.85rem;color:#888;font-weight:500;">@Model.Customers.Count customer@(Model.Customers.Count != 1 ? "s" : "")</span>
+                <form method="get" class="search-box">
+                    <input type="text" name="search" placeholder="Search name, email or phone..." value="@Model.SearchQuery" />
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                    @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                    {
+                        <a href="/Admin/ManageCustomers" style="color:#888;font-size:0.85rem;text-decoration:none;">Clear</a>
+                    }
+                </form>
+            </div>
+            @if (Model.Customers.Count > 0)
+            {
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Location</th>
+                                <th>Orders</th>
+                                <th>Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Customers)
+                            {
+                                <tr>
+                                    <td><strong>@c.Name @c.Surname</strong></td>
+                                    <td><a href="mailto:@c.Email" style="color:#667eea;text-decoration:none;">@c.Email</a></td>
+                                    <td><a href="tel:@c.Phone" style="color:#667eea;text-decoration:none;">@c.Phone</a></td>
+                                    <td>@c.City@(string.IsNullOrEmpty(c.City) ? "" : ", ")@c.Province</td>
+                                    <td><span class="order-count">@c.OrderCount</span></td>
+                                    <td style="font-size:0.8rem;color:#888;">@c.CreateDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                    {
+                        <p>No customers matching "@Model.SearchQuery".</p>
+                    }
+                    else
+                    {
+                        <p>No customers found.</p>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="admin-footer">
+            &copy; @DateTime.Now.Year Emonti Optometrist Admin Panel
+        </div>
+    </main>
+</div>
