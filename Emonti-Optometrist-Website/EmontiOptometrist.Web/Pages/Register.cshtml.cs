@@ -143,75 +143,84 @@ public class RegisterModel : PageModel
         string custId = Guid.NewGuid().ToString();
         string address = BuildAddress();
 
-        using var conn = new SqliteConnection(connStr);
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
-            INSERT INTO customer (
-                Cust_ID, Customer_Name, Customer_Surname, Customer_DOB, Customer_Gender,
-                Customer_Email, Customer_Phone, Customer_Address,
-                Medical_Aid, Medical_Aid_Number,
-                Main_Member_Name, Main_Member_Surname, Main_Member_ID,
-                Street_Number, Street_Name, Complex_Name, Unit_Number,
-                City, Province, Postal_Code, Is_Archive, Customer_Password,
-                Cust_FirstName, Cust_LastName, Cust_Email, Cust_Phone
-            ) VALUES (
-                @Cust_ID, @FirstName, @LastName, @DOB, @Gender,
-                @Email, @Phone, @Address,
-                @MedicalAid, @MedicalAidNumber,
-                @MainMemberName, @MainMemberSurname, @MainMemberID,
-                @StreetNumber, @StreetName, @ComplexName, @UnitNumber,
-                @City, @Province, @PostalCode, 0, @Password,
-                @FirstName, @LastName, @Email, @Phone
-            )";
-
-        cmd.Parameters.AddWithValue("@Cust_ID", custId);
-        cmd.Parameters.AddWithValue("@FirstName", Input.FirstName.Trim());
-        cmd.Parameters.AddWithValue("@LastName", Input.LastName.Trim());
-        cmd.Parameters.AddWithValue("@DOB", Input.DateOfBirth.ToString("yyyy-MM-dd"));
-        cmd.Parameters.AddWithValue("@Gender", Input.Gender);
-        cmd.Parameters.AddWithValue("@Email", Input.Email.Trim());
-        cmd.Parameters.AddWithValue("@Phone", Input.Phone.Trim());
-        cmd.Parameters.AddWithValue("@Address", address);
-        cmd.Parameters.AddWithValue("@Password", Input.Password);
-
-        cmd.Parameters.AddWithValue("@MedicalAid",
-            string.IsNullOrWhiteSpace(Input.MedicalAid) ? DBNull.Value : Input.MedicalAid.Trim());
-        cmd.Parameters.AddWithValue("@MedicalAidNumber",
-            string.IsNullOrWhiteSpace(Input.MedicalAidNumber) ? DBNull.Value : Input.MedicalAidNumber.Trim());
-
-        if (isMainMember)
+        try
         {
-            cmd.Parameters.AddWithValue("@MainMemberName", DBNull.Value);
-            cmd.Parameters.AddWithValue("@MainMemberSurname", DBNull.Value);
-            cmd.Parameters.AddWithValue("@MainMemberID", DBNull.Value);
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                INSERT INTO customer (
+                    Cust_ID, Customer_Name, Customer_Surname, Customer_DOB, Customer_Gender,
+                    Customer_Email, Customer_Phone, Customer_Address,
+                    Medical_Aid, Medical_Aid_Number,
+                    Main_Member_Name, Main_Member_Surname, Main_Member_ID,
+                    Street_Number, Street_Name, Complex_Name, Unit_Number,
+                    City, Province, Postal_Code, Is_Archive, Customer_Password,
+                    Cust_FirstName, Cust_LastName, Cust_Email, Cust_Phone
+                ) VALUES (
+                    @Cust_ID, @FirstName, @LastName, @DOB, @Gender,
+                    @Email, @Phone, @Address,
+                    @MedicalAid, @MedicalAidNumber,
+                    @MainMemberName, @MainMemberSurname, @MainMemberID,
+                    @StreetNumber, @StreetName, @ComplexName, @UnitNumber,
+                    @City, @Province, @PostalCode, 0, @Password,
+                    @FirstName, @LastName, @Email, @Phone
+                )";
+
+            cmd.Parameters.AddWithValue("@Cust_ID", custId);
+            cmd.Parameters.AddWithValue("@FirstName", Input.FirstName.Trim());
+            cmd.Parameters.AddWithValue("@LastName", Input.LastName.Trim());
+            cmd.Parameters.AddWithValue("@DOB", Input.DateOfBirth.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@Gender", Input.Gender);
+            cmd.Parameters.AddWithValue("@Email", Input.Email.Trim());
+            cmd.Parameters.AddWithValue("@Phone", Input.Phone.Trim());
+            cmd.Parameters.AddWithValue("@Address", address);
+            cmd.Parameters.AddWithValue("@Password", Input.Password.Trim());
+
+            cmd.Parameters.AddWithValue("@MedicalAid",
+                string.IsNullOrWhiteSpace(Input.MedicalAid) ? DBNull.Value : Input.MedicalAid.Trim());
+            cmd.Parameters.AddWithValue("@MedicalAidNumber",
+                string.IsNullOrWhiteSpace(Input.MedicalAidNumber) ? DBNull.Value : Input.MedicalAidNumber.Trim());
+
+            if (isMainMember)
+            {
+                cmd.Parameters.AddWithValue("@MainMemberName", DBNull.Value);
+                cmd.Parameters.AddWithValue("@MainMemberSurname", DBNull.Value);
+                cmd.Parameters.AddWithValue("@MainMemberID", DBNull.Value);
+            }
+            else
+            {
+                cmd.Parameters.AddWithValue("@MainMemberName",
+                    string.IsNullOrWhiteSpace(Input.MainMemberName) ? DBNull.Value : Input.MainMemberName.Trim());
+                cmd.Parameters.AddWithValue("@MainMemberSurname",
+                    string.IsNullOrWhiteSpace(Input.MainMemberSurname) ? DBNull.Value : Input.MainMemberSurname.Trim());
+                cmd.Parameters.AddWithValue("@MainMemberID",
+                    string.IsNullOrWhiteSpace(Input.MainMemberID) ? DBNull.Value : Input.MainMemberID.Trim());
+            }
+
+            cmd.Parameters.AddWithValue("@StreetNumber",
+                string.IsNullOrWhiteSpace(Input.StreetNumber) ? DBNull.Value : Input.StreetNumber.Trim());
+            cmd.Parameters.AddWithValue("@StreetName",
+                string.IsNullOrWhiteSpace(Input.StreetName) ? DBNull.Value : Input.StreetName.Trim());
+            cmd.Parameters.AddWithValue("@ComplexName",
+                string.IsNullOrWhiteSpace(Input.ComplexName) ? DBNull.Value : Input.ComplexName.Trim());
+            cmd.Parameters.AddWithValue("@UnitNumber",
+                string.IsNullOrWhiteSpace(Input.UnitNumber) ? DBNull.Value : Input.UnitNumber.Trim());
+            cmd.Parameters.AddWithValue("@City",
+                string.IsNullOrWhiteSpace(Input.City) ? DBNull.Value : Input.City.Trim());
+            cmd.Parameters.AddWithValue("@Province",
+                string.IsNullOrWhiteSpace(Input.Province) ? DBNull.Value : Input.Province.Trim());
+            cmd.Parameters.AddWithValue("@PostalCode",
+                string.IsNullOrWhiteSpace(Input.PostalCode) ? DBNull.Value : Input.PostalCode.Trim());
+
+            cmd.ExecuteNonQuery();
         }
-        else
+        catch (Exception ex)
         {
-            cmd.Parameters.AddWithValue("@MainMemberName",
-                string.IsNullOrWhiteSpace(Input.MainMemberName) ? DBNull.Value : Input.MainMemberName.Trim());
-            cmd.Parameters.AddWithValue("@MainMemberSurname",
-                string.IsNullOrWhiteSpace(Input.MainMemberSurname) ? DBNull.Value : Input.MainMemberSurname.Trim());
-            cmd.Parameters.AddWithValue("@MainMemberID",
-                string.IsNullOrWhiteSpace(Input.MainMemberID) ? DBNull.Value : Input.MainMemberID.Trim());
+            _logger.LogError(ex, "Error creating customer account");
+            ErrorMessage = "An error occurred while creating your account. Please try again.";
+            return Page();
         }
-
-        cmd.Parameters.AddWithValue("@StreetNumber",
-            string.IsNullOrWhiteSpace(Input.StreetNumber) ? DBNull.Value : Input.StreetNumber.Trim());
-        cmd.Parameters.AddWithValue("@StreetName",
-            string.IsNullOrWhiteSpace(Input.StreetName) ? DBNull.Value : Input.StreetName.Trim());
-        cmd.Parameters.AddWithValue("@ComplexName",
-            string.IsNullOrWhiteSpace(Input.ComplexName) ? DBNull.Value : Input.ComplexName.Trim());
-        cmd.Parameters.AddWithValue("@UnitNumber",
-            string.IsNullOrWhiteSpace(Input.UnitNumber) ? DBNull.Value : Input.UnitNumber.Trim());
-        cmd.Parameters.AddWithValue("@City",
-            string.IsNullOrWhiteSpace(Input.City) ? DBNull.Value : Input.City.Trim());
-        cmd.Parameters.AddWithValue("@Province",
-            string.IsNullOrWhiteSpace(Input.Province) ? DBNull.Value : Input.Province.Trim());
-        cmd.Parameters.AddWithValue("@PostalCode",
-            string.IsNullOrWhiteSpace(Input.PostalCode) ? DBNull.Value : Input.PostalCode.Trim());
-
-        cmd.ExecuteNonQuery();
 
         TempData["RegistrationSuccess"] = "Account created successfully! You can now log in.";
 
