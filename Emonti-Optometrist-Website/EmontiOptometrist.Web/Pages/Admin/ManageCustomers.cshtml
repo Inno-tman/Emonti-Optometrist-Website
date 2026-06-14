@@ -146,7 +146,6 @@
                                 <th>Phone</th>
                                 <th>Location</th>
                                 <th>Orders</th>
-                                <th>Registered</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -158,7 +157,6 @@
                                     <td><a href="tel:@c.Phone" style="color:#667eea;text-decoration:none;">@c.Phone</a></td>
                                     <td>@c.City@(string.IsNullOrEmpty(c.City) ? "" : ", ")@c.Province</td>
                                     <td><span class="order-count">@c.OrderCount</span></td>
-                                    <td style="font-size:0.8rem;color:#888;">@c.CreateDate</td>
                                 </tr>
                             }
                         </tbody>
