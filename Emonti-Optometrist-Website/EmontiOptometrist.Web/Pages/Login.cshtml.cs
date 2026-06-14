@@ -64,7 +64,7 @@ public class LoginModel : PageModel
             WHERE Customer_Email = @Email AND Customer_Password = @Password
               AND (Is_Archive IS NULL OR Is_Archive = 0)";
         cmd.Parameters.AddWithValue("@Email", Input.Email.Trim());
-        cmd.Parameters.AddWithValue("@Password", Input.Password);
+        cmd.Parameters.AddWithValue("@Password", Input.Password.Trim());
 
         using var reader = cmd.ExecuteReader();
         if (reader.Read())
