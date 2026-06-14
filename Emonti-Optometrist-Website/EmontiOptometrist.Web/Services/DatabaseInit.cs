@@ -67,7 +67,8 @@ public class DatabaseInit
                 Cust_LastName TEXT,
                 Cust_Email TEXT,
                 Cust_Phone TEXT,
-                Cust_Address TEXT
+                Cust_Address TEXT,
+                Last_Login TEXT
             )";
         cmd.ExecuteNonQuery();
 
@@ -297,5 +298,12 @@ public class DatabaseInit
             cmd.Parameters.AddWithValue("@Image", p.Image);
             cmd.ExecuteNonQuery();
         }
+
+        try
+        {
+            cmd.CommandText = "ALTER TABLE customer ADD COLUMN Last_Login TEXT";
+            cmd.ExecuteNonQuery();
+        }
+        catch { }
     }
 }
