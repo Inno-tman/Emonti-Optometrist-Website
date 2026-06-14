@@ -77,6 +77,13 @@ public class LoginModel : PageModel
             AuthSession.SignInCustomer(HttpContext, custId, email, firstName, lastName);
             _logger.LogInformation("Customer {Email} logged in.", email);
 
+            reader.Close();
+
+            using var updateCmd = conn.CreateCommand();
+            updateCmd.CommandText = "UPDATE customer SET Last_Login = datetime('now', 'localtime') WHERE Cust_ID = @CustId";
+            updateCmd.Parameters.AddWithValue("@CustId", custId);
+            updateCmd.ExecuteNonQuery();
+
             return RedirectToPage("/Index");
         }
 

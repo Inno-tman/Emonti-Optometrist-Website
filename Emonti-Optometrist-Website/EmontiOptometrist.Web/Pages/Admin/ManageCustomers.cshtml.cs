@@ -37,7 +37,7 @@ public class ManageCustomersModel : PageModel
 
         var sql = @"
             SELECT c.Cust_ID, c.Customer_Name, c.Customer_Surname, c.Customer_Email,
-                   c.Customer_Phone, c.City, c.Province,
+                   c.Customer_Phone, c.City, c.Province, c.Last_Login,
                    COALESCE(o.OrderCount, 0) AS OrderCount
             FROM customer c
             LEFT JOIN (SELECT CustID, COUNT(*) AS OrderCount FROM [Order] GROUP BY CustID) o ON c.Cust_ID = o.CustID";
@@ -66,6 +66,7 @@ public class ManageCustomersModel : PageModel
                 Phone = reader["Customer_Phone"]?.ToString() ?? "",
                 City = reader["City"]?.ToString() ?? "",
                 Province = reader["Province"]?.ToString() ?? "",
+                LastLogin = reader["Last_Login"]?.ToString() ?? "",
                 OrderCount = Convert.ToInt32(reader["OrderCount"])
             });
         }
@@ -83,5 +84,6 @@ public class CustomerListItem
     public string Phone { get; set; } = "";
     public string City { get; set; } = "";
     public string Province { get; set; } = "";
+    public string LastLogin { get; set; } = "";
     public int OrderCount { get; set; }
 }
