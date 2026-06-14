@@ -234,26 +234,13 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Dynamic floating pill nav bar effect on scroll (Stitch.money style)
+// Subtle shadow enhancement on scroll for fixed header
 window.addEventListener('scroll', () => {
     const header = document.querySelector('.header');
-    const scrollY = window.scrollY;
-    
-    if (scrollY > 50) {
-        // More opaque and stronger shadow when scrolled (floating pill effect)
-        header.style.background = 'rgba(255, 255, 255, 0.95)';
-        header.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.15), 0 6px 20px rgba(0, 0, 0, 0.1)';
-        header.style.backdropFilter = 'blur(24px) saturate(180%)';
-        header.style.webkitBackdropFilter = 'blur(24px) saturate(180%)';
-        header.style.top = '0.75rem';
-    } else {
-        // Lighter, more transparent when at top (floating pill above content)
-        header.style.background = 'rgba(255, 255, 255, 0.85)';
-        header.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)';
-        header.style.backdropFilter = 'blur(20px) saturate(180%)';
-        header.style.webkitBackdropFilter = 'blur(20px) saturate(180%)';
-        header.style.top = '1rem';
-    }
+    if (!header) return;
+    header.style.boxShadow = window.scrollY > 50
+        ? '0 4px 20px rgba(0, 0, 0, 0.1)'
+        : '0 2px 16px rgba(0, 0, 0, 0.08)';
 });
 
 // Animate hero content on load
