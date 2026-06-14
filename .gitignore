@@ -43,6 +43,10 @@ x86/
 
 # Publish Web Output
 *.[Pp]ublish.xml
+# SQLite journal files (WAL and SHM)
+*.db-wal
+*.db-shm
+
 # Web config with secrets
 */Web.config
 *.Web.config
