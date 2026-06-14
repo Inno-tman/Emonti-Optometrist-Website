@@ -4,52 +4,382 @@
     ViewData["Title"] = "Register";
 }
 
-<div class="identity-container">
-    <div class="identity-card">
-        <div class="identity-header">
-            <div class="identity-logo">
-                <span class="logo-brand">EMONTI</span>
-                <span class="logo-profession">OPTOMETRIST</span>
+<style>
+    @@keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @@keyframes heroTitleReveal {
+        0% { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    @@keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(30px); filter: blur(5px); }
+        to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    .register-hero {
+        background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        color: white;
+        padding: 8rem 2rem 4rem;
+        text-align: center;
+        position: relative;
+        overflow: visible;
+    }
+
+    .register-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
+
+    .register-hero .container { position: relative; z-index: 2; }
+
+    .register-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: heroTitleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 30px rgba(102, 126, 234, 0.5);
+    }
+
+    .register-hero p {
+        animation: fadeSlideIn 1.2s ease-out 0.5s backwards;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .register-container {
+        max-width: 800px;
+        margin: -3rem auto 4rem;
+        padding: 0 2rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .register-content {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        padding: 3rem;
+    }
+
+    .form-section { margin-bottom: 2rem; }
+
+    .section-title {
+        font-size: 1.5rem;
+        color: #2c5aa0;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 0.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group { display: flex; flex-direction: column; }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group input, .form-group select {
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+        border-color: #2c5aa0;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    }
+
+    .required { color: #dc3545; }
+
+    .btn-register {
+        background: linear-gradient(135deg, #2c5aa0, #1e4080);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(44, 90, 160, 0.4);
+    }
+
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .alert-success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .alert-error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .text-danger { color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; display: block; }
+
+    .links-section {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .links-section a {
+        color: #2c5aa0;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .links-section a:hover { text-decoration: underline; }
+
+    @@media (max-width: 768px) {
+        .register-hero { padding: 6rem 1rem 3rem; }
+        .register-hero h1 { font-size: 2rem; }
+        .register-container { margin-top: -2rem; padding: 0 1rem; }
+        .register-content { padding: 2rem; }
+        .form-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<section class="register-hero">
+    <div class="container">
+        <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+        <p>Join us and create your comprehensive profile</p>
+    </div>
+</section>
+
+<div class="register-container">
+    <div class="register-content">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">@Html.Raw(Model.ErrorMessage)</div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success">@Model.SuccessMessage</div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ModelOnlyError))
+        {
+            <div class="alert alert-error">@Model.ModelOnlyError</div>
+        }
+
+        <form method="post" id="registerForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert" style="@(ViewData.ModelState.ErrorCount > 0 ? "" : "display:none;")"></div>
+
+            <!-- Personal Information -->
+            <div class="form-section">
+                <h3 class="section-title">Personal Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name <span class="required">*</span></label>
+                        <input asp-for="Input.FirstName" placeholder="Enter your first name" />
+                        <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name <span class="required">*</span></label>
+                        <input asp-for="Input.LastName" placeholder="Enter your last name" />
+                        <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone Number <span class="required">*</span></label>
+                        <input asp-for="Input.Phone" placeholder="0123456789" />
+                        <span asp-validation-for="Input.Phone" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth <span class="required">*</span></label>
+                        <input asp-for="Input.DateOfBirth" type="date" />
+                        <span asp-validation-for="Input.DateOfBirth" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Gender <span class="required">*</span></label>
+                        <select asp-for="Input.Gender">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="Input.Gender" class="text-danger"></span>
+                    </div>
+                </div>
             </div>
-            <h2>Create Account</h2>
-            <p>Join Emonti Optometrist today</p>
-        </div>
 
-        <form method="post" class="identity-form">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-
-            <div class="form-group">
-                <label asp-for="Input.FullName">Full name</label>
-                <input asp-for="Input.FullName" class="form-control identity-input" placeholder="John Doe" />
-                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            <!-- Medical Information -->
+            <div class="form-section">
+                <h3 class="section-title">Medical Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Medical Aid Provider</label>
+                        <input asp-for="Input.MedicalAid" placeholder="e.g., Discovery Health" />
+                    </div>
+                    <div class="form-group">
+                        <label>Medical Aid Number</label>
+                        <input asp-for="Input.MedicalAidNumber" placeholder="Enter your medical aid number" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Are you the main member on this medical aid? <span class="required">*</span></label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; font-weight: normal; gap: 0.3rem;">
+                                <input type="radio" asp-for="Input.IsMainMember" value="true" id="IsMainMemberYes" />
+                                Yes
+                            </label>
+                            <label style="display: flex; align-items: center; font-weight: normal; gap: 0.3rem;">
+                                <input type="radio" asp-for="Input.IsMainMember" value="false" id="IsMainMemberNo" />
+                                No
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div id="mainMemberDetails" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Main Member First Name</label>
+                            <input asp-for="Input.MainMemberName" placeholder="Enter main member's first name" />
+                            <span asp-validation-for="Input.MainMemberName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Main Member Last Name</label>
+                            <input asp-for="Input.MainMemberSurname" placeholder="Enter main member's last name" />
+                            <span asp-validation-for="Input.MainMemberSurname" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Main Member ID Number (13 digits)</label>
+                            <input asp-for="Input.MainMemberID" placeholder="e.g., 1234567890123" />
+                            <span asp-validation-for="Input.MainMemberID" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label asp-for="Input.Email">Email address</label>
-                <input asp-for="Input.Email" class="form-control identity-input" autocomplete="email" placeholder="name@example.com" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            <!-- Address Information -->
+            <div class="form-section">
+                <h3 class="section-title">Address Information <span class="required">*</span></h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Street Number</label>
+                        <input asp-for="Input.StreetNumber" placeholder="e.g., 123" />
+                    </div>
+                    <div class="form-group">
+                        <label>Street Name</label>
+                        <input asp-for="Input.StreetName" placeholder="e.g., Main Street" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Complex Name</label>
+                        <input asp-for="Input.ComplexName" placeholder="e.g., Waterfall Estate" />
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Number</label>
+                        <input asp-for="Input.UnitNumber" placeholder="e.g., 1, 2A, etc." />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input asp-for="Input.City" placeholder="e.g., Cape Town" />
+                    </div>
+                    <div class="form-group">
+                        <label>Province</label>
+                        <select asp-for="Input.Province">
+                            <option value="">Select Province</option>
+                            <option value="Eastern Cape">Eastern Cape</option>
+                            <option value="Free State">Free State</option>
+                            <option value="Gauteng">Gauteng</option>
+                            <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                            <option value="Limpopo">Limpopo</option>
+                            <option value="Mpumalanga">Mpumalanga</option>
+                            <option value="Northern Cape">Northern Cape</option>
+                            <option value="North West">North West</option>
+                            <option value="Western Cape">Western Cape</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Postal Code</label>
+                        <input asp-for="Input.PostalCode" placeholder="e.g., 8001" />
+                        <span asp-validation-for="Input.PostalCode" class="text-danger"></span>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label asp-for="Input.Password">Password</label>
-                <input asp-for="Input.Password" class="form-control identity-input" autocomplete="new-password" placeholder="Create a password" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <!-- Account Information -->
+            <div class="form-section">
+                <h3 class="section-title">Account Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email Address <span class="required">*</span></label>
+                        <input asp-for="Input.Email" type="email" placeholder="Enter your email address" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password <span class="required">*</span> (6-8 characters)</label>
+                        <input asp-for="Input.Password" type="password" placeholder="Enter your password (6-8 characters)" />
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password <span class="required">*</span></label>
+                        <input asp-for="Input.ConfirmPassword" type="password" placeholder="Confirm your password" />
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label asp-for="Input.ConfirmPassword">Confirm password</label>
-                <input asp-for="Input.ConfirmPassword" class="form-control identity-input" autocomplete="new-password" placeholder="Confirm your password" />
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            <div class="form-section" style="text-align: center; margin-top: 2rem;">
+                <button type="submit" class="btn-register" style="font-size: 1.1rem; padding: 1.2rem 3rem;">Create Account</button>
             </div>
 
-            <button type="submit" class="identity-btn">Create Account</button>
-
-            <div class="identity-links">
-                <a asp-page="./Login">Already have an account? Sign in</a>
+            <div class="links-section">
+                <a asp-page="./Login"><i class="fas fa-sign-in-alt"></i> Already have an account? Sign in</a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var yesRadio = document.getElementById('IsMainMemberYes');
+        var noRadio = document.getElementById('IsMainMemberNo');
+        var mainMemberDetails = document.getElementById('mainMemberDetails');
+
+        function toggleMainMemberFields() {
+            if (noRadio && noRadio.checked) {
+                mainMemberDetails.style.display = 'block';
+            } else {
+                mainMemberDetails.style.display = 'none';
+            }
+        }
+
+        if (yesRadio) yesRadio.addEventListener('change', toggleMainMemberFields);
+        if (noRadio) noRadio.addEventListener('change', toggleMainMemberFields);
+        toggleMainMemberFields();
+    });
+</script>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
