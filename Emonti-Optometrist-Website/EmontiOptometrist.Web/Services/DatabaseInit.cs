@@ -299,11 +299,13 @@ public class DatabaseInit
             cmd.ExecuteNonQuery();
         }
 
-        try
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('customer') WHERE name='Last_Login'";
+        var hasLastLogin = (long)cmd.ExecuteScalar() > 0;
+        if (!hasLastLogin)
         {
             cmd.CommandText = "ALTER TABLE customer ADD COLUMN Last_Login TEXT";
             cmd.ExecuteNonQuery();
         }
-        catch { }
     }
 }
