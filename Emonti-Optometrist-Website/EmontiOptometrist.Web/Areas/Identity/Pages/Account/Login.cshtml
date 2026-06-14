@@ -4,48 +4,365 @@
     ViewData["Title"] = "Log in";
 }
 
-<div class="identity-container">
-    <div class="identity-card">
-        <div class="identity-header">
-            <div class="identity-logo">
-                <span class="logo-brand">EMONTI</span>
-                <span class="logo-profession">OPTOMETRIST</span>
-            </div>
-            <h2>Welcome Back</h2>
-            <p>Sign in to your account</p>
-        </div>
+<style>
+    .login-hero {
+        background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        color: white;
+        padding: 8rem 2rem 4rem;
+        text-align: center;
+        position: relative;
+        overflow: visible;
+    }
 
-        <form method="post" class="identity-form">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+    .login-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
 
-            <div class="form-group">
-                <label asp-for="Input.Email">Email address</label>
-                <input asp-for="Input.Email" class="form-control identity-input" autocomplete="email" placeholder="name@example.com" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
+    .login-hero .container {
+        position: relative;
+        z-index: 2;
+    }
 
-            <div class="form-group">
-                <label asp-for="Input.Password">Password</label>
-                <input asp-for="Input.Password" class="form-control identity-input" autocomplete="current-password" placeholder="Enter your password" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
+    .login-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: heroTitleReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 30px rgba(102, 126, 234, 0.5);
+    }
 
-            <div class="form-group checkbox-group">
-                <label class="checkbox-label">
+    .login-hero p {
+        animation: fadeSlideIn 1.2s ease-out 0.5s backwards;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-container {
+        max-width: 800px;
+        margin: -3rem auto 4rem;
+        padding: 0 2rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .login-content {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        padding: 3rem;
+    }
+
+    .login-form {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+        border-color: #2c5aa0;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    }
+
+    .btn-login {
+        width: 100%;
+        background: linear-gradient(135deg, #2c5aa0, #1e4080);
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(44, 90, 160, 0.4);
+    }
+
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .alert-error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .alert-success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+
+    .links-section {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .links-section a {
+        color: #2c5aa0;
+        text-decoration: none;
+        margin: 0 1rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .links-section a:hover { text-decoration: underline; }
+
+    @@keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @@keyframes heroTitleReveal {
+        0% { opacity: 0; transform: translateY(50px) scale(0.9); filter: blur(10px); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+
+    @@keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(30px); filter: blur(5px); }
+        to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.6);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 0;
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 500px;
+    }
+
+    .modal-header {
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, #2c5aa0 0%, #1e4080 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 { margin: 0; font-size: 1.5rem; }
+    .close { color: white; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; }
+    .close:hover { opacity: 0.7; }
+    .modal-body { padding: 2rem; }
+
+    @@media (max-width: 768px) {
+        .login-hero { padding: 6rem 1rem 3rem; }
+        .login-hero h1 { font-size: 2rem; }
+        .login-container { margin-top: -2rem; padding: 0 1rem; }
+        .login-content { padding: 2rem; }
+    }
+</style>
+
+<section class="login-hero">
+    <div class="container">
+        <h1><i class="fas fa-sign-in-alt"></i> Welcome Back</h1>
+        <p>Sign in to your account to continue</p>
+    </div>
+</section>
+
+<div class="login-container">
+    <div class="login-content">
+        <div class="login-form">
+            <h2 style="text-align: center; color: #2c5aa0; margin-bottom: 2rem;">
+                <i class="fas fa-user-circle"></i> Login
+            </h2>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-error">@Model.ErrorMessage</div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success">@Model.SuccessMessage</div>
+            }
+
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert" style="display:none;"></div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input asp-for="Input.Email" class="form-control" autocomplete="email" placeholder="Enter your email address" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" placeholder="Enter your password" />
+                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                </div>
+
+                <div class="checkbox-group">
                     <input asp-for="Input.RememberMe" />
-                    <span>Remember me</span>
-                </label>
-            </div>
+                    <label asp-for="Input.RememberMe">Remember me</label>
+                </div>
 
-            <button type="submit" class="identity-btn">Sign In</button>
+                <button type="submit" class="btn-login">Sign In</button>
 
-            <div class="identity-links">
-                <a asp-page="./ForgotPassword">Forgot your password?</a>
-                <a asp-page="./Register">Don't have an account? Register</a>
-            </div>
-        </form>
+                <div class="links-section">
+                    <a asp-page="./Register"><i class="fas fa-user-plus"></i> Create New Account</a>
+                    <br />
+                    <a href="javascript:void(0);" onclick="openForgotPasswordModal()">
+                        <i class="fas fa-key"></i> Forgot Password?
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-key"></i> Forgot Password</h2>
+            <button type="button" class="close" onclick="closeForgotPasswordModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            @if (!string.IsNullOrEmpty(Model.ForgotPasswordError))
+            {
+                <div class="alert alert-error">@Model.ForgotPasswordError</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ForgotPasswordSuccess))
+            {
+                <div class="alert alert-success">@Model.ForgotPasswordSuccess</div>
+            }
+
+            <form method="post" asp-page-handler="SendResetCode" id="forgotPasswordForm">
+                <p style="margin-bottom: 1.5rem; color: #666;">
+                    Enter your email address and we'll send you a password reset code.
+                </p>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input name="ForgotPasswordEmail" type="email" class="form-control" placeholder="Enter your email address" required />
+                </div>
+                <button type="submit" class="btn-login">Send Reset Code</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-lock"></i> Reset Password</h2>
+            <button type="button" class="close" onclick="closeResetPasswordModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            @if (!string.IsNullOrEmpty(Model.ResetPasswordError))
+            {
+                <div class="alert alert-error">@Model.ResetPasswordError</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ResetPasswordSuccess))
+            {
+                <div class="alert alert-success">@Model.ResetPasswordSuccess</div>
+            }
+
+            <form method="post" asp-page-handler="ResetPassword" id="resetPasswordForm">
+                <input type="hidden" name="ResetEmail" value="@Model.ResetEmail" />
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email Address</label>
+                    <input name="ResetEmail" type="email" class="form-control" placeholder="Enter your email address" required />
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Reset Code</label>
+                    <input name="ResetCode" type="text" class="form-control" placeholder="Enter the code sent to your email" required />
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> New Password</label>
+                    <input name="NewPassword" type="password" class="form-control" placeholder="Enter your new password" required />
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Confirm New Password</label>
+                    <input name="ConfirmNewPassword" type="password" class="form-control" placeholder="Confirm your new password" required />
+                </div>
+                <button type="submit" class="btn-login">Reset Password</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openForgotPasswordModal() {
+        document.getElementById('forgotPasswordModal').style.display = 'block';
+    }
+    function closeForgotPasswordModal() {
+        document.getElementById('forgotPasswordModal').style.display = 'none';
+    }
+    function openResetPasswordModal() {
+        closeForgotPasswordModal();
+        document.getElementById('resetPasswordModal').style.display = 'block';
+    }
+    function closeResetPasswordModal() {
+        document.getElementById('resetPasswordModal').style.display = 'none';
+    }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('forgotPasswordModal'))
+            closeForgotPasswordModal();
+        if (event.target == document.getElementById('resetPasswordModal'))
+            closeResetPasswordModal();
+    }
+
+    @if (Model.ShowForgotPasswordModal)
+    {
+        <text>document.getElementById('forgotPasswordModal').style.display = 'block';</text>
+    }
+    @if (Model.ShowResetPasswordModal)
+    {
+        <text>openResetPasswordModal();</text>
+    }
+</script>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
