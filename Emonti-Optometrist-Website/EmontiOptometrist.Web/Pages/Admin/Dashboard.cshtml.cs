@@ -19,6 +19,8 @@ public class DashboardModel : PageModel
     public int PendingOrders { get; set; }
     public int TotalProducts { get; set; }
     public int TotalStaff { get; set; }
+    public int TodayAppointments { get; set; }
+    public int NewCustomers { get; set; }
     public List<RecentOrderItem> RecentOrders { get; set; } = new();
 
     public IActionResult OnGet()
@@ -66,9 +68,24 @@ public class DashboardModel : PageModel
 
                 using (var cmd = conn.CreateCommand())
                 {
+                    cmd.CommandText = "SELECT COUNT(*) FROM Appointment WHERE date(Appointment_Date) = date('now')";
+                    TodayAppointments = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT COUNT(*) FROM customer WHERE date(Customer_Create_Date) >= date('now', 'start of month')";
+                    NewCustomers = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                using (var cmd = conn.CreateCommand())
+                {
                     cmd.CommandText = @"
-                        SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status
-                        FROM [Order] ORDER BY Order_Date DESC
+                        SELECT o.OrderID, o.CustID, o.Order_Date, o.Order_Total, o.Order_Status,
+                               c.Customer_Name, c.Customer_Surname
+                        FROM [Order] o
+                        LEFT JOIN customer c ON o.CustID = c.Cust_ID
+                        ORDER BY o.Order_Date DESC
                         LIMIT 5";
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -78,6 +95,7 @@ public class DashboardModel : PageModel
                             {
                                 OrderID = Convert.ToInt32(reader["OrderID"]),
                                 CustID = reader["CustID"].ToString(),
+                                CustomerName = $"{reader["Customer_Name"]} {reader["Customer_Surname"]}",
                                 OrderDate = DateTime.Parse(reader["Order_Date"].ToString()),
                                 Total = Convert.ToDecimal(reader["Order_Total"]),
                                 Status = reader["Order_Status"].ToString()
@@ -100,6 +118,7 @@ public class RecentOrderItem
 {
     public int OrderID { get; set; }
     public string CustID { get; set; } = "";
+    public string CustomerName { get; set; } = "";
     public DateTime OrderDate { get; set; }
     public decimal Total { get; set; }
     public string Status { get; set; } = "";

@@ -16,50 +16,28 @@ function initSlidingPill() {
 
     if (!PILL || !MENU_LINKS_PARENT || MENU_LINKS.length === 0) return;
 
-    // Helper function to get current page name from URL
     function getCurrentPageName() {
         const path = window.location.pathname.toLowerCase();
-        
-        // Check for specific pages first (more specific matches)
-        if (path.includes('/services.aspx') || (path.includes('/services') && !path.includes('/services/'))) return 'services';
-        if (path.includes('/shop.aspx') || (path.includes('/shop') && !path.includes('/shop/'))) return 'shop';
-        if (path.includes('/appointmentstart.aspx') || path.includes('/bookappointment.aspx') || path.includes('/appointment')) return 'appointment';
-        if (path.includes('/about.aspx') || (path.includes('/about') && !path.includes('/about/'))) return 'about';
-        if (path.includes('/contact.aspx') || (path.includes('/contact') && !path.includes('/contact/'))) return 'contact';
-        if (path.includes('/help.aspx') || (path.includes('/help') && !path.includes('/help/'))) return 'help';
-        
-        // Check for home page (default page)
-        if (path === '/' || 
-            path === '/default.aspx' ||
-            path.endsWith('/default.aspx') ||
-            (path.endsWith('/') && path.length <= 2)) {
-            return 'home';
-        }
-        
+        if (path === '/' || path === '') return 'home';
+        if (path.includes('/services')) return 'services';
+        if (path.includes('/shop')) return 'shop';
+        if (path.includes('/appointmentstart') || path.includes('/bookappointment') || path.includes('/appointment')) return 'appointment';
+        if (path.includes('/about')) return 'about';
+        if (path.includes('/contact')) return 'contact';
+        if (path.includes('/help')) return 'help';
         return null;
     }
 
-    // Helper function to get page name from href
     function getPageNameFromHref(href) {
         if (!href) return null;
-        const hrefLower = href.toLowerCase();
-        // Check for home/default first
-        if (hrefLower.includes('default') || 
-            hrefLower === '~/' || 
-            hrefLower === '/' ||
-            hrefLower.endsWith('/default.aspx') ||
-            (hrefLower.includes('~') && !hrefLower.includes('services') && 
-             !hrefLower.includes('shop') && !hrefLower.includes('appointment') &&
-             !hrefLower.includes('about') && !hrefLower.includes('contact') &&
-             !hrefLower.includes('help'))) {
-            return 'home';
-        }
-        if (hrefLower.includes('services')) return 'services';
-        if (hrefLower.includes('shop')) return 'shop';
-        if (hrefLower.includes('appointment')) return 'appointment';
-        if (hrefLower.includes('about')) return 'about';
-        if (hrefLower.includes('contact')) return 'contact';
-        if (hrefLower.includes('help')) return 'help';
+        const h = href.toLowerCase();
+        if (h === '/' || h === '') return 'home';
+        if (h.includes('services')) return 'services';
+        if (h.includes('shop')) return 'shop';
+        if (h.includes('appointment')) return 'appointment';
+        if (h.includes('about')) return 'about';
+        if (h.includes('contact')) return 'contact';
+        if (h.includes('help')) return 'help';
         return null;
     }
 
@@ -67,106 +45,47 @@ function initSlidingPill() {
         let activeItem = null;
         const currentPage = getCurrentPageName();
         const currentPath = window.location.pathname.toLowerCase();
-        
-        // First, try to find item with active class (set by code-behind)
+
         MENU_LINKS.forEach((e) => {
-            if (e.classList.contains('active')) {
-                activeItem = e;
-            }
+            if (e.classList.contains('active')) activeItem = e;
         });
-        
-        // If no active class found, try to match by URL (only for pages in navigation)
+
         if (!activeItem) {
             MENU_LINKS.forEach((e) => {
                 const href = e.getAttribute('href') || '';
-                const hrefLower = href.toLowerCase();
                 const pageName = getPageNameFromHref(href);
-                
-                // Check multiple conditions for matching
-                let isMatch = false;
-                
-                // Match by page name (both should return 'appointment' for appointment pages)
-                if (pageName && pageName === currentPage) {
-                    isMatch = true;
-                }
-                
-                // Special handling for appointment pages - match BookAppointment with AppointmentStart link
-                // Both BookAppointment.aspx and AppointmentStart.aspx should match the appointment nav item
-                if (currentPage === 'appointment' && (pageName === 'appointment' || hrefLower.includes('appointment'))) {
-                    isMatch = true;
-                }
-                
-                // Also check if current path matches the href directly (for resolved ASP.NET paths)
-                // Handle both ~/ paths and resolved paths
-                let hrefPath = hrefLower.replace('~/', '/').replace('.aspx', '');
-                if (hrefPath && currentPath.includes(hrefPath)) {
-                    isMatch = true;
-                }
-                
-                // For appointment pages specifically, check if current path contains 'bookappointment' 
-                // and href contains 'appointment' (to match BookAppointment with AppointmentStart link)
-                if (currentPath.includes('bookappointment') && hrefLower.includes('appointment')) {
-                    isMatch = true;
-                }
-                
-                // Special handling for home page
-                if (pageName === 'home' && (currentPath === '/' || currentPath === '/default.aspx' || currentPath.endsWith('/default.aspx') || (currentPath.endsWith('/') && currentPath.length <= 2))) {
-                    isMatch = true;
-                }
-                
-                // Match by href pattern
-                if (hrefLower.includes('default') && (currentPath === '/' || currentPath.includes('default'))) {
-                    isMatch = true;
-                }
-                
-                if (isMatch) {
-                    activeItem = e;
-                    // Also add active class for consistency
-                    e.classList.add('active');
-                }
+                let isMatch = pageName && pageName === currentPage;
+                if (currentPage === 'appointment' && pageName === 'appointment') isMatch = true;
+                if (currentPath.includes('bookappointment') && href.toLowerCase().includes('appointment')) isMatch = true;
+                if (isMatch) { activeItem = e; e.classList.add('active'); }
             });
         }
-        
-        // Fallback: if on appointment page and no active found, find appointment nav item by ID or href
+
         if (!activeItem && currentPage === 'appointment') {
             MENU_LINKS.forEach((e) => {
-                const href = e.getAttribute('href') || '';
-                const hrefLower = href.toLowerCase();
-                const id = e.getAttribute('id') || '';
-                const idLower = id.toLowerCase();
-                
-                // Check if this is the appointment nav item (by ID or href containing appointment)
-                if (idLower.includes('appointment') || hrefLower.includes('appointment')) {
-                    activeItem = e;
-                    e.classList.add('active');
+                if (e.getAttribute('href')?.toLowerCase().includes('appointment')) {
+                    activeItem = e; e.classList.add('active');
                 }
             });
         }
-        
-        // Fallback: if on home page and no active found, use first item (Home)
+
         if (!activeItem && currentPage === 'home' && MENU_LINKS.length > 0) {
-            activeItem = MENU_LINKS[0];
-            activeItem.classList.add('active');
+            activeItem = MENU_LINKS[0]; activeItem.classList.add('active');
         }
-        
-        // Only position the pill if we found an active item
-        // For pages not in navigation (Cart, Login, Register, etc.), don't show pill on any item
+
         if (activeItem) {
-            const dimensions = activeItem.getBoundingClientRect();
+            const dims = activeItem.getBoundingClientRect();
             const parentRect = MENU_LINKS_PARENT.getBoundingClientRect();
-            
-            if (dimensions.width > 0 && dimensions.height > 0) {
-                PILL.style.width = dimensions.width + 'px';
-                PILL.style.height = dimensions.height + 'px';
-                PILL.style.left = (dimensions.left - parentRect.left) + 'px';
+            if (dims.width > 0 && dims.height > 0) {
+                PILL.style.width = dims.width + 'px';
+                PILL.style.height = dims.height + 'px';
+                PILL.style.left = (dims.left - parentRect.left) + 'px';
                 PILL.style.opacity = '1';
                 PILL.style.visibility = 'visible';
             } else {
-                // Retry if dimensions aren't ready yet
                 setTimeout(setPill, 50);
             }
         } else {
-            // Hide the pill if no active item (for pages not in main navigation)
             PILL.style.opacity = '0';
             PILL.style.visibility = 'hidden';
         }
