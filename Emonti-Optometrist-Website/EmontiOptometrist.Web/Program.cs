@@ -12,7 +12,8 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"
     builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 }
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages()
+    .AddMvcOptions(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<DatabaseInit>();
