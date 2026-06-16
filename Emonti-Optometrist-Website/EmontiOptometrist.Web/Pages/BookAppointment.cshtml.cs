@@ -92,7 +92,7 @@ public class BookAppointmentModel : PageModel
                     WHERE Cust_ID = @CustId AND Appointment_Date = @Date
                     AND Appoinment_Status != 'Cancelled'";
                 perDayCmd.Parameters.AddWithValue("@CustId", custId);
-                perDayCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("o"));
+                perDayCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd HH:mm:ss"));
                 if ((long)perDayCmd.ExecuteScalar()! > 0)
                     return new JsonResult(new { available = false, message = "You already have an appointment on this date. Only one appointment per day allowed." });
 
@@ -106,7 +106,7 @@ public class BookAppointmentModel : PageModel
                          WHERE Staff_ID = @StaffId AND Blocked_Date = @Date
                          AND TimeID = @TimeId) AS TotalCount";
                 checkCmd.Parameters.AddWithValue("@StaffId", optometristId);
-                checkCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("o"));
+                checkCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd HH:mm:ss"));
                 checkCmd.Parameters.AddWithValue("@TimeId", time);
                 if ((long)checkCmd.ExecuteScalar()! > 0)
                     return new JsonResult(new { available = false, message = "This slot is already booked or blocked by the optometrist." });
@@ -247,7 +247,7 @@ public class BookAppointmentModel : PageModel
                 WHERE Cust_ID = @CustId AND Appointment_Date = @AppointmentDate
                 AND Appoinment_Status != 'Cancelled'";
             perDayCmd.Parameters.AddWithValue("@CustId", custId);
-            perDayCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
+            perDayCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd HH:mm:ss"));
             if ((long)perDayCmd.ExecuteScalar()! > 0)
             {
                 ErrorMessage = "You already have an appointment scheduled on this date. You can only book one appointment per day.";
@@ -263,7 +263,7 @@ public class BookAppointmentModel : PageModel
                     (SELECT COUNT(*) FROM BlockedTimeslots
                      WHERE Staff_ID = @StaffId AND Blocked_Date = @AppointmentDate
                      AND TimeID = @AppointmentTimeId) AS TotalCount";
-            checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
+            checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd HH:mm:ss"));
             checkCmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
             checkCmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
             if ((long)checkCmd.ExecuteScalar()! > 0)
@@ -280,7 +280,7 @@ public class BookAppointmentModel : PageModel
                     (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
             cmd.Parameters.AddWithValue("@CustId", custId);
             cmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
-            cmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
+            cmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd HH:mm:ss"));
             cmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
             cmd.Parameters.AddWithValue("@Status", "Pending");
 
