@@ -39,6 +39,87 @@ public class BookAppointmentModel : PageModel
 
     public List<StaffItem> Optometrists { get; set; } = new();
 
+    public JsonResult OnGetCheckAvailability(string date, string time, string optometristId)
+    {
+        if (!DateTime.TryParse(date, out var parsedDate))
+            return new JsonResult(new { available = false, message = "Invalid date." });
+
+        var custId = AuthSession.GetCustId(HttpContext);
+        if (string.IsNullOrEmpty(custId))
+            return new JsonResult(new { available = false, message = "Please log in to book." });
+
+        if (parsedDate.Date < DateTime.Today)
+            return new JsonResult(new { available = false, message = "This date has already passed. Please select a future date." });
+
+        if (parsedDate.DayOfWeek == DayOfWeek.Sunday)
+            return new JsonResult(new { available = false, message = "We are closed on Sundays. Please select a different date." });
+
+        var slot = TimeSlots.FirstOrDefault(s => s.Value == time);
+        if (slot == null)
+            return new JsonResult(new { available = true, message = "" });
+
+        if (!DateTime.TryParse(slot.Text.Split(" - ")[0], out var parsedStart))
+            return new JsonResult(new { available = false, message = "Invalid time slot." });
+
+        var slotStart = parsedStart.TimeOfDay;
+        var businessClose = parsedDate.DayOfWeek == DayOfWeek.Saturday ? new TimeSpan(14, 0, 0) : new TimeSpan(17, 0, 0);
+        if (slotStart < new TimeSpan(8, 0, 0) || slotStart >= businessClose)
+        {
+            var closeTime = parsedDate.DayOfWeek == DayOfWeek.Saturday ? "2:00 PM" : "5:00 PM";
+            return new JsonResult(new { available = false, message = $"This slot is outside our business hours (8 AM - {closeTime})." });
+        }
+
+        if (parsedDate == DateTime.Today)
+        {
+            var slotDateTime = DateTime.Today.Add(slotStart);
+            if (DateTime.Now >= slotDateTime)
+                return new JsonResult(new { available = false, message = "This time has already passed. Please select a future slot." });
+            if (slotDateTime <= DateTime.Now.AddHours(2))
+                return new JsonResult(new { available = false, message = "Same-day bookings need at least 2 hours notice." });
+        }
+
+        if (!string.IsNullOrEmpty(time) && !string.IsNullOrEmpty(optometristId))
+        {
+            try
+            {
+                var connStr = _configuration.GetConnectionString("DefaultConnection");
+                using var conn = new SqliteConnection(connStr);
+                conn.Open();
+
+                using var perDayCmd = conn.CreateCommand();
+                perDayCmd.CommandText = @"
+                    SELECT COUNT(*) FROM Appointment
+                    WHERE Cust_ID = @CustId AND Appointment_Date = @Date
+                    AND Appoinment_Status != 'Cancelled'";
+                perDayCmd.Parameters.AddWithValue("@CustId", custId);
+                perDayCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("o"));
+                if ((long)perDayCmd.ExecuteScalar()! > 0)
+                    return new JsonResult(new { available = false, message = "You already have an appointment on this date. Only one appointment per day allowed." });
+
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = @"
+                    SELECT
+                        (SELECT COUNT(*) FROM Appointment
+                         WHERE Staff_ID = @StaffId AND Appointment_Date = @Date
+                         AND AppointmentTimeID = @TimeId AND Appoinment_Status != 'Cancelled') +
+                        (SELECT COUNT(*) FROM BlockedTimeslots
+                         WHERE Staff_ID = @StaffId AND Blocked_Date = @Date
+                         AND TimeID = @TimeId) AS TotalCount";
+                checkCmd.Parameters.AddWithValue("@StaffId", optometristId);
+                checkCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("o"));
+                checkCmd.Parameters.AddWithValue("@TimeId", time);
+                if ((long)checkCmd.ExecuteScalar()! > 0)
+                    return new JsonResult(new { available = false, message = "This slot is already booked or blocked by the optometrist." });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { available = false, message = $"Error checking availability: {ex.Message}" });
+            }
+        }
+
+        return new JsonResult(new { available = true, message = "This slot is available." });
+    }
+
     public void OnGet(string? rebook)
     {
         Input.PreferredDate = DateTime.Today;
