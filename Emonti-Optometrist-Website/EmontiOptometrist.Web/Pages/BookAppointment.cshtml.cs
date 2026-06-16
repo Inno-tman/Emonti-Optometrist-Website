@@ -240,6 +240,7 @@ public class BookAppointmentModel : PageModel
             var connStr = _configuration.GetConnectionString("DefaultConnection");
             using var conn = new SqliteConnection(connStr);
             conn.Open();
+            using var tx = conn.BeginTransaction();
 
             using var perDayCmd = conn.CreateCommand();
             perDayCmd.CommandText = @"
@@ -285,6 +286,7 @@ public class BookAppointmentModel : PageModel
             cmd.Parameters.AddWithValue("@Status", "Pending");
 
             cmd.ExecuteNonQuery();
+            tx.Commit();
 
             var customerEmail = HttpContext.Session.GetString(AuthSession.UserEmail);
             if (!string.IsNullOrEmpty(customerEmail))

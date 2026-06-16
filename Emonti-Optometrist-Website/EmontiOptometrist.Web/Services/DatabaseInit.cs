@@ -156,6 +156,18 @@ public class DatabaseInit
         cmd.ExecuteNonQuery();
 
         cmd.CommandText = @"
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_Appointment_Slot
+            ON Appointment(Staff_ID, Appointment_Date, AppointmentTimeID)
+            WHERE Appoinment_Status != 'Cancelled'";
+        try { cmd.ExecuteNonQuery(); } catch { }
+
+        cmd.CommandText = @"
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_Appointment_CustomerDay
+            ON Appointment(Cust_ID, Appointment_Date)
+            WHERE Appoinment_Status != 'Cancelled'";
+        try { cmd.ExecuteNonQuery(); } catch { }
+
+        cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS Staff (
                 Staff_ID TEXT PRIMARY KEY,
                 Staff_Name TEXT,
