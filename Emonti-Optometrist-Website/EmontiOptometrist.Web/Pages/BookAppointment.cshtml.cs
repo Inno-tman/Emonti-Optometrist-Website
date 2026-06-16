@@ -122,7 +122,6 @@ public class BookAppointmentModel : PageModel
 
     public void OnGet(string? rebook)
     {
-        Input.PreferredDate = DateTime.Today;
         LoadOptometrists();
 
         if (!string.IsNullOrEmpty(rebook))

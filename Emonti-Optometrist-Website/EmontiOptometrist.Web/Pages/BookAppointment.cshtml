@@ -446,6 +446,9 @@
         var timeSelect = document.getElementById('Input_PreferredTime');
         var optometristSelect = document.getElementById('Input_OptometristId');
         var statusEl = document.getElementById('availabilityStatus');
+        var submitBtn = document.querySelector('.btn-submit');
+
+        if (submitBtn) submitBtn.disabled = true;
 
         if (!statusEl) {
             console.warn('availabilityStatus element not found');
@@ -458,6 +461,7 @@
             var mm = String(today.getMonth() + 1).padStart(2, '0');
             var dd = String(today.getDate()).padStart(2, '0');
             dateInput.setAttribute('min', yyyy + '-' + mm + '-' + dd);
+            dateInput.value = '';
             dateInput.addEventListener('change', checkAvailability);
         }
 
@@ -472,11 +476,13 @@
             if (!date || !time || !optometrist) {
                 statusEl.className = 'availability-status';
                 statusEl.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = true;
                 return;
             }
 
             statusEl.className = 'availability-status visible';
             statusEl.innerHTML = '<span class="spinner"></span> Checking availability...';
+            if (submitBtn) submitBtn.disabled = true;
 
             fetch('/BookAppointment?handler=CheckAvailability&date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&optometristId=' + encodeURIComponent(optometrist))
                 .then(function (r) { return r.json(); })
@@ -484,15 +490,18 @@
                     if (data.available) {
                         statusEl.className = 'availability-status available visible';
                         statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                        if (submitBtn) submitBtn.disabled = false;
                     } else {
                         statusEl.className = 'availability-status unavailable visible';
                         statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.message;
+                        if (submitBtn) submitBtn.disabled = true;
                     }
                 })
                 .catch(function (err) {
                     console.error('Availability check failed:', err);
                     statusEl.className = 'availability-status';
                     statusEl.style.display = 'none';
+                    if (submitBtn) submitBtn.disabled = true;
                 });
         }
     });
