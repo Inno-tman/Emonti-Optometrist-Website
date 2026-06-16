@@ -390,7 +390,7 @@
                     <div class="form-group">
                         <label asp-for="Input.OptometristId"><i class="fas fa-user-md"></i> Optometrist <span class="required">*</span></label>
                         <div class="select-wrapper">
-                            <select asp-for="Input.OptometristId" onchange="checkAvailability()">
+                            <select asp-for="Input.OptometristId">
                                 <option value="">-- Select Optometrist --</option>
                                 @foreach (var opt in Model.Optometrists)
                                 {
@@ -405,13 +405,13 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label asp-for="Input.PreferredDate"><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
-                        <input asp-for="Input.PreferredDate" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="checkAvailability()" />
+                        <input asp-for="Input.PreferredDate" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="Input.PreferredDate"></span>
                     </div>
                     <div class="form-group">
                         <label asp-for="Input.PreferredTime"><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
                         <div class="select-wrapper">
-                            <select asp-for="Input.PreferredTime" onchange="checkAvailability()">
+                            <select asp-for="Input.PreferredTime">
                                 <option value="">-- Select Time --</option>
                                 <optgroup label="Morning">
                                     @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Morning"))
@@ -442,47 +442,58 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var dateInput = document.querySelector('input[type="date"]');
+        var dateInput = document.getElementById('Input_PreferredDate');
+        var timeSelect = document.getElementById('Input_PreferredTime');
+        var optometristSelect = document.getElementById('Input_OptometristId');
+        var statusEl = document.getElementById('availabilityStatus');
+
+        if (!statusEl) {
+            console.warn('availabilityStatus element not found');
+            return;
+        }
+
         if (dateInput) {
             var today = new Date();
             var yyyy = today.getFullYear();
             var mm = String(today.getMonth() + 1).padStart(2, '0');
             var dd = String(today.getDate()).padStart(2, '0');
             dateInput.setAttribute('min', yyyy + '-' + mm + '-' + dd);
-        }
-    });
-
-    function checkAvailability() {
-        var date = document.getElementById('Input_PreferredDate')?.value;
-        var time = document.getElementById('Input_PreferredTime')?.value;
-        var optometrist = document.getElementById('Input_OptometristId')?.value;
-        var statusEl = document.getElementById('availabilityStatus');
-
-        if (!statusEl) return;
-
-        if (!date || !time || !optometrist) {
-            statusEl.className = 'availability-status';
-            statusEl.style.display = 'none';
-            return;
+            dateInput.addEventListener('change', checkAvailability);
         }
 
-        statusEl.className = 'availability-status visible';
-        statusEl.innerHTML = '<span class="spinner"></span> Checking availability...';
+        if (timeSelect) timeSelect.addEventListener('change', checkAvailability);
+        if (optometristSelect) optometristSelect.addEventListener('change', checkAvailability);
 
-        fetch('/BookAppointment?handler=CheckAvailability&date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&optometristId=' + encodeURIComponent(optometrist))
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data.available) {
-                    statusEl.className = 'availability-status available visible';
-                    statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
-                } else {
-                    statusEl.className = 'availability-status unavailable visible';
-                    statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.message;
-                }
-            })
-            .catch(function () {
+        function checkAvailability() {
+            var date = dateInput ? dateInput.value : '';
+            var time = timeSelect ? timeSelect.value : '';
+            var optometrist = optometristSelect ? optometristSelect.value : '';
+
+            if (!date || !time || !optometrist) {
                 statusEl.className = 'availability-status';
                 statusEl.style.display = 'none';
-            });
-    }
+                return;
+            }
+
+            statusEl.className = 'availability-status visible';
+            statusEl.innerHTML = '<span class="spinner"></span> Checking availability...';
+
+            fetch('/BookAppointment?handler=CheckAvailability&date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&optometristId=' + encodeURIComponent(optometrist))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.available) {
+                        statusEl.className = 'availability-status available visible';
+                        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                    } else {
+                        statusEl.className = 'availability-status unavailable visible';
+                        statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.message;
+                    }
+                })
+                .catch(function (err) {
+                    console.error('Availability check failed:', err);
+                    statusEl.className = 'availability-status';
+                    statusEl.style.display = 'none';
+                });
+        }
+    });
 </script>
