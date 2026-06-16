@@ -326,6 +326,13 @@
         .btn-submit:active {
             transform: translateY(-1px);
         }
+        .btn-submit:disabled {
+            background: #6c6c8a !important;
+            cursor: not-allowed !important;
+            opacity: 0.6 !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
 
         @@media (max-width: 768px) {
             .booking-hero { padding: 6rem 1rem 3rem; }
