@@ -1,0 +1,341 @@
+@page
+@model EmontiOptometrist.Web.Pages.Staff.MessagesModel
+@{
+    ViewData["Title"] = "Messages";
+}
+
+@section HeadContent {
+    <style>
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .messages-hero {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
+            padding: 5rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .messages-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .messages-hero .container {
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        .messages-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .messages-hero p {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+
+        .messages-section {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: 60vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .conversation-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(102,126,234,0.1);
+            animation: fadeInUp 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .conversation-card:hover {
+            box-shadow: 0 8px 24px rgba(102,126,234,0.15);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: inherit;
+        }
+        .conversation-card.unread {
+            border-left: 4px solid #667eea;
+            background: #f8f9ff;
+        }
+
+        .conversation-info { flex: 1; min-width: 0; }
+        .conversation-info .customer-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.15rem;
+        }
+        .conversation-info .subject {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+        .conversation-info .preview {
+            font-size: 0.85rem;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .conversation-info .date {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 0.2rem;
+        }
+        .unread-badge {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .thread-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease;
+        }
+        .thread-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .thread-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        .thread-header .customer-label {
+            font-size: 0.8rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .thread-header a {
+            font-size: 0.85rem;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .thread-messages { padding: 1rem 1.5rem; max-height: 500px; overflow-y: auto; }
+        .thread-message {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        .thread-message.customer {
+            background: #f0f0f0;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .thread-message.staff {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .thread-message .meta {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 0.3rem;
+        }
+        .thread-message .body {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .reply-box {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #eee;
+            background: #fafafa;
+        }
+        .reply-box textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 0.75rem;
+        }
+        .reply-box textarea:focus { outline: none; border-color: #667eea; }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #c0c0c0;
+            margin-bottom: 1rem;
+        }
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .empty-state p {
+            color: #666;
+        }
+
+        @@media (max-width: 768px) {
+            .messages-hero { padding: 6rem 1rem 2.5rem; }
+            .messages-section { padding: 1.5rem 1rem; }
+            .conversation-card { padding: 1rem; }
+            .thread-message { max-width: 90%; }
+        }
+    </style>
+}
+
+<section class="messages-hero">
+    <div class="container">
+        <h1>Messages</h1>
+        <p>Respond to customer inquiries</p>
+    </div>
+</section>
+
+<section class="messages-section">
+    <div class="container">
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success" style="padding:1rem;border-radius:10px;margin-bottom:1.5rem;background:#d4edda;border:1px solid #c3e6cb;color:#155724;animation:fadeInUp 0.4s ease;">@Model.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error" style="padding:1rem;border-radius:10px;margin-bottom:1.5rem;background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;animation:fadeInUp 0.4s ease;">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.SelectedConversationId.HasValue)
+        {
+            <div class="thread-container">
+                <div class="thread-header">
+                    <a href="/Staff/Messages"><i class="fas fa-arrow-left"></i> Back</a>
+                    <div style="flex:1;">
+                        <h3>@Model.SelectedSubject</h3>
+                        @if (!string.IsNullOrEmpty(Model.SelectedCustomerName))
+                        {
+                            <div class="customer-label">From: @Model.SelectedCustomerName</div>
+                        }
+                    </div>
+                </div>
+                <div class="thread-messages">
+                    @foreach (var msg in Model.ThreadMessages)
+                    {
+                        <div class="thread-message @(msg.SenderRole == "Customer" ? "customer" : "staff")">
+                            <div class="body">@msg.MessageBody</div>
+                            <div class="meta">
+                                @msg.CreatedAt
+                                @if (msg.SenderRole == "Customer")
+                                {
+                                    <span> &middot; Customer</span>
+                                }
+                                else
+                                {
+                                    <span> &middot; Staff</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="reply-box">
+                    <form method="post" asp-page-handler="Reply">
+                        <input type="hidden" name="conversationId" value="@Model.SelectedConversationId" />
+                        <textarea name="body" placeholder="Type your reply..." required></textarea>
+                        <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Send Reply</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (Model.HasConversations)
+            {
+                foreach (var conv in Model.Conversations)
+                {
+                    <a href="/Staff/Messages?conv=@conv.ConversationId" class="conversation-card @(conv.UnreadCount > 0 ? "unread" : "")">
+                        <div class="conversation-info">
+                            <div class="customer-name">@conv.CustomerName</div>
+                            <div class="subject">@conv.Subject</div>
+                            <div class="preview">@conv.LastMessage</div>
+                            <div class="date">@conv.LastDate</div>
+                        </div>
+                        @if (conv.UnreadCount > 0)
+                        {
+                            <div class="unread-badge">@conv.UnreadCount</div>
+                        }
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <h3>No Messages Yet</h3>
+                    <p>Customer messages will appear here.</p>
+                </div>
+            }
+        }
+    </div>
+</section>
