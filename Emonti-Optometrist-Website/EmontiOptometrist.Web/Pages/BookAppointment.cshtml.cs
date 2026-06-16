@@ -55,6 +55,21 @@ public class BookAppointmentModel : PageModel
             using var conn = new SqliteConnection(connStr);
             conn.Open();
 
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = @"
+                SELECT COUNT(*) FROM Appointment
+                WHERE Appointment_Date = @AppointmentDate
+                AND AppointmentTimeID = @AppointmentTimeId
+                AND Appoinment_Status != 'Cancelled'";
+            checkCmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date.ToString("o"));
+            checkCmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
+            var existing = (long)checkCmd.ExecuteScalar()!;
+            if (existing > 0)
+            {
+                ErrorMessage = "This time slot is already booked. Please select a different date or time.";
+                return Page();
+            }
+
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 INSERT INTO Appointment
