@@ -254,6 +254,63 @@
             color: #ddd;
         }
 
+        /* Timeslot Management */
+        .timeslot-mgmt {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .day-calendar {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 6px;
+            margin: 1rem 0;
+        }
+        .day-btn {
+            padding: 0.5rem 0.3rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.75rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .day-btn:hover { border-color: #667eea; background: #f0f2ff; }
+        .day-btn.selected { border-color: #667eea; background: #667eea; color: white; font-weight: 600; }
+        .day-btn.past { opacity: 0.4; cursor: not-allowed; }
+        .day-btn .day-num { font-size: 1rem; font-weight: 700; display: block; }
+        .day-btn .day-name { font-size: 0.65rem; opacity: 0.7; }
+        .timeslot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .slot-btn {
+            padding: 0.7rem 0.5rem;
+            border-radius: 8px;
+            border: 2px solid;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .slot-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .slot-btn.available { background: #d4edda; border-color: #28a745; color: #155724; }
+        .slot-btn.booked { background: #f8d7da; border-color: #dc3545; color: #721c24; cursor: not-allowed; }
+        .slot-btn.blocked { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .slot-btn .slot-label { display: block; }
+        .slot-btn .slot-sub { display: block; font-size: 0.7rem; font-weight: 400; opacity: 0.8; }
+        .timeslot-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
         @@media (max-width: 768px) {
             .staff-hero {
                 padding: 6rem 1rem 2.5rem;
@@ -321,6 +378,15 @@
             </div>
         </div>
 
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success" style="padding:1rem;border-radius:10px;margin-bottom:1.5rem;background:#d4edda;border:1px solid #c3e6cb;color:#155724;">@Model.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error" style="padding:1rem;border-radius:10px;margin-bottom:1.5rem;background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;">@Model.ErrorMessage</div>
+        }
+
         <div class="section-header">
             <h2><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h2>
         </div>
@@ -335,6 +401,7 @@
                             <th>Date</th>
                             <th>Time</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -346,6 +413,12 @@
                                 <td>@apt.AppointmentDate.ToString("MMM dd, yyyy")</td>
                                 <td>@apt.Timeslot</td>
                                 <td><span class="status-badge @apt.Status.ToLower()">@apt.Status</span></td>
+                                <td>
+                                    <form method="post" asp-page-handler="CancelAppointment" onsubmit="return confirm('Cancel this appointment?');">
+                                        <input type="hidden" name="appointmentId" value="@apt.AppointmentId" />
+                                        <button type="submit" style="padding:0.25rem 0.65rem;border:1px solid #dc3545;border-radius:5px;background:white;color:#dc3545;font-size:0.75rem;font-weight:600;cursor:pointer;">Cancel</button>
+                                    </form>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -358,6 +431,29 @@
                     <p>No upcoming appointments.</p>
                 </div>
             }
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-clock"></i> Timeslot Management</h2>
+            <span style="font-size:0.85rem;color:#666;">Click a date, then click a slot to block/unblock</span>
+        </div>
+        <div class="timeslot-mgmt">
+            <div class="day-calendar" id="dayCalendar">
+                @for (int i = 0; i < 30; i++)
+                {
+                    var d = DateTime.Today.AddDays(i);
+                    var isPast = i == 0 && DateTime.Now.Hour >= 17;
+                    <div class="day-btn @(isPast ? "past" : "")" data-date="@d.ToString("yyyy-MM-dd")"
+                         onclick="@(isPast ? "" : "selectDay(this)")">
+                        <span class="day-num">@d.Day</span>
+                        <span class="day-name">@d.ToString("ddd")</span>
+                        <span style="font-size:0.6rem;opacity:0.6">@d.ToString("MMM")</span>
+                    </div>
+                }
+            </div>
+            <div id="timeslotContainer">
+                <div class="timeslot-loading"><i class="fas fa-hand-pointer"></i> Select a date above to manage timeslots</div>
+            </div>
         </div>
 
         <div class="section-header">
@@ -395,3 +491,58 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        var selectedDate = '';
+
+        function selectDay(el) {
+            if (el.classList.contains('past')) return;
+            document.querySelectorAll('.day-btn').forEach(function(d) { d.classList.remove('selected'); });
+            el.classList.add('selected');
+            selectedDate = el.getAttribute('data-date');
+            loadTimeslots(selectedDate);
+        }
+
+        function loadTimeslots(date) {
+            var container = document.getElementById('timeslotContainer');
+            container.innerHTML = '<div class="timeslot-loading"><i class="fas fa-spinner fa-spin"></i> Loading timeslots...</div>';
+
+            fetch('?handler=GetTimeslots&date=' + encodeURIComponent(date))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        container.innerHTML = '<div class="timeslot-loading" style="color:#dc3545">' + data.error + '</div>';
+                        return;
+                    }
+                    var html = '<div class="timeslot-grid">';
+                    data.slots.forEach(function(s) {
+                        var cls = s.status;
+                        var clickAttr = cls === 'booked' ? '' : 'onclick="toggleSlot(\'' + date + '\',\'' + s.timeId + '\')"';
+                        var subText = cls === 'available' ? 'Click to block' : (cls === 'blocked' ? 'Click to unblock' : 'Booked');
+                        html += '<div class="slot-btn ' + cls + '" ' + clickAttr + ' title="' + subText + '">';
+                        html += '<span class="slot-label">' + s.label + '</span>';
+                        html += '<span class="slot-sub">' + subText + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                })
+                .catch(function(err) {
+                    container.innerHTML = '<div class="timeslot-loading" style="color:#dc3545">Error loading timeslots</div>';
+                });
+        }
+
+        function toggleSlot(date, timeId) {
+            fetch('?handler=ToggleBlock&date=' + encodeURIComponent(date) + '&timeId=' + encodeURIComponent(timeId))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) { alert(data.error); return; }
+                    loadTimeslots(date);
+                })
+                .catch(function(err) {
+                    alert('Error toggling block: ' + err.message);
+                });
+        }
+    </script>
+}

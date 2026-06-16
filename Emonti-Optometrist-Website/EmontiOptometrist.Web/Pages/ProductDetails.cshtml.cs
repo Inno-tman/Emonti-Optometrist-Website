@@ -78,11 +78,21 @@ public class ProductDetailsModel : PageModel
         }
     }
 
-    public IActionResult OnPostAddToCart(int productId)
+    public IActionResult OnPostAddToCart(int productId, int quantity = 1)
     {
         var allProducts = _productDb.GetAllProducts();
         var product = allProducts.FirstOrDefault(p => p.ProductId == productId);
         var displayName = product?.Name ?? "Product";
+
+        if (product == null || product.Stock <= 0)
+        {
+            ResultMessage = "Sorry, this product is out of stock.";
+            LoadProduct(productId);
+            return Page();
+        }
+
+        if (quantity < 1) quantity = 1;
+        if (quantity > product.Stock) quantity = product.Stock;
 
         if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
@@ -90,7 +100,7 @@ public class ProductDetailsModel : PageModel
             {
                 var custId = AuthSession.GetCustId(HttpContext) ?? "guest";
                 int cartId = _cartDb.GetOrCreateCart(custId);
-                _cartDb.AddItemToCart(cartId, productId, 1, product?.Price ?? 0);
+                _cartDb.AddItemToCart(cartId, productId, quantity, product?.Price ?? 0);
                 ResultMessage = $"{displayName} added to cart!";
             }
             catch (Exception ex)
@@ -106,9 +116,17 @@ public class ProductDetailsModel : PageModel
             var productIdStr = productId.ToString();
             var existing = cartItems.FirstOrDefault(c => c.ProductId == productIdStr);
 
+            var newQty = (existing?.Quantity ?? 0) + quantity;
+            if (newQty > product.Stock)
+            {
+                ResultMessage = $"Sorry, only {product.Stock} item(s) available.";
+                LoadProduct(productId);
+                return Page();
+            }
+
             if (existing != null)
             {
-                existing.Quantity++;
+                existing.Quantity = newQty;
             }
             else
             {
@@ -119,7 +137,7 @@ public class ProductDetailsModel : PageModel
                     ProductName = displayName,
                     Brand = product?.Brand ?? "",
                     Price = product?.Price ?? 0,
-                    Quantity = 1,
+                    Quantity = quantity,
                     ImageUrl = product?.ImageUrl ?? "/Images/Products/default.png"
                 });
             }

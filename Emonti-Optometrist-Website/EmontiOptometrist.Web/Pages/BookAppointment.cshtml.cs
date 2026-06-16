@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -9,10 +11,12 @@ namespace EmontiOptometrist.Web.Pages;
 public class BookAppointmentModel : PageModel
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<BookAppointmentModel> _logger;
 
-    public BookAppointmentModel(IConfiguration configuration)
+    public BookAppointmentModel(IConfiguration configuration, ILogger<BookAppointmentModel> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -20,6 +24,7 @@ public class BookAppointmentModel : PageModel
 
     public string? SuccessMessage { get; set; }
     public string? ErrorMessage { get; set; }
+    public bool IsRebooking { get; set; }
 
     public List<TimeSlotItem> TimeSlots { get; set; } = new()
     {
@@ -32,9 +37,58 @@ public class BookAppointmentModel : PageModel
         new() { Value = "7", Text = "15:00 - 16:00", Group = "Afternoon" },
     };
 
-    public void OnGet()
+    public List<StaffItem> Optometrists { get; set; } = new();
+
+    public void OnGet(string? rebook)
     {
         Input.PreferredDate = DateTime.Today;
+        LoadOptometrists();
+
+        if (!string.IsNullOrEmpty(rebook))
+            LoadRebookingData(rebook);
+    }
+
+    private void LoadOptometrists()
+    {
+        try
+        {
+            var connStr = _configuration.GetConnectionString("DefaultConnection");
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Staff_ID, Staff_Name, Staff_Surname FROM Staff WHERE Staff_Role = 'Optometrist' ORDER BY Staff_Name, Staff_Surname";
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+                Optometrists.Add(new StaffItem { Value = rdr["Staff_ID"].ToString()!, Text = $"{rdr["Staff_Name"]} {rdr["Staff_Surname"]}" });
+        }
+        catch { }
+    }
+
+    private void LoadRebookingData(string appointmentId)
+    {
+        var custId = AuthSession.GetCustId(HttpContext);
+        if (string.IsNullOrEmpty(custId)) return;
+
+        try
+        {
+            var connStr = _configuration.GetConnectionString("DefaultConnection");
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT Staff_ID FROM Appointment
+                WHERE Appointment_ID = @Id AND Cust_ID = @CustId
+                AND Appoinment_Status != 'Cancelled'";
+            cmd.Parameters.AddWithValue("@Id", appointmentId);
+            cmd.Parameters.AddWithValue("@CustId", custId);
+            var staffId = cmd.ExecuteScalar()?.ToString();
+            if (!string.IsNullOrEmpty(staffId))
+            {
+                Input.OptometristId = staffId;
+                IsRebooking = true;
+            }
+        }
+        catch { }
     }
 
     public IActionResult OnPost()
@@ -49,24 +103,92 @@ public class BookAppointmentModel : PageModel
             return Page();
         }
 
+        LoadOptometrists();
+
+        var date = Input.PreferredDate.Date;
+
+        if (date < DateTime.Today)
+        {
+            ErrorMessage = "Please select a future date for your appointment.";
+            return Page();
+        }
+
+        if (date.DayOfWeek == DayOfWeek.Sunday)
+        {
+            ErrorMessage = "We are closed on Sundays. Please select a different date.";
+            return Page();
+        }
+
+        var slot = TimeSlots.FirstOrDefault(s => s.Value == Input.PreferredTime);
+        if (slot == null)
+        {
+            ErrorMessage = "Please select a valid time slot.";
+            return Page();
+        }
+
+        if (!DateTime.TryParse(slot.Text.Split(" - ")[0], out var parsedStart))
+        {
+            ErrorMessage = "Invalid time slot.";
+            return Page();
+        }
+
+        var slotStart = parsedStart.TimeOfDay;
+        var businessClose = date.DayOfWeek == DayOfWeek.Saturday ? new TimeSpan(14, 0, 0) : new TimeSpan(17, 0, 0);
+        if (slotStart < new TimeSpan(8, 0, 0) || slotStart >= businessClose)
+        {
+            ErrorMessage = "The selected time slot is outside our business hours.";
+            return Page();
+        }
+
+        if (date == DateTime.Today)
+        {
+            var slotDateTime = DateTime.Today.Add(slotStart);
+            if (DateTime.Now >= slotDateTime)
+            {
+                ErrorMessage = "This time slot has already passed. Please select a future time slot.";
+                return Page();
+            }
+            if (slotDateTime <= DateTime.Now.AddHours(2))
+            {
+                ErrorMessage = "Same-day appointments require at least 2 hours advance notice.";
+                return Page();
+            }
+        }
+
         try
         {
             var connStr = _configuration.GetConnectionString("DefaultConnection");
             using var conn = new SqliteConnection(connStr);
             conn.Open();
 
+            using var perDayCmd = conn.CreateCommand();
+            perDayCmd.CommandText = @"
+                SELECT COUNT(*) FROM Appointment
+                WHERE Cust_ID = @CustId AND Appointment_Date = @AppointmentDate
+                AND Appoinment_Status != 'Cancelled'";
+            perDayCmd.Parameters.AddWithValue("@CustId", custId);
+            perDayCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
+            if ((long)perDayCmd.ExecuteScalar()! > 0)
+            {
+                ErrorMessage = "You already have an appointment scheduled on this date. You can only book one appointment per day.";
+                return Page();
+            }
+
             using var checkCmd = conn.CreateCommand();
             checkCmd.CommandText = @"
-                SELECT COUNT(*) FROM Appointment
-                WHERE Appointment_Date = @AppointmentDate
-                AND AppointmentTimeID = @AppointmentTimeId
-                AND Appoinment_Status != 'Cancelled'";
-            checkCmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date.ToString("o"));
+                SELECT
+                    (SELECT COUNT(*) FROM Appointment
+                     WHERE Staff_ID = @StaffId AND Appointment_Date = @AppointmentDate
+                     AND AppointmentTimeID = @AppointmentTimeId AND Appoinment_Status != 'Cancelled') +
+                    (SELECT COUNT(*) FROM BlockedTimeslots
+                     WHERE Staff_ID = @StaffId AND Blocked_Date = @AppointmentDate
+                     AND TimeID = @AppointmentTimeId) AS TotalCount";
+            checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
             checkCmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
-            var existing = (long)checkCmd.ExecuteScalar()!;
-            if (existing > 0)
+            checkCmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
+            if ((long)checkCmd.ExecuteScalar()! > 0)
             {
-                ErrorMessage = "This time slot is already booked. Please select a different date or time.";
+                ErrorMessage = "This time slot is already booked or unavailable. Please select a different date or time.";
                 return Page();
             }
 
@@ -77,14 +199,23 @@ public class BookAppointmentModel : PageModel
                 VALUES
                     (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
             cmd.Parameters.AddWithValue("@CustId", custId);
-            cmd.Parameters.AddWithValue("@StaffId", "1");
-            cmd.Parameters.AddWithValue("@AppointmentDate", Input.PreferredDate.Date.ToString("o"));
+            cmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
+            cmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
             cmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
             cmd.Parameters.AddWithValue("@Status", "Pending");
 
             cmd.ExecuteNonQuery();
 
-            SuccessMessage = $"Appointment booked successfully! We look forward to seeing you on {Input.PreferredDate:dddd, MMMM dd, yyyy}.";
+            var customerEmail = HttpContext.Session.GetString(AuthSession.UserEmail);
+            if (!string.IsNullOrEmpty(customerEmail))
+                SendConfirmationEmail(customerEmail, date, slot.Text);
+
+            var optometristName = Optometrists.FirstOrDefault(o => o.Value == Input.OptometristId)?.Text ?? "";
+            if (IsRebooking)
+                SuccessMessage = $"Rebooking successful! Your appointment has been confirmed for {date:dddd, MMMM dd, yyyy} at {slot.Text} with {optometristName}.";
+            else
+                SuccessMessage = $"Appointment booked successfully! A confirmation email will be sent to your email address. We look forward to seeing you on {date:dddd, MMMM dd, yyyy} at {slot.Text} with {optometristName}.";
+
             ModelState.Clear();
             Input = new AppointmentInput { PreferredDate = DateTime.Today };
             return Page();
@@ -95,6 +226,81 @@ public class BookAppointmentModel : PageModel
             return Page();
         }
     }
+
+    private void SendConfirmationEmail(string customerEmail, DateTime date, string slotText)
+    {
+        try
+        {
+            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "587");
+            var smtpEmail = _configuration["Smtp:Email"] ?? "";
+            var smtpPassword = _configuration["Smtp:Password"] ?? "";
+            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+            var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
+
+            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+            {
+                _logger.LogWarning("SMTP credentials not configured, skipping confirmation email");
+                return;
+            }
+
+            using var smtp = new SmtpClient(smtpHost, smtpPort);
+            smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
+            smtp.EnableSsl = enableSsl;
+            smtp.Timeout = 30000;
+
+            using var message = new MailMessage();
+            message.From = new MailAddress(smtpEmail, smtpFromName);
+            message.To.Add(customerEmail);
+            message.Subject = $"Appointment {(IsRebooking ? "Rebooking" : "Confirmation")} - Emonti Optometrist";
+
+            var optometristName = Optometrists.FirstOrDefault(o => o.Value == Input.OptometristId)?.Text ?? "Selected Optometrist";
+            var heading = IsRebooking ? "Appointment Rebooked" : "Appointment Confirmed";
+            var body = $@"<!DOCTYPE html>
+<html><head><meta charset=""utf-8""></head>
+<body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
+<tr><td align=""center"">
+<table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
+<tr><td style=""background-color:#667eea;padding:25px;text-align:center;"">
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">{heading}</h1>
+</td></tr>
+<tr><td style=""padding:30px;"">
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;"">Dear Valued Customer,</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">Your appointment has been successfully confirmed.</p>
+<div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #667eea;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Optometrist:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{optometristName}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{date:dddd, MMMM dd, yyyy}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#667eea;font-size:14px;font-weight:600;"">{slotText}</td></tr>
+</table></div>
+<div style=""background-color:#e7f3ff;border-left:4px solid #2196F3;padding:15px;margin:20px 0;border-radius:4px;"">
+<p style=""margin:0 0 8px 0;color:#1976D2;font-size:14px;font-weight:600;"">Important Reminders</p>
+<ul style=""margin:0;padding-left:20px;color:#1565C0;font-size:13px;line-height:1.8;"">
+<li>Please arrive <strong>15 minutes early</strong> for your appointment</li>
+<li>Bring your current eyeglasses or contact lenses if you have them</li>
+<li>Bring your medical aid card if applicable</li>
+</ul>
+</div>
+<p style=""margin:25px 0 0 0;color:#555;font-size:15px;"">We look forward to seeing you soon!</p>
+</td></tr>
+<tr><td style=""background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;"">
+<p style=""margin:0 0 5px 0;color:#666;font-size:13px;font-weight:600;"">Emonti Optometrist</p>
+<p style=""margin:0;color:#888;font-size:12px;"">Shop 7 New Colonnade, Devereaux Ave, Vincent, East London 5247</p>
+</td></tr>
+</table></td></tr></table></body></html>";
+
+            message.Body = body;
+            message.IsBodyHtml = true;
+
+            smtp.Send(message);
+            _logger.LogInformation("Confirmation email sent to {Email}", customerEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send confirmation email to {Email}", customerEmail);
+        }
+    }
 }
 
 public class AppointmentInput
@@ -102,6 +308,10 @@ public class AppointmentInput
     [Required(ErrorMessage = "Please select an appointment type")]
     [Display(Name = "Appointment Type")]
     public string AppointmentType { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please select an optometrist")]
+    [Display(Name = "Optometrist")]
+    public string OptometristId { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please select a date")]
     [Display(Name = "Preferred Date")]
@@ -139,4 +349,10 @@ public class TimeSlotItem
     public string Value { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public string Group { get; set; } = string.Empty;
+}
+
+public class StaffItem
+{
+    public string Value { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
 }

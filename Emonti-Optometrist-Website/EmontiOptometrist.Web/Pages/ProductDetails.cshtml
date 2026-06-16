@@ -626,7 +626,12 @@ else
                         {
                             <form method="post" asp-page-handler="AddToCart" style="flex:1;">
                                 <input type="hidden" name="productId" value="@product.ProductId" />
-                                <button type="submit" class="btn-add-cart">
+                                <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
+                                    <button type="button" class="qty-btn" onclick="qtyDown()" style="width:36px;height:36px;border:2px solid #667eea;border-radius:8px;background:white;color:#667eea;font-weight:700;font-size:1.2rem;cursor:pointer;">−</button>
+                                    <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="@product.Stock" style="width:60px;text-align:center;border:2px solid #e0e0e0;border-radius:8px;padding:0.4rem;font-size:1rem;font-weight:600;" />
+                                    <button type="button" class="qty-btn" onclick="qtyUp(@product.Stock)" style="width:36px;height:36px;border:2px solid #667eea;border-radius:8px;background:white;color:#667eea;font-weight:700;font-size:1.2rem;cursor:pointer;">+</button>
+                                </div>
+                                <button type="submit" class="btn-add-cart" style="width:100%;">
                                     <i class="fas fa-shopping-cart"></i> Add to Cart
                                 </button>
                             </form>
@@ -686,4 +691,16 @@ else
             }, 4000);
         }
     })();
+
+    function qtyDown() {
+        var input = document.getElementById('qtyInput');
+        var val = parseInt(input.value) || 1;
+        if (val > 1) input.value = val - 1;
+    }
+
+    function qtyUp(max) {
+        var input = document.getElementById('qtyInput');
+        var val = parseInt(input.value) || 1;
+        if (val < max) input.value = val + 1;
+    }
 </script>

@@ -174,6 +174,32 @@ public class DatabaseInit
         cmd.ExecuteNonQuery();
 
         cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS BlockedTimeslots (
+                Blocked_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Staff_ID TEXT NOT NULL,
+                Blocked_Date TEXT NOT NULL,
+                TimeID TEXT NOT NULL,
+                Created_At TEXT DEFAULT (datetime('now'))
+            )";
+        cmd.ExecuteNonQuery();
+
+        try { cmd.CommandText = "ALTER TABLE BlockedTimeslots ADD COLUMN Created_At TEXT DEFAULT (datetime('now'))"; cmd.ExecuteNonQuery(); } catch { }
+
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Messages (
+                Message_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Conversation_ID INTEGER NOT NULL,
+                Cust_ID TEXT NOT NULL,
+                Staff_ID TEXT,
+                Sender_Role TEXT NOT NULL,
+                Subject TEXT,
+                Message_Body TEXT NOT NULL,
+                Created_At TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+                Is_Read INTEGER DEFAULT 0
+            )";
+        cmd.ExecuteNonQuery();
+
+        cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS Payments (
                 Payment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 Cust_ID INTEGER,

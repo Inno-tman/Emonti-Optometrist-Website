@@ -46,10 +46,28 @@ public class LoginModel : PageModel
     {
     }
 
+    private const int MaxFailedAttempts = 5;
+    private const int LockoutMinutes = 5;
+
     public IActionResult OnPost()
     {
         if (!ModelState.IsValid)
             return Page();
+
+        var failedKey = $"FailedAttempts_{Input.Email.Trim().ToLower()}";
+        var lockoutKey = $"LockoutEnd_{Input.Email.Trim().ToLower()}";
+
+        var lockoutEnd = HttpContext.Session.GetString(lockoutKey);
+        if (!string.IsNullOrEmpty(lockoutEnd))
+        {
+            if (DateTime.TryParse(lockoutEnd, out var endTime) && endTime > DateTime.Now)
+            {
+                ErrorMessage = $"Account is locked. Try again after {endTime:HH:mm}.";
+                return Page();
+            }
+            HttpContext.Session.Remove(failedKey);
+            HttpContext.Session.Remove(lockoutKey);
+        }
 
         string connStr = _configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
 
@@ -73,6 +91,9 @@ public class LoginModel : PageModel
             var firstName = reader["Customer_Name"]?.ToString() ?? "";
             var lastName = reader["Customer_Surname"]?.ToString() ?? "";
             var email = reader["Customer_Email"]?.ToString() ?? "";
+
+            HttpContext.Session.Remove(failedKey);
+            HttpContext.Session.Remove(lockoutKey);
 
             AuthSession.SignInCustomer(HttpContext, custId, email, firstName, lastName);
             _logger.LogInformation("Customer {Email} logged in.", email);
@@ -105,6 +126,9 @@ public class LoginModel : PageModel
             var staffName = staffReader["Staff_Name"]?.ToString() ?? "";
             var role = staffReader["Staff_Role"]?.ToString() ?? "Staff";
 
+            HttpContext.Session.Remove(failedKey);
+            HttpContext.Session.Remove(lockoutKey);
+
             AuthSession.SignInStaff(HttpContext, staffId, staffName, role);
             _logger.LogInformation("Staff {Email} logged in as {Role}.", Input.Email, role);
 
@@ -113,7 +137,20 @@ public class LoginModel : PageModel
             return RedirectToPage("/Staff/Dashboard");
         }
 
-        ErrorMessage = "Invalid login attempt.";
+        var attempts = HttpContext.Session.GetInt32(failedKey) ?? 0;
+        attempts++;
+        HttpContext.Session.SetInt32(failedKey, attempts);
+
+        if (attempts >= MaxFailedAttempts)
+        {
+            HttpContext.Session.SetString(lockoutKey, DateTime.Now.AddMinutes(LockoutMinutes).ToString("O"));
+            ErrorMessage = $"Too many failed attempts. Account locked for {LockoutMinutes} minutes.";
+        }
+        else
+        {
+            ErrorMessage = $"Invalid login attempt. {MaxFailedAttempts - attempts} attempt(s) remaining.";
+        }
+
         return Page();
     }
 
@@ -151,17 +188,17 @@ public class LoginModel : PageModel
         ShowResetPasswordModal = true;
         ShowForgotPasswordModal = false;
 
-        string smtpEmail = _configuration["SmtpEmail"];
-        string smtpPassword = _configuration["SmtpPassword"];
+        string smtpEmail = _configuration["Smtp:Email"];
+        string smtpPassword = _configuration["Smtp:Password"];
         if (!string.IsNullOrEmpty(smtpEmail) && !string.IsNullOrEmpty(smtpPassword))
         {
             try
             {
                 using var smtp = new System.Net.Mail.SmtpClient(
-                    _configuration["SmtpHost"] ?? "smtp.gmail.com",
-                    int.Parse(_configuration["SmtpPort"] ?? "587"));
+                    _configuration["Smtp:Host"] ?? "smtp.gmail.com",
+                    int.Parse(_configuration["Smtp:Port"] ?? "587"));
                 smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                smtp.EnableSsl = bool.Parse(_configuration["SmtpEnableSsl"] ?? "true");
+                smtp.EnableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
                 using var msg = new System.Net.Mail.MailMessage(smtpEmail, forgotPasswordEmail,
                     "Password Reset Code - Emonti Optometrist",
                     $"Your reset code is: {resetCode}");
