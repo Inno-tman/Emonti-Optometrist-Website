@@ -78,6 +78,7 @@
         }
         .role-badge.admin { background: #e9d8fd; color: #6b46c1; }
         .role-badge.staff { background: #cce5ff; color: #004085; }
+        .role-badge.optometrist { background: #d4edda; color: #155724; }
 
         .btn {
             display: inline-flex; align-items: center; gap: 0.35rem;
@@ -176,6 +177,10 @@
                                     {
                                         <span class="role-badge admin">Admin</span>
                                     }
+                                    else if (staff.Role == "Optometrist")
+                                    {
+                                        <span class="role-badge optometrist">Optometrist</span>
+                                    }
                                     else
                                     {
                                         <span class="role-badge staff">Staff</span>
@@ -226,6 +231,7 @@
                     <select name="staffRole" style="padding:0.5rem 0.75rem;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;font-family:inherit;">
                         <option value="Staff">Staff</option>
                         <option value="Admin">Admin</option>
+                        <option value="Optometrist">Optometrist</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-success" style="align-self:flex-start;"><i class="fas fa-plus"></i> Add Staff</button>
