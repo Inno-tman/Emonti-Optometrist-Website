@@ -89,10 +89,10 @@ public class BookAppointmentModel : PageModel
                 using var perDayCmd = conn.CreateCommand();
                 perDayCmd.CommandText = @"
                     SELECT COUNT(*) FROM Appointment
-                    WHERE Cust_ID = @CustId AND Appointment_Date = @Date
+                    WHERE Cust_ID = @CustId AND date(Appointment_Date) = date(@Date)
                     AND Appoinment_Status != 'Cancelled'";
                 perDayCmd.Parameters.AddWithValue("@CustId", custId);
-                perDayCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                perDayCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd"));
                 if ((long)perDayCmd.ExecuteScalar()! > 0)
                     return new JsonResult(new { available = false, message = "You already have an appointment on this date. Only one appointment per day allowed." });
 
@@ -100,13 +100,13 @@ public class BookAppointmentModel : PageModel
                 checkCmd.CommandText = @"
                     SELECT
                         (SELECT COUNT(*) FROM Appointment
-                         WHERE Staff_ID = @StaffId AND Appointment_Date = @Date
+                         WHERE Staff_ID = @StaffId AND date(Appointment_Date) = date(@Date)
                          AND AppointmentTimeID = @TimeId AND Appoinment_Status != 'Cancelled') +
                         (SELECT COUNT(*) FROM BlockedTimeslots
-                         WHERE Staff_ID = @StaffId AND Blocked_Date = @Date
+                         WHERE Staff_ID = @StaffId AND date(Blocked_Date) = date(@Date)
                          AND TimeID = @TimeId) AS TotalCount";
                 checkCmd.Parameters.AddWithValue("@StaffId", optometristId);
-                checkCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                checkCmd.Parameters.AddWithValue("@Date", parsedDate.ToString("yyyy-MM-dd"));
                 checkCmd.Parameters.AddWithValue("@TimeId", time);
                 if ((long)checkCmd.ExecuteScalar()! > 0)
                     return new JsonResult(new { available = false, message = "This slot is already booked or blocked by the optometrist." });
@@ -244,10 +244,10 @@ public class BookAppointmentModel : PageModel
             using var perDayCmd = conn.CreateCommand();
             perDayCmd.CommandText = @"
                 SELECT COUNT(*) FROM Appointment
-                WHERE Cust_ID = @CustId AND Appointment_Date = @AppointmentDate
+                WHERE Cust_ID = @CustId AND date(Appointment_Date) = date(@AppointmentDate)
                 AND Appoinment_Status != 'Cancelled'";
             perDayCmd.Parameters.AddWithValue("@CustId", custId);
-            perDayCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd HH:mm:ss"));
+            perDayCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd"));
             if ((long)perDayCmd.ExecuteScalar()! > 0)
             {
                 ErrorMessage = "You already have an appointment scheduled on this date. You can only book one appointment per day.";
@@ -258,12 +258,12 @@ public class BookAppointmentModel : PageModel
             checkCmd.CommandText = @"
                 SELECT
                     (SELECT COUNT(*) FROM Appointment
-                     WHERE Staff_ID = @StaffId AND Appointment_Date = @AppointmentDate
+                     WHERE Staff_ID = @StaffId AND date(Appointment_Date) = date(@AppointmentDate)
                      AND AppointmentTimeID = @AppointmentTimeId AND Appoinment_Status != 'Cancelled') +
                     (SELECT COUNT(*) FROM BlockedTimeslots
-                     WHERE Staff_ID = @StaffId AND Blocked_Date = @AppointmentDate
+                     WHERE Staff_ID = @StaffId AND date(Blocked_Date) = date(@AppointmentDate)
                      AND TimeID = @AppointmentTimeId) AS TotalCount";
-            checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd HH:mm:ss"));
+            checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("yyyy-MM-dd"));
             checkCmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
             checkCmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
             if ((long)checkCmd.ExecuteScalar()! > 0)
