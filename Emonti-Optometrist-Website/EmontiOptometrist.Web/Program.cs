@@ -3,14 +3,31 @@ using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
-// On Azure App Service, use persistent path so DB survives redeploys
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
+
+// On Azure App Service, use persistent path
 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 {
     var home = Environment.GetEnvironmentVariable("HOME") ?? "/home";
-    connectionString = $"DataSource={home}/site/wwwroot/app.db;Cache=Shared";
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+    connStr = $"DataSource={home}/site/wwwroot/app.db;Cache=Shared";
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connStr;
 }
+else
+{
+    // Ensure database is in a writable directory (works on Render, Docker, local)
+    var dataDir = Path.Combine(AppContext.BaseDirectory, "data");
+    Directory.CreateDirectory(dataDir);
+    var dbPath = Path.Combine(dataDir, "app.db");
+    var deployed = Path.Combine(Directory.GetCurrentDirectory(), "app.db");
+    if (!File.Exists(dbPath) && File.Exists(deployed))
+        File.Copy(deployed, dbPath, overwrite: false);
+    var csb = new SqliteConnectionStringBuilder(connStr);
+    csb.DataSource = dbPath;
+    connStr = csb.ConnectionString;
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connStr;
+}
+
+var connectionString = connStr;
 
 builder.Services.AddRazorPages()
     .AddMvcOptions(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
