@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
+using EmontiOptometrist.Web.Services;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -22,11 +23,14 @@ public class ReportsModel : PageModel
     public List<RecentOrderDisplay> RecentOrders { get; set; } = new();
     public List<PopularProductDisplay> PopularProducts { get; set; } = new();
 
-    public void OnGet()
+    public IActionResult OnGet()
     {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return RedirectToPage("/Login");
+
         var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         if (string.IsNullOrEmpty(connStr))
-            return;
+            return Page();
 
         try
         {
@@ -109,6 +113,8 @@ public class ReportsModel : PageModel
         {
             System.Diagnostics.Debug.WriteLine($"Reports error: {ex.Message}");
         }
+
+        return Page();
     }
 }
 
