@@ -102,52 +102,134 @@
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.25rem;
-            margin-bottom: 1.25rem;
+            gap: 1.5rem;
+            margin-bottom: 0.5rem;
         }
         .form-group {
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         .form-group label {
-            font-weight: 600;
-            color: #444;
+            font-weight: 700;
+            color: #2c3e50;
             margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
-        .form-group .required { color: #dc3545; margin-left: 2px; }
+        .form-group label i {
+            color: #667eea;
+            font-size: 0.85rem;
+            width: 16px;
+            text-align: center;
+        }
+        .form-group .required { color: #e74c3c; margin-left: 1px; }
+
+        .form-group .select-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+        }
+        .form-group .select-wrapper::after {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', 'FontAwesome';
+            font-weight: 900;
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 0.7rem;
+            pointer-events: none;
+            transition: transform 0.2s ease;
+        }
+        .form-group .select-wrapper:focus-within::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
         .form-group input,
         .form-group select,
         .form-group textarea {
             padding: 0.85rem 1rem;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: white;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.25s ease;
+            background: #fafbff;
             width: 100%;
             box-sizing: border-box;
+            color: #2c3e50;
+        }
+        .form-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 2.5rem;
+            cursor: pointer;
+            background-image: none;
+        }
+        .form-group input:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            border-color: #b0b8e0;
+            background: #f0f2ff;
         }
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             border-color: #667eea;
             outline: none;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+            background: white;
         }
         .form-group input.input-validation-error,
         .form-group select.input-validation-error,
         .form-group textarea.input-validation-error {
-            border-color: #dc3545;
+            border-color: #e74c3c;
+            background: #fff8f8;
+        }
+        .form-group select option {
+            padding: 0.6rem;
+            background: white;
+            color: #2c3e50;
+        }
+        .form-group select option:disabled {
+            color: #aaa;
         }
         .form-group .field-validation-error {
-            color: #dc3545;
-            font-size: 0.85rem;
+            color: #e74c3c;
+            font-size: 0.8rem;
             margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .form-group .field-validation-error::before {
+            content: '\f071';
+            font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', 'FontAwesome';
+            font-weight: 900;
+            font-size: 0.7rem;
         }
         .form-group textarea { resize: vertical; min-height: 80px; }
 
-        optgroup { font-weight: 600; color: #667eea; }
+        optgroup {
+            font-weight: 700;
+            color: #667eea;
+            background: #f8f9ff;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+        optgroup option {
+            font-weight: 400;
+            color: #2c3e50;
+            padding-left: 1.5rem;
+        }
 
         .validation-summary-errors ul {
             list-style: none;
@@ -253,52 +335,58 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label asp-for="Input.AppointmentType"><span class="required">*</span></label>
-                        <select asp-for="Input.AppointmentType">
-                            <option value="">-- Select Type --</option>
-                            <option value="Eye Exam">Eye Exam</option>
-                            <option value="Contact Lens Fitting">Contact Lens Fitting</option>
-                            <option value="Follow-up">Follow-up</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label asp-for="Input.AppointmentType"><i class="fas fa-stethoscope"></i> Appointment Type <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <select asp-for="Input.AppointmentType">
+                                <option value="">-- Select Type --</option>
+                                <option value="Eye Exam">Eye Exam</option>
+                                <option value="Contact Lens Fitting">Contact Lens Fitting</option>
+                                <option value="Follow-up">Follow-up</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                         <span asp-validation-for="Input.AppointmentType"></span>
                     </div>
                     <div class="form-group">
-                        <label asp-for="Input.OptometristId"><span class="required">*</span></label>
-                        <select asp-for="Input.OptometristId">
-                            <option value="">-- Select Optometrist --</option>
-                            @foreach (var opt in Model.Optometrists)
-                            {
-                                <option value="@opt.Value">@opt.Text</option>
-                            }
-                        </select>
+                        <label asp-for="Input.OptometristId"><i class="fas fa-user-md"></i> Optometrist <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <select asp-for="Input.OptometristId">
+                                <option value="">-- Select Optometrist --</option>
+                                @foreach (var opt in Model.Optometrists)
+                                {
+                                    <option value="@opt.Value">@opt.Text</option>
+                                }
+                            </select>
+                        </div>
                         <span asp-validation-for="Input.OptometristId"></span>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label asp-for="Input.PreferredDate"><span class="required">*</span></label>
+                        <label asp-for="Input.PreferredDate"><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
                         <input asp-for="Input.PreferredDate" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="Input.PreferredDate"></span>
                     </div>
                     <div class="form-group">
-                        <label asp-for="Input.PreferredTime"><span class="required">*</span></label>
-                        <select asp-for="Input.PreferredTime">
-                            <option value="">-- Select Time --</option>
-                            <optgroup label="Morning">
-                                @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Morning"))
-                                {
-                                    <option value="@slot.Value">@slot.Text</option>
-                                }
-                            </optgroup>
-                            <optgroup label="Afternoon">
-                                @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Afternoon"))
-                                {
-                                    <option value="@slot.Value">@slot.Text</option>
-                                }
-                            </optgroup>
-                        </select>
+                        <label asp-for="Input.PreferredTime"><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <select asp-for="Input.PreferredTime">
+                                <option value="">-- Select Time --</option>
+                                <optgroup label="Morning">
+                                    @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Morning"))
+                                    {
+                                        <option value="@slot.Value">@slot.Text</option>
+                                    }
+                                </optgroup>
+                                <optgroup label="Afternoon">
+                                    @foreach (var slot in Model.TimeSlots.Where(s => s.Group == "Afternoon"))
+                                    {
+                                        <option value="@slot.Value">@slot.Text</option>
+                                    }
+                                </optgroup>
+                            </select>
+                        </div>
                         <span asp-validation-for="Input.PreferredTime"></span>
                     </div>
                 </div>
