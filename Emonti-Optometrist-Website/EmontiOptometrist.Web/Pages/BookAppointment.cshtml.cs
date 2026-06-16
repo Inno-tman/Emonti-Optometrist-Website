@@ -177,10 +177,7 @@ public class BookAppointmentModel : PageModel
         LoadOptometrists();
 
         if (!ModelState.IsValid)
-        {
-            ErrorMessage = "Please fill in all required fields.";
             return Page();
-        }
 
         var custId = AuthSession.GetCustId(HttpContext);
         if (string.IsNullOrEmpty(custId))
@@ -406,19 +403,22 @@ public class AppointmentInput
     [Display(Name = "Preferred Time")]
     public string PreferredTime { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Patient name is required")]
     [Display(Name = "Patient Name")]
     [StringLength(100)]
-    public string? PatientName { get; set; }
+    public string PatientName { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email address")]
     [Display(Name = "Email")]
     [StringLength(200)]
-    public string? Email { get; set; }
+    public string Email { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Phone number is required")]
     [Phone(ErrorMessage = "Invalid phone number")]
     [Display(Name = "Phone")]
     [StringLength(20)]
-    public string? Phone { get; set; }
+    public string Phone { get; set; } = string.Empty;
 
     [Display(Name = "Notes / Comments")]
     [StringLength(500)]
