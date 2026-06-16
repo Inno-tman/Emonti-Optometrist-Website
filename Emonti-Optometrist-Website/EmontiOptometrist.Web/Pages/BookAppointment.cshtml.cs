@@ -51,6 +51,25 @@ public class BookAppointmentModel : PageModel
 
         try
         {
+            if (Input.PreferredDate.Date == DateTime.Today)
+            {
+                var slot = TimeSlots.FirstOrDefault(s => s.Value == Input.PreferredTime);
+                if (slot != null && DateTime.TryParse(slot.Text.Split(" - ")[0], out var startTime))
+                {
+                    var slotDateTime = DateTime.Today.Add(startTime.TimeOfDay);
+                    if (DateTime.Now >= slotDateTime)
+                    {
+                        ErrorMessage = "This time slot has already passed. Please select a future time slot.";
+                        return Page();
+                    }
+                    if (slotDateTime <= DateTime.Now.AddHours(2))
+                    {
+                        ErrorMessage = "Same-day appointments require at least 2 hours advance notice.";
+                        return Page();
+                    }
+                }
+            }
+
             var connStr = _configuration.GetConnectionString("DefaultConnection");
             using var conn = new SqliteConnection(connStr);
             conn.Open();
