@@ -100,6 +100,15 @@ public class ShopModel : PageModel
     {
         var displayName = name ?? "Product";
 
+        var allProducts = _productDb.GetAllProducts();
+        var product = allProducts.FirstOrDefault(p => p.ProductId == productId);
+        if (product == null || product.Stock <= 0)
+        {
+            ResultMessage = "Sorry, this product is out of stock.";
+            OnGet();
+            return Page();
+        }
+
         if (AuthSession.IsCustomerLoggedIn(HttpContext))
         {
             try
@@ -122,9 +131,17 @@ public class ShopModel : PageModel
             var productIdStr = productId.ToString();
             var existing = cartItems.FirstOrDefault(c => c.ProductId == productIdStr);
 
+            var newQty = (existing?.Quantity ?? 0) + 1;
+            if (newQty > product.Stock)
+            {
+                ResultMessage = $"Sorry, only {product.Stock} item(s) available.";
+                OnGet();
+                return Page();
+            }
+
             if (existing != null)
             {
-                existing.Quantity++;
+                existing.Quantity = newQty;
             }
             else
             {

@@ -50,6 +50,12 @@ public class CartDatabase
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
 
+            using var stockCmd = conn.CreateCommand();
+            stockCmd.CommandText = "SELECT QuantityOnHand FROM Products2 WHERE Product_ID = @ProductId";
+            stockCmd.Parameters.AddWithValue("@ProductId", productId);
+            var stockObj = stockCmd.ExecuteScalar();
+            var availableStock = stockObj != null ? Convert.ToInt32(stockObj) : 0;
+
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT CartItem_ID, Quantity FROM CartItem WHERE Cart_ID = @CartId AND Product_ID = @ProductId";
             cmd.Parameters.AddWithValue("@CartId", cartId);
@@ -67,12 +73,16 @@ public class CartDatabase
                 }
             }
 
+            var newTotalQty = existingQuantity + quantity;
+            if (newTotalQty > availableStock)
+                throw new Exception($"Only {availableStock} item(s) available.");
+
             if (existingItemId > 0)
             {
-                System.Diagnostics.Debug.WriteLine($"Updating existing cart item: CartItemId={existingItemId}, NewQuantity={existingQuantity + quantity}");
+                System.Diagnostics.Debug.WriteLine($"Updating existing cart item: CartItemId={existingItemId}, NewQuantity={newTotalQty}");
                 cmd.CommandText = "UPDATE CartItem SET Quantity = @NewQuantity, Price = @Price WHERE CartItem_ID = @CartItemId";
                 cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@NewQuantity", existingQuantity + quantity);
+                cmd.Parameters.AddWithValue("@NewQuantity", newTotalQty);
                 cmd.Parameters.AddWithValue("@Price", price);
                 cmd.Parameters.AddWithValue("@CartItemId", existingItemId);
                 cmd.ExecuteNonQuery();
