@@ -174,6 +174,15 @@ public class DatabaseInit
         cmd.ExecuteNonQuery();
 
         cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS BlockedTimeslots (
+                Blocked_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Staff_ID TEXT NOT NULL,
+                Blocked_Date TEXT NOT NULL,
+                TimeID TEXT NOT NULL
+            )";
+        cmd.ExecuteNonQuery();
+
+        cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS Payments (
                 Payment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 Cust_ID INTEGER,

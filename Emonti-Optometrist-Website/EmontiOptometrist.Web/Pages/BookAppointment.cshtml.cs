@@ -176,15 +176,19 @@ public class BookAppointmentModel : PageModel
 
             using var checkCmd = conn.CreateCommand();
             checkCmd.CommandText = @"
-                SELECT COUNT(*) FROM Appointment
-                WHERE Appointment_Date = @AppointmentDate
-                AND AppointmentTimeID = @AppointmentTimeId
-                AND Appoinment_Status != 'Cancelled'";
+                SELECT
+                    (SELECT COUNT(*) FROM Appointment
+                     WHERE Staff_ID = @StaffId AND Appointment_Date = @AppointmentDate
+                     AND AppointmentTimeID = @AppointmentTimeId AND Appoinment_Status != 'Cancelled') +
+                    (SELECT COUNT(*) FROM BlockedTimeslots
+                     WHERE Staff_ID = @StaffId AND Blocked_Date = @AppointmentDate
+                     AND TimeID = @AppointmentTimeId) AS TotalCount";
             checkCmd.Parameters.AddWithValue("@AppointmentDate", date.ToString("o"));
             checkCmd.Parameters.AddWithValue("@AppointmentTimeId", Input.PreferredTime);
+            checkCmd.Parameters.AddWithValue("@StaffId", Input.OptometristId);
             if ((long)checkCmd.ExecuteScalar()! > 0)
             {
-                ErrorMessage = "This time slot is already booked. Please select a different date or time.";
+                ErrorMessage = "This time slot is already booked or unavailable. Please select a different date or time.";
                 return Page();
             }
 
