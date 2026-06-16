@@ -174,6 +174,8 @@ public class BookAppointmentModel : PageModel
 
     public IActionResult OnPost()
     {
+        LoadOptometrists();
+
         if (!ModelState.IsValid)
             return Page();
 
@@ -183,8 +185,6 @@ public class BookAppointmentModel : PageModel
             ErrorMessage = "Please log in to book an appointment.";
             return Page();
         }
-
-        LoadOptometrists();
 
         var date = Input.PreferredDate.Date;
 
