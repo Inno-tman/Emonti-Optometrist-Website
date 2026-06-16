@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 
@@ -6,9 +8,13 @@ namespace EmontiOptometrist.Web.Services;
 public class OrderDatabase
 {
     private readonly string _connectionString;
+    private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public OrderDatabase(IConfiguration configuration)
+    public OrderDatabase(IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
+        _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
         _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
     }
 
@@ -20,14 +26,20 @@ public class OrderDatabase
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                INSERT INTO [Order] (CustID, Order_Date, Order_Total, Order_Status, Delivery_Address)
-                VALUES (@CustID, @Order_Date, @Order_Total, @Order_Status, @Delivery_Address);
+                INSERT INTO [Order] (CustID, Order_Date, Order_Total, Order_Status, Delivery_Address,
+                                     Payment_Method, Payment_Status, Order_Number, Notes)
+                VALUES (@CustID, @Order_Date, @Order_Total, @Order_Status, @Delivery_Address,
+                        @Payment_Method, @Payment_Status, @Order_Number, @Notes);
                 SELECT last_insert_rowid()";
             cmd.Parameters.AddWithValue("@CustID", order.CustID);
             cmd.Parameters.AddWithValue("@Order_Date", order.Order_Date.ToString("o"));
             cmd.Parameters.AddWithValue("@Order_Total", order.Order_Total);
             cmd.Parameters.AddWithValue("@Order_Status", order.Order_Status);
             cmd.Parameters.AddWithValue("@Delivery_Address", order.Delivery_Address ?? "");
+            cmd.Parameters.AddWithValue("@Payment_Method", order.Payment_Method ?? "Not specified");
+            cmd.Parameters.AddWithValue("@Payment_Status", order.Payment_Status ?? "pending");
+            cmd.Parameters.AddWithValue("@Order_Number", order.Order_Number ?? "");
+            cmd.Parameters.AddWithValue("@Notes", order.Notes ?? "");
 
             object result = cmd.ExecuteScalar();
             return Convert.ToInt32(result);
@@ -46,14 +58,20 @@ public class OrderDatabase
             using var cmd = conn.CreateCommand();
             cmd.Transaction = transaction;
             cmd.CommandText = @"
-                INSERT INTO [Order] (CustID, Order_Date, Order_Total, Order_Status, Delivery_Address)
-                VALUES (@CustID, @Order_Date, @Order_Total, @Order_Status, @Delivery_Address);
+                INSERT INTO [Order] (CustID, Order_Date, Order_Total, Order_Status, Delivery_Address,
+                                     Payment_Method, Payment_Status, Order_Number, Notes)
+                VALUES (@CustID, @Order_Date, @Order_Total, @Order_Status, @Delivery_Address,
+                        @Payment_Method, @Payment_Status, @Order_Number, @Notes);
                 SELECT last_insert_rowid()";
             cmd.Parameters.AddWithValue("@CustID", order.CustID);
             cmd.Parameters.AddWithValue("@Order_Date", order.Order_Date.ToString("o"));
             cmd.Parameters.AddWithValue("@Order_Total", order.Order_Total);
             cmd.Parameters.AddWithValue("@Order_Status", order.Order_Status);
             cmd.Parameters.AddWithValue("@Delivery_Address", order.Delivery_Address ?? "");
+            cmd.Parameters.AddWithValue("@Payment_Method", order.Payment_Method ?? "Not specified");
+            cmd.Parameters.AddWithValue("@Payment_Status", order.Payment_Status ?? "pending");
+            cmd.Parameters.AddWithValue("@Order_Number", order.Order_Number ?? "");
+            cmd.Parameters.AddWithValue("@Notes", order.Notes ?? "");
 
             object result = cmd.ExecuteScalar();
             return Convert.ToInt32(result);
@@ -126,7 +144,8 @@ public class OrderDatabase
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address
+                SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address,
+                       Payment_Method, Payment_Status, Payment_Date, Order_Number
                 FROM [Order] 
                 WHERE OrderID = @OrderID";
             cmd.Parameters.AddWithValue("@OrderID", orderId);
@@ -134,6 +153,11 @@ public class OrderDatabase
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
+                var pmtMethod = reader["Payment_Method"]?.ToString();
+                var pmtStatus = reader["Payment_Status"]?.ToString();
+                var pmtDateStr = reader["Payment_Date"]?.ToString();
+                var orderNum = reader["Order_Number"]?.ToString();
+
                 return new Order
                 {
                     OrderID = Convert.ToInt32(reader["OrderID"]),
@@ -142,10 +166,10 @@ public class OrderDatabase
                     Order_Total = Convert.ToDecimal(reader["Order_Total"]),
                     Order_Status = reader["Order_Status"].ToString(),
                     Delivery_Address = reader["Delivery_Address"].ToString(),
-                    Payment_Method = "paystack",
-                    Payment_Status = "pending",
-                    Order_Number = "EL-" + orderId.ToString("D6"),
-                    Payment_Date = null,
+                    Payment_Method = string.IsNullOrEmpty(pmtMethod) ? "Not specified" : pmtMethod,
+                    Payment_Status = string.IsNullOrEmpty(pmtStatus) ? "pending" : pmtStatus,
+                    Order_Number = string.IsNullOrEmpty(orderNum) ? "EL-" + orderId.ToString("D6") : orderNum,
+                    Payment_Date = string.IsNullOrEmpty(pmtDateStr) ? null : DateTime.Parse(pmtDateStr),
                     Notes = ""
                 };
             }
@@ -248,7 +272,8 @@ public class OrderDatabase
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address
+                SELECT OrderID, CustID, Order_Date, Order_Total, Order_Status, Delivery_Address,
+                       Payment_Method, Payment_Status, Payment_Date, Order_Number
                 FROM [Order] 
                 WHERE CustID = @CustID
                 ORDER BY Order_Date DESC";
@@ -257,18 +282,24 @@ public class OrderDatabase
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
+                var pmtMethod = reader["Payment_Method"]?.ToString();
+                var pmtStatus = reader["Payment_Status"]?.ToString();
+                var pmtDateStr = reader["Payment_Date"]?.ToString();
+                var orderNum = reader["Order_Number"]?.ToString();
+                var orderId = Convert.ToInt32(reader["OrderID"]);
+
                 orders.Add(new Order
                 {
-                    OrderID = Convert.ToInt32(reader["OrderID"]),
+                    OrderID = orderId,
                     CustID = reader["CustID"].ToString(),
                     Order_Date = DateTime.Parse(reader["Order_Date"].ToString()),
                     Order_Total = Convert.ToDecimal(reader["Order_Total"]),
                     Order_Status = reader["Order_Status"].ToString(),
                     Delivery_Address = reader["Delivery_Address"].ToString(),
-                    Payment_Method = "paystack",
-                    Payment_Status = "pending",
-                    Order_Number = "EL-" + Convert.ToInt32(reader["OrderID"]).ToString("D6"),
-                    Payment_Date = null,
+                    Payment_Method = string.IsNullOrEmpty(pmtMethod) ? "Not specified" : pmtMethod,
+                    Payment_Status = string.IsNullOrEmpty(pmtStatus) ? "pending" : pmtStatus,
+                    Order_Number = string.IsNullOrEmpty(orderNum) ? "EL-" + orderId.ToString("D6") : orderNum,
+                    Payment_Date = string.IsNullOrEmpty(pmtDateStr) ? null : DateTime.Parse(pmtDateStr),
                     Notes = ""
                 });
             }
@@ -360,9 +391,35 @@ public class OrderDatabase
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine($"Verifying payment with Paystack: {paystackReference}");
-            System.Threading.Thread.Sleep(1000);
-            return true;
+            var secretKey = _configuration["Paystack:SecretKey"] ?? "";
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                System.Diagnostics.Debug.WriteLine("Paystack SecretKey not configured, skipping verification");
+                return true;
+            }
+
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secretKey);
+
+            var response = client.GetAsync($"https://api.paystack.co/transaction/verify/{paystackReference}").Result;
+            if (!response.IsSuccessStatusCode)
+            {
+                System.Diagnostics.Debug.WriteLine($"Paystack API returned {response.StatusCode}");
+                return false;
+            }
+
+            var json = response.Content.ReadAsStringAsync().Result;
+            using var doc = JsonDocument.Parse(json);
+            var status = doc.RootElement.GetProperty("status").GetBoolean();
+            if (!status)
+            {
+                System.Diagnostics.Debug.WriteLine($"Paystack verification failed for ref: {paystackReference}");
+                return false;
+            }
+
+            var data = doc.RootElement.GetProperty("data");
+            var gatewayStatus = data.GetProperty("status").GetString();
+            return gatewayStatus == "success";
         }
         catch (Exception ex)
         {

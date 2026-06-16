@@ -611,13 +611,21 @@
                         <span class="btn-text"><i class="fas fa-lock"></i> Place Order</span>
                         <span class="spinner"></span>
                     </button>
+                    <div id="paystackNotice" style="display:none;margin-top:0.75rem;padding:0.6rem 0.8rem;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;font-size:0.82rem;color:#6d4c00;text-align:center;">
+                        <i class="fas fa-spinner fa-spin"></i> Preparing Paystack payment...
+                    </div>
                 </div>
             </div>
         </div>
     </form>
 </section>
 
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script>
+    var paystackPublicKey = '@Model.PaystackPublicKey';
+    var orderTotal = @Model.Total.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+    var customerEmail = '@Model.Email';
+
     function selectPayment(el) {
         document.querySelectorAll('.payment-option').forEach(function(opt) {
             opt.classList.remove('selected');
@@ -642,9 +650,79 @@
         });
     }
 
-    document.getElementById('checkoutForm').addEventListener('submit', function() {
-        var btn = document.getElementById('placeOrderBtn');
-        btn.classList.add('loading');
-        btn.disabled = true;
+    function validateForm() {
+        var required = ['FirstName', 'LastName', 'Email', 'Phone', 'Address', 'City', 'PostalCode'];
+        for (var i = 0; i < required.length; i++) {
+            var el = document.getElementById(required[i]);
+            if (!el || !el.value.trim()) {
+                alert('Please fill in all required fields.');
+                if (el) el.focus();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        var selectedPayment = document.querySelector('input[name="PaymentMethod"]:checked');
+        if (!selectedPayment) return;
+
+        if (selectedPayment.value === 'credit_card') {
+            e.preventDefault();
+            if (!validateForm()) return;
+
+            var btn = document.getElementById('placeOrderBtn');
+            var notice = document.getElementById('paystackNotice');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            notice.style.display = 'block';
+
+            var formData = new FormData(document.getElementById('checkoutForm'));
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+            fetch('?handler=CreatePendingOrder', {
+                method: 'POST',
+                body: new URLSearchParams(formData),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    alert(data.error);
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    notice.style.display = 'none';
+                    return;
+                }
+
+                var ref = 'EL_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+                var handler = PaystackPop.setup({
+                    key: paystackPublicKey,
+                    email: data.email,
+                    amount: Math.round(data.total * 100),
+                    currency: 'ZAR',
+                    ref: ref,
+                    metadata: {
+                        order_id: data.orderId,
+                        order_reference: ref
+                    },
+                    callback: function(response) {
+                        window.location.href = '/OrderConfirmation?ref=' + encodeURIComponent(response.reference) + '&id=' + data.orderId;
+                    },
+                    onClose: function() {
+                        btn.classList.remove('loading');
+                        btn.disabled = false;
+                        notice.style.display = 'none';
+                    }
+                });
+                handler.openIframe();
+            })
+            .catch(function(err) {
+                alert('Error creating order: ' + err.message);
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                notice.style.display = 'none';
+            });
+        }
     });
 </script>

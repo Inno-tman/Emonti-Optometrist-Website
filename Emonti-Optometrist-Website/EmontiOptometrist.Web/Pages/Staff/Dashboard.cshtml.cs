@@ -21,11 +21,16 @@ public class DashboardModel : PageModel
     public int TotalPatients { get; set; }
     public int UpcomingCount { get; set; }
     public List<UpcomingAppointment> UpcomingAppointments { get; set; } = new();
+    public string SuccessMessage { get; set; } = "";
+    public string ErrorMessage { get; set; } = "";
 
     public IActionResult OnGet()
     {
         if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
             return RedirectToPage("/Login");
+
+        SuccessMessage = TempData["SuccessMessage"]?.ToString() ?? "";
+        ErrorMessage = TempData["ErrorMessage"]?.ToString() ?? "";
 
         var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
         StaffName = HttpContext.Session.GetString("StaffName") ?? "Staff";
@@ -111,6 +116,169 @@ public class DashboardModel : PageModel
         }
 
         return Page();
+    }
+
+    public IActionResult OnPostCancelAppointment(int appointmentId)
+    {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return RedirectToPage("/Login");
+
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
+        if (string.IsNullOrEmpty(connStr))
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE Appointment SET Appoinment_Status = 'Cancelled' WHERE Appointment_ID = @Id AND Appoinment_Status != 'Cancelled'";
+            cmd.Parameters.AddWithValue("@Id", appointmentId);
+            int rows = cmd.ExecuteNonQuery();
+
+            if (rows > 0)
+                TempData["SuccessMessage"] = "Appointment cancelled successfully.";
+            else
+                TempData["ErrorMessage"] = "Appointment could not be cancelled (already cancelled or not found).";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error cancelling appointment: {ex.Message}";
+        }
+
+        return RedirectToPage();
+    }
+
+    public JsonResult OnGetGetTimeslots(string date)
+    {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return new JsonResult(new { error = "Not authenticated" });
+
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
+        var staffId = HttpContext.Session.GetString("Staff_ID") ?? "";
+
+        try
+        {
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+
+            var allSlots = new List<(string TimeId, string Label)>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT TimeID, Timeslot FROM tblTime ORDER BY TimeID";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    allSlots.Add((reader["TimeID"].ToString(), reader["Timeslot"].ToString()));
+            }
+
+            var bookedIds = new HashSet<string>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT AppointmentTimeID FROM Appointment
+                    WHERE date(Appointment_Date) = date(@Date)
+                    AND Appoinment_Status != 'Cancelled'";
+                cmd.Parameters.AddWithValue("@Date", date);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    var tid = reader["AppointmentTimeID"]?.ToString();
+                    if (!string.IsNullOrEmpty(tid)) bookedIds.Add(tid);
+                }
+            }
+
+            var blockedIds = new HashSet<string>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT TimeID FROM BlockedTimeslots
+                    WHERE Staff_ID = @StaffId AND Blocked_Date = @Date";
+                cmd.Parameters.AddWithValue("@StaffId", staffId);
+                cmd.Parameters.AddWithValue("@Date", date);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    var tid = reader["TimeID"]?.ToString();
+                    if (!string.IsNullOrEmpty(tid)) blockedIds.Add(tid);
+                }
+            }
+
+            var slots = new List<object>();
+            foreach (var (timeId, label) in allSlots)
+            {
+                string status;
+                if (bookedIds.Contains(timeId))
+                    status = "booked";
+                else if (blockedIds.Contains(timeId))
+                    status = "blocked";
+                else
+                    status = "available";
+
+                slots.Add(new { timeId, label, status });
+            }
+
+            return new JsonResult(new { slots });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { error = ex.Message });
+        }
+    }
+
+    public JsonResult OnGetToggleBlock(string date, string timeId)
+    {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return new JsonResult(new { error = "Not authenticated" });
+
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
+        var staffId = HttpContext.Session.GetString("Staff_ID") ?? "";
+
+        try
+        {
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = @"
+                SELECT COUNT(*) FROM BlockedTimeslots
+                WHERE Staff_ID = @StaffId AND Blocked_Date = @Date AND TimeID = @TimeId";
+            checkCmd.Parameters.AddWithValue("@StaffId", staffId);
+            checkCmd.Parameters.AddWithValue("@Date", date);
+            checkCmd.Parameters.AddWithValue("@TimeId", timeId);
+            int exists = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+            if (exists > 0)
+            {
+                using var delCmd = conn.CreateCommand();
+                delCmd.CommandText = @"
+                    DELETE FROM BlockedTimeslots
+                    WHERE Staff_ID = @StaffId AND Blocked_Date = @Date AND TimeID = @TimeId";
+                delCmd.Parameters.AddWithValue("@StaffId", staffId);
+                delCmd.Parameters.AddWithValue("@Date", date);
+                delCmd.Parameters.AddWithValue("@TimeId", timeId);
+                delCmd.ExecuteNonQuery();
+            }
+            else
+            {
+                using var insCmd = conn.CreateCommand();
+                insCmd.CommandText = @"
+                    INSERT INTO BlockedTimeslots (Staff_ID, Blocked_Date, TimeID)
+                    VALUES (@StaffId, @Date, @TimeId)";
+                insCmd.Parameters.AddWithValue("@StaffId", staffId);
+                insCmd.Parameters.AddWithValue("@Date", date);
+                insCmd.Parameters.AddWithValue("@TimeId", timeId);
+                insCmd.ExecuteNonQuery();
+            }
+
+            return new JsonResult(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { error = ex.Message });
+        }
     }
 }
 
