@@ -73,4 +73,5 @@ jobs:
           app-name: 'EmontiOptometristWebsite'
           slot-name: 'Production'
           package: publish
+          type: zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AF073AC291564FBC91DBF4742BE8B3F2 }}
