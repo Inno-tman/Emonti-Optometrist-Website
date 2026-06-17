@@ -72,27 +72,32 @@ jobs:
           name: ASP-app
           path: publish
       
-      - name: Deploy to Azure Web App via Kudu ZIP API
+      - name: Deploy via VFS API (bypasses multipart temp buffering)
         shell: pwsh
         run: |
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
-          $kuduUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/zipdeploy?isAsync=true&clean=true"
+          $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
           $headers = @{Authorization = "Basic $encodedCreds"}
+          # Clear wwwroot via VFS DELETE (avoids multipart temp space)
+          Write-Host "Cleaning wwwroot..."
+          try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
+          # Upload zip via VFS PUT (raw bytes, no multipart buffering needed)
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
-          Write-Host "Deploying $((Get-Item $zipPath).Length) bytes..."
-          $response = Invoke-WebRequest -Uri $kuduUrl -Method POST -InFile $zipPath -ContentType "multipart/form-data" -Headers $headers -UseBasicParsing
-          if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 202) {
-            Write-Host "Deploy accepted (status $($response.StatusCode)), monitoring..."
-            Start-Sleep -Seconds 15
-            $statusUrl = $response.Headers.Location
-            if (-not $statusUrl) { $statusUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/deployments/latest" }
-            Write-Host "Deployment status: $statusUrl"
-          } else {
-            Write-Error "Deployment failed with status $($response.StatusCode)"
-            exit 1
-          }
+          $zipBytes = [System.IO.File]::ReadAllBytes($zipPath)
+          Write-Host "Uploading $($zipBytes.Length) bytes via VFS PUT..."
+          $response = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method PUT -Body $zipBytes -ContentType "application/octet-stream" -Headers $headers -UseBasicParsing
+          Write-Host "Uploaded (status $($response.StatusCode))"
+          # Extract zip server-side via PowerShell
+          Write-Host "Extracting on server..."
+          $extractCmd = 'powershell -Command "Expand-Archive -Path D:\home\site\wwwroot\deploy.zip -DestinationPath D:\home\site\wwwroot -Force"'
+          $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
+          $cmdResponse = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
+          Write-Host "Extraction result: $($cmdResponse.StatusCode)"
+          # Clean up zip
+          Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing
+          Write-Host "Deployment complete!"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
           AZURE_KUDU_PASSWORD: ${{ secrets.AZURE_KUDU_PASSWORD }}
