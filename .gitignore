@@ -47,10 +47,5 @@ x86/
 *.db-wal
 *.db-shm
 
-# Web config with secrets
-*/Web.config
-*.Web.config
-**/Web.config
-
 publish_test/
 SUMMARY.md
