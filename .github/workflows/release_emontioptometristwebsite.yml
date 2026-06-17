@@ -53,6 +53,13 @@ jobs:
           $totalSize = ($files | Measure-Object -Property Length -Sum).Sum
           Write-Host "Published $($files.Count) files, $([Math]::Round($totalSize/1MB, 2)) MB total"
           Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published" | Sort-Object Length -Descending | Select-Object -First 15 FullName, Length
+          $configFile = Get-ChildItem "$env:GITHUB_WORKSPACE\published" -Filter "*.config" -Recurse | Select-Object -ExpandProperty Name
+          Write-Host "Config files found: $($configFile -join ', ')"
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\published\Web.config")) {
+            Write-Error "Web.config NOT FOUND in published output!"
+            Get-ChildItem "$env:GITHUB_WORKSPACE\published" -Filter "*.config"
+            exit 1
+          }
           if ($files.Count -eq 0) { exit 1 }
 
       - name: Upload artifact for deployment job
