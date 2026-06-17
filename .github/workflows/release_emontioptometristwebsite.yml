@@ -28,18 +28,29 @@ jobs:
         working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
         run: nuget restore ..\Emonti-Optometrist-Website.sln
 
-      - name: Publish to folder
+      - name: Build and publish with MSBuild
         working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
         run: |
           $pub = "$env:GITHUB_WORKSPACE\published"
-          msbuild Emonti-Optometrist-Website.csproj /nologo /verbosity:m /t:Build /p:OutDir="$pub\bin\"
-          robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln /XD obj packages Properties /NDL /NJH /NJS /NP; if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
+          msbuild Emonti-Optometrist-Website.csproj /nologo /verbosity:m /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:publishUrl="$pub" /p:Configuration=Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Inspect published output
+        run: |
+          if (-Not (Test-Path "$env:GITHUB_WORKSPACE\published")) {
+            Write-Error "Published folder not found"
+            Get-ChildItem "$env:GITHUB_WORKSPACE" | Select-Object Name
+            exit 1
+          }
+          $files = Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published"
+          Write-Host "Published $($files.Count) files"
+          $files | Select-Object -First 30 FullName
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: ASP-app
-          path: '${{ github.workspace }}\published\**'
+          path: published/**
 
   deploy:
     runs-on: windows-latest
