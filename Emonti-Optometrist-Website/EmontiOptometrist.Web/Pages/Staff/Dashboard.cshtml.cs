@@ -8,10 +8,12 @@ namespace EmontiOptometrist.Web.Pages.Staff;
 public class DashboardModel : PageModel
 {
     private readonly IConfiguration _configuration;
+    private readonly BrevoEmailService _brevoEmail;
 
-    public DashboardModel(IConfiguration configuration)
+    public DashboardModel(IConfiguration configuration, BrevoEmailService brevoEmail)
     {
         _configuration = configuration;
+        _brevoEmail = brevoEmail;
     }
 
     public string StaffName { get; set; } = "";
@@ -118,7 +120,7 @@ public class DashboardModel : PageModel
         return Page();
     }
 
-    public IActionResult OnPostCancelAppointment(int appointmentId)
+    public IActionResult OnPostCancelAppointment(int appointmentId, string reason)
     {
         if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
             return RedirectToPage("/Login");
@@ -134,15 +136,82 @@ public class DashboardModel : PageModel
         {
             using var conn = new SqliteConnection(connStr);
             conn.Open();
+
+            string? customerEmail = null;
+            string? customerName = null;
+            string? appointmentDate = null;
+            string? appointmentTime = null;
+            string? optometristName = null;
+
+            using (var getInfo = conn.CreateCommand())
+            {
+                getInfo.CommandText = @"
+                    SELECT c.Customer_Email, c.Customer_Name, a.Appointment_Date, t.Timeslot, s.Staff_Name, s.Staff_Surname
+                    FROM Appointment a
+                    INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
+                    LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
+                    LEFT JOIN Staff s ON a.Staff_ID = s.Staff_ID
+                    WHERE a.Appointment_ID = @Id";
+                getInfo.Parameters.AddWithValue("@Id", appointmentId);
+                using (var rdr = getInfo.ExecuteReader())
+                {
+                    if (rdr.Read())
+                    {
+                        customerEmail = rdr["Customer_Email"]?.ToString();
+                        customerName = $"{rdr["Customer_Name"]}";
+                        appointmentDate = rdr["Appointment_Date"]?.ToString();
+                        appointmentTime = rdr["Timeslot"]?.ToString() ?? "N/A";
+                        optometristName = $"{rdr["Staff_Name"]} {rdr["Staff_Surname"]}";
+                    }
+                }
+            }
+
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "UPDATE Appointment SET Appoinment_Status = 'Cancelled' WHERE Appointment_ID = @Id AND Appoinment_Status != 'Cancelled'";
             cmd.Parameters.AddWithValue("@Id", appointmentId);
             int rows = cmd.ExecuteNonQuery();
 
             if (rows > 0)
+            {
                 TempData["SuccessMessage"] = "Appointment cancelled successfully.";
+
+                if (!string.IsNullOrEmpty(customerEmail))
+                {
+                    var reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided." : reason;
+                    var body = $@"<!DOCTYPE html>
+<html><head><meta charset=""utf-8""></head>
+<body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
+<tr><td align=""center"">
+<table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
+<tr><td style=""background-color:#dc3545;padding:25px;text-align:center;"">
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">Appointment Cancelled</h1>
+</td></tr>
+<tr><td style=""padding:30px;"">
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;"">Dear {customerName},</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">Your appointment has been cancelled.</p>
+<div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #dc3545;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Optometrist:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{optometristName}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{appointmentDate}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{appointmentTime}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;vertical-align:top;""><strong>Reason:</strong></td><td style=""padding:8px 0;color:#dc3545;font-size:14px;"">{reasonText}</td></tr>
+</table></div>
+<p style=""margin:25px 0 0 0;color:#555;font-size:15px;"">We apologise for the inconvenience. Please contact us if you would like to reschedule.</p>
+</td></tr>
+<tr><td style=""background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;"">
+<p style=""margin:0 0 5px 0;color:#666;font-size:13px;font-weight:600;"">Emonti Optometrist</p>
+<p style=""margin:0;color:#888;font-size:12px;"">Shop 7 New Colonnade, Devereaux Ave, Vincent, East London 5247</p>
+</td></tr>
+</table></td></tr></table></body></html>";
+
+                    _ = _brevoEmail.SendEmailAsync(customerEmail, customerName, "Appointment Cancelled - Emonti Optometrist", body);
+                }
+            }
             else
+            {
                 TempData["ErrorMessage"] = "Appointment could not be cancelled (already cancelled or not found).";
+            }
         }
         catch (Exception ex)
         {
