@@ -1,6 +1,8 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -341,6 +343,46 @@ public class BookAppointmentModel : PageModel
         }
     }
 
+    private void SendEmail(string toEmail, string subject, string htmlBody)
+    {
+        try
+        {
+            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
+            var smtpPortString = _configuration["Smtp:Port"] ?? "587";
+            var smtpEmail = _configuration["Smtp:Email"] ?? "";
+            var smtpPassword = _configuration["Smtp:Password"] ?? "";
+            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+
+            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+            {
+                _logger.LogWarning("SMTP credentials not configured, skipping email");
+                return;
+            }
+
+            int.TryParse(smtpPortString, out var smtpPort);
+            if (smtpPort == 0) smtpPort = 587;
+
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            client.Timeout = 30000;
+            client.Connect(smtpHost, smtpPort, smtpPort == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls);
+            client.Authenticate(smtpEmail, smtpPassword);
+
+            var msg = new MimeMessage();
+            msg.From.Add(new MailboxAddress(smtpFromName, smtpEmail));
+            msg.To.Add(new MailboxAddress(toEmail, toEmail));
+            msg.Subject = subject;
+            msg.Body = new TextPart("html") { Text = htmlBody };
+
+            client.Send(msg);
+            client.Disconnect(true);
+            _logger.LogInformation("Email sent to {Email}: {Subject}", toEmail, subject);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send email to {Email}", toEmail);
+        }
+    }
+
     private void SendOptometristNotification(string staffId, string patientName, string patientPhone, DateTime date, string slotText)
     {
         try
@@ -356,29 +398,6 @@ public class BookAppointmentModel : PageModel
             var staffEmail = rdr["Staff_Email"]?.ToString() ?? "";
             if (string.IsNullOrEmpty(staffEmail)) return;
             var staffName = $"{rdr["Staff_Name"]} {rdr["Staff_Surname"]}";
-
-            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "587");
-            var smtpEmail = _configuration["Smtp:Email"] ?? "";
-            var smtpPassword = _configuration["Smtp:Password"] ?? "";
-            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
-            var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
-
-            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-            {
-                _logger.LogWarning("SMTP credentials not configured, skipping optometrist notification");
-                return;
-            }
-
-            using var smtp = new SmtpClient(smtpHost, smtpPort);
-            smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
-            smtp.EnableSsl = enableSsl;
-            smtp.Timeout = 30000;
-
-            using var message = new MailMessage();
-            message.From = new MailAddress(smtpEmail, smtpFromName);
-            message.To.Add(staffEmail);
-            message.Subject = "New Appointment Booking - Emonti Optometrist";
 
             var body = $@"<!DOCTYPE html>
 <html><head><meta charset=""utf-8""></head>
@@ -408,11 +427,7 @@ public class BookAppointmentModel : PageModel
 </td></tr>
 </table></td></tr></table></body></html>";
 
-            message.Body = body;
-            message.IsBodyHtml = true;
-
-            smtp.Send(message);
-            _logger.LogInformation("Optometrist notification sent to {Email}", staffEmail);
+            SendEmail(staffEmail, "New Appointment Booking - Emonti Optometrist", body);
         }
         catch (Exception ex)
         {
@@ -422,34 +437,9 @@ public class BookAppointmentModel : PageModel
 
     private void SendConfirmationEmail(string customerEmail, DateTime date, string slotText)
     {
-        try
-        {
-            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "587");
-            var smtpEmail = _configuration["Smtp:Email"] ?? "";
-            var smtpPassword = _configuration["Smtp:Password"] ?? "";
-            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
-            var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
-
-            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-            {
-                _logger.LogWarning("SMTP credentials not configured, skipping confirmation email");
-                return;
-            }
-
-            using var smtp = new SmtpClient(smtpHost, smtpPort);
-            smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
-            smtp.EnableSsl = enableSsl;
-            smtp.Timeout = 30000;
-
-            using var message = new MailMessage();
-            message.From = new MailAddress(smtpEmail, smtpFromName);
-            message.To.Add(customerEmail);
-            message.Subject = $"Appointment {(IsRebooking ? "Rebooking" : "Confirmation")} - Emonti Optometrist";
-
-            var optometristName = Optometrists.FirstOrDefault(o => o.Value == Input.OptometristId)?.Text ?? "Selected Optometrist";
-            var heading = IsRebooking ? "Appointment Rebooked" : "Appointment Confirmed";
-            var body = $@"<!DOCTYPE html>
+        var optometristName = Optometrists.FirstOrDefault(o => o.Value == Input.OptometristId)?.Text ?? "Selected Optometrist";
+        var heading = IsRebooking ? "Appointment Rebooked" : "Appointment Confirmed";
+        var body = $@"<!DOCTYPE html>
 <html><head><meta charset=""utf-8""></head>
 <body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
 <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
@@ -483,16 +473,7 @@ public class BookAppointmentModel : PageModel
 </td></tr>
 </table></td></tr></table></body></html>";
 
-            message.Body = body;
-            message.IsBodyHtml = true;
-
-            smtp.Send(message);
-            _logger.LogInformation("Confirmation email sent to {Email}", customerEmail);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send confirmation email to {Email}", customerEmail);
-        }
+        SendEmail(customerEmail, $"Appointment {(IsRebooking ? "Rebooking" : "Confirmation")} - Emonti Optometrist", body);
     }
 }
 
