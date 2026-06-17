@@ -32,8 +32,8 @@ jobs:
         working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
         run: |
           $pub = "$env:GITHUB_WORKSPACE\published"
-          msbuild Emonti-Optometrist-Website.csproj /nologo /verbosity:minimal /t:Publish /p:Configuration=Release /p:PublishDir="$pub\"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          msbuild Emonti-Optometrist-Website.csproj /nologo /verbosity:m /t:Build /p:OutDir="$pub\bin\"
+          robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln /XD obj packages Properties /NDL /NJH /NJS /NP; if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -50,6 +50,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ASP-app
+          path: publish
       
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -57,5 +58,5 @@ jobs:
         with:
           app-name: 'EmontiOptometristWebsite'
           slot-name: 'Production'
-          package: ./ASP-app
+          package: publish
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AF073AC291564FBC91DBF4742BE8B3F2 }}
