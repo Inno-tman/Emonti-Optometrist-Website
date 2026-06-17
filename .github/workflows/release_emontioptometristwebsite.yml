@@ -72,19 +72,18 @@ jobs:
           name: ASP-app
           path: publish
       
-      - name: Deploy via FTP (bypasses ASP.NET request buffering)
+      - name: Deploy via FTPS + server-side unzip
         shell: pwsh
         run: |
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
-          $ftpUrl = "ftp://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
-          $ftpUser = "EmontiOptometristWebsite\`$EmontiOptometristWebsite"
-          Write-Host "Uploading $((Get-Item $zipPath).Length) bytes via FTP..."
-          $webClient = New-Object System.Net.WebClient
-          $webClient.Credentials = New-Object System.Net.NetworkCredential($ftpUser, $env:AZURE_KUDU_PASSWORD)
-          $webClient.UploadFile($ftpUrl, $zipPath)
-          $webClient.Dispose()
-          Write-Host "FTP upload complete."
+          $ftpUrl = "ftps://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
+          $ftpUser = "EmontiOptometristWebsite" + [char]92 + '$EmontiOptometristWebsite'
+          $ftpPass = $env:AZURE_KUDU_PASSWORD
+          Write-Host "Uploading $((Get-Item $zipPath).Length) bytes via FTPS..."
+          curl.exe -T "$zipPath" "$ftpUrl" --user "${ftpUser}:${ftpPass}" --ssl --insecure
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "FTPS upload complete."
           # Extract server-side via Kudu command API
           $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
