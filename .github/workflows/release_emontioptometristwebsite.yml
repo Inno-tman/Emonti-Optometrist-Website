@@ -72,24 +72,24 @@ jobs:
           name: ASP-app
           path: publish
       
-      - name: Deploy via VFS API (bypasses multipart temp buffering)
+      - name: Deploy via FTP (bypasses ASP.NET request buffering)
         shell: pwsh
         run: |
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
+          Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
+          $ftpUrl = "ftp://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
+          $ftpUser = "EmontiOptometristWebsite\`$EmontiOptometristWebsite"
+          Write-Host "Uploading $((Get-Item $zipPath).Length) bytes via FTP..."
+          $webClient = New-Object System.Net.WebClient
+          $webClient.Credentials = New-Object System.Net.NetworkCredential($ftpUser, $env:AZURE_KUDU_PASSWORD)
+          $webClient.UploadFile($ftpUrl, $zipPath)
+          $webClient.Dispose()
+          Write-Host "FTP upload complete."
+          # Extract server-side via Kudu command API
           $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
           $headers = @{Authorization = "Basic $encodedCreds"}
-          # Clear wwwroot via VFS DELETE (avoids multipart temp space)
-          Write-Host "Cleaning wwwroot..."
-          try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
-          # Upload zip via VFS PUT (raw bytes, no multipart buffering needed)
-          Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
-          $zipBytes = [System.IO.File]::ReadAllBytes($zipPath)
-          Write-Host "Uploading $($zipBytes.Length) bytes via VFS PUT..."
-          $response = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method PUT -Body $zipBytes -ContentType "application/octet-stream" -Headers $headers -UseBasicParsing
-          Write-Host "Uploaded (status $($response.StatusCode))"
-          # Extract zip server-side via PowerShell
           Write-Host "Extracting on server..."
           $extractCmd = 'powershell -Command "Expand-Archive -Path D:\home\site\wwwroot\deploy.zip -DestinationPath D:\home\site\wwwroot -Force"'
           $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
