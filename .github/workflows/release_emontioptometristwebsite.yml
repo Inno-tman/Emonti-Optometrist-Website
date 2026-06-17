@@ -79,6 +79,13 @@ jobs:
           name: ASP-app
           path: publish
       
+      - name: List publish contents
+        shell: pwsh
+        run: |
+          Get-ChildItem "$env:GITHUB_WORKSPACE\publish" | Select-Object Name, Length, Mode
+          Write-Host "---"
+          Get-ChildItem "$env:GITHUB_WORKSPACE\publish" -Filter "*.config" -Recurse | Select-Object FullName, Length
+      
       - name: Deploy via FTPS + app_offline + server-side unzip
         shell: pwsh
         run: |
@@ -94,6 +101,15 @@ jobs:
           # Upload zip via FTPS
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
+          # Debug: check zip contents
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+          Write-Host "Zip contains $($zip.Entries.Count) entries"
+          $configEntries = $zip.Entries | Where-Object { $_.Name -like '*.config' } | Select-Object FullName, Length
+          if ($configEntries) { $configEntries | ForEach-Object { Write-Host "  Config in zip: $($_.FullName) ($($_.Length) bytes)" } }
+          else { Write-Host "  WARNING: No .config files found in zip!" }
+          $zip.Dispose()
+          # FTPS upload
           $ftpUrl = "ftps://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
           $ftpUser = "EmontiOptometristWebsite" + [char]92 + '$EmontiOptometristWebsite'
           $ftpPass = $env:AZURE_KUDU_PASSWORD
@@ -116,6 +132,13 @@ jobs:
           # Bring app back online
           Write-Host "Bringing app online..."
           try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/app_offline.htm" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
+          Start-Sleep -Seconds 10
+          # Verify deployment
+          Write-Host "Verifying deployment..."
+          try {
+            $check = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" -Method GET -Headers $headers -UseBasicParsing
+            Write-Host "Web.config VERIFIED on server: $($check.StatusCode)"
+          } catch { Write-Host "WARNING: Web.config NOT FOUND on server after deploy!" }
           Write-Host "Deployment complete!"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
