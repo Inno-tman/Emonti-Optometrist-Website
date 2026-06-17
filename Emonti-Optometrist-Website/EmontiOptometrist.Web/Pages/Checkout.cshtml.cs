@@ -323,6 +323,7 @@ public class CheckoutModel : PageModel
             var smtpEmail = _configuration["Smtp:Email"] ?? "";
             var smtpPassword = _configuration["Smtp:Password"] ?? "";
             var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+            var smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
             var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
 
             if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
@@ -332,7 +333,7 @@ public class CheckoutModel : PageModel
             }
 
             using var smtp = new SmtpClient(smtpHost, smtpPort);
-            smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
+            smtp.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
             smtp.EnableSsl = enableSsl;
             smtp.Timeout = 30000;
 

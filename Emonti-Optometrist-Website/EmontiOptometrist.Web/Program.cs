@@ -87,6 +87,7 @@ app.MapGet("/api/test-email", async (HttpContext http) =>
     var smtpEmail = app.Configuration["Smtp:Email"] ?? "";
     var smtpPassword = app.Configuration["Smtp:Password"] ?? "";
     var smtpFromName = app.Configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+    var smtpUsername = app.Configuration["Smtp:Username"] ?? smtpEmail;
 
     if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
         return Results.Json(new { success = false, message = "SMTP not configured", smtpEmail, smtpPassword = string.IsNullOrEmpty(smtpPassword) ? "empty" : "set" });
@@ -103,7 +104,7 @@ app.MapGet("/api/test-email", async (HttpContext http) =>
             using var client = new MailKit.Net.Smtp.SmtpClient();
             client.Timeout = 15000;
             client.Connect(cfg.host, cfg.port, cfg.ssl);
-            client.Authenticate(smtpEmail, smtpPassword);
+            client.Authenticate(smtpUsername, smtpPassword);
             var msg = new MimeMessage();
             msg.From.Add(new MailboxAddress(smtpFromName, smtpEmail));
             msg.To.Add(new MailboxAddress(to, to));

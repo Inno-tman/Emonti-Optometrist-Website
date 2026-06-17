@@ -190,6 +190,7 @@ public class LoginModel : PageModel
 
         string smtpEmail = _configuration["Smtp:Email"];
         string smtpPassword = _configuration["Smtp:Password"];
+        string smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
         if (!string.IsNullOrEmpty(smtpEmail) && !string.IsNullOrEmpty(smtpPassword))
         {
             try
@@ -197,7 +198,7 @@ public class LoginModel : PageModel
                 using var smtp = new System.Net.Mail.SmtpClient(
                     _configuration["Smtp:Host"] ?? "smtp.gmail.com",
                     int.Parse(_configuration["Smtp:Port"] ?? "587"));
-                smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
+                smtp.Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword);
                 smtp.EnableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
                 using var msg = new System.Net.Mail.MailMessage(smtpEmail, forgotPasswordEmail,
                     "Password Reset Code - Emonti Optometrist",

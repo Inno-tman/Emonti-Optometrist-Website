@@ -352,6 +352,7 @@ public class BookAppointmentModel : PageModel
             var smtpEmail = _configuration["Smtp:Email"] ?? "";
             var smtpPassword = _configuration["Smtp:Password"] ?? "";
             var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+            var smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
 
             if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
             {
@@ -365,7 +366,7 @@ public class BookAppointmentModel : PageModel
             using var client = new MailKit.Net.Smtp.SmtpClient();
             client.Timeout = 30000;
             client.Connect(smtpHost, smtpPort, smtpPort == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls);
-            client.Authenticate(smtpEmail, smtpPassword);
+            client.Authenticate(smtpUsername, smtpPassword);
 
             var msg = new MimeMessage();
             msg.From.Add(new MailboxAddress(smtpFromName, smtpEmail));
