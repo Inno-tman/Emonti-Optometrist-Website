@@ -204,6 +204,7 @@ public class BookAppointmentModel : PageModel
     public IActionResult OnPost()
     {
         LoadOptometrists();
+        LoadCustomerDetails();
 
         if (!ModelState.IsValid)
             return Page();
