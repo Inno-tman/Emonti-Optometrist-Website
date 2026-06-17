@@ -38,12 +38,17 @@ jobs:
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
           Write-Host "Removing unnecessary large files from published output..."
           # Copy roslyn compiler - needed by DotNetCompilerPlatform for runtime compilation
-          $roslynSrc = "..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
+          $pkgDir = "..\packages"
+          Write-Host "Packages dir: $(Resolve-Path $pkgDir)"
+          $roslynSrc = "$pkgDir\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
+          $roslynDest = "$pub\bin\roslyn"
           if (Test-Path $roslynSrc) {
-            $roslynDest = "$pub\bin\roslyn"
-            robocopy $roslynSrc $roslynDest /E /NDL /NJH /NJS /NP
+            Copy-Item -Path "$roslynSrc\*" -Destination $roslynDest -Recurse -Force
             Write-Host "Roslyn compiler copied to published output."
-          } else { Write-Host "WARNING: Roslyn source not found at $roslynSrc" }
+          } else {
+            Write-Host "Roslyn source NOT found at: $roslynSrc"
+            Get-ChildItem "$pkgDir\Microsoft.CodeDom.Providers.DotNetCompilerPlatform*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  Found package: $($_.Name)" }
+          }
           Remove-Item -Recurse -Force "$pub\bin\_PublishedWebsites" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.xml" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.pdb" -ErrorAction SilentlyContinue
