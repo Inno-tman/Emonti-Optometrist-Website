@@ -89,11 +89,17 @@ jobs:
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
           $headers = @{Authorization = "Basic $encodedCreds"}
-          Write-Host "Extracting on server..."
+          Write-Host "Waiting for app to stabilize..."
+          Start-Sleep -Seconds 15
           $extractCmd = 'powershell -Command "Expand-Archive -Path D:\home\site\wwwroot\deploy.zip -DestinationPath D:\home\site\wwwroot -Force"'
           $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
-          $cmdResponse = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
-          Write-Host "Extraction result: $($cmdResponse.StatusCode)"
+          for ($i = 0; $i -lt 5; $i++) {
+            try {
+              $cmdResponse = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
+              Write-Host "Extraction result: $($cmdResponse.StatusCode)"
+              if ($cmdResponse.StatusCode -eq 200) { break }
+            } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
+          }
           # Clean up zip
           Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing
           Write-Host "Deployment complete!"
