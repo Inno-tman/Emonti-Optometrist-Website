@@ -37,7 +37,7 @@ jobs:
           robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln /XD obj packages Properties /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
 
-      - name: Verify published output
+      - name: Verify and measure published output
         run: |
           if (-Not (Test-Path "$env:GITHUB_WORKSPACE\published")) {
             Write-Error "Published folder not found"
@@ -45,8 +45,9 @@ jobs:
             exit 1
           }
           $files = Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published"
-          Write-Host "Published $($files.Count) files"
-          $files | Select-Object -First 20 FullName
+          $totalSize = ($files | Measure-Object -Property Length -Sum).Sum
+          Write-Host "Published $($files.Count) files, $([Math]::Round($totalSize/1MB, 2)) MB total"
+          Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published" | Sort-Object Length -Descending | Select-Object -First 15 FullName, Length
           if ($files.Count -eq 0) { exit 1 }
 
       - name: Upload artifact for deployment job
@@ -70,14 +71,19 @@ jobs:
         shell: pwsh
         run: |
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
-          $kuduUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/zipdeploy"
+          $kuduUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/zipdeploy?isAsync=true&clean=true"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
+          $headers = @{Authorization = "Basic $encodedCreds"}
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
           Write-Host "Deploying $((Get-Item $zipPath).Length) bytes..."
-          $response = Invoke-WebRequest -Uri $kuduUrl -Method POST -InFile $zipPath -ContentType "multipart/form-data" -Headers @{Authorization = "Basic $encodedCreds"} -UseBasicParsing
+          $response = Invoke-WebRequest -Uri $kuduUrl -Method POST -InFile $zipPath -ContentType "multipart/form-data" -Headers $headers -UseBasicParsing
           if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 202) {
-            Write-Host "Deployment successful!"
+            Write-Host "Deploy accepted (status $($response.StatusCode)), monitoring..."
+            Start-Sleep -Seconds 15
+            $statusUrl = $response.Headers.Location
+            if (-not $statusUrl) { $statusUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/deployments/latest" }
+            Write-Host "Deployment status: $statusUrl"
           } else {
             Write-Error "Deployment failed with status $($response.StatusCode)"
             exit 1
