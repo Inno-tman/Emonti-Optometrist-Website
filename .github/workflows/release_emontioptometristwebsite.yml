@@ -100,8 +100,8 @@ jobs:
               if ($cmdResponse.StatusCode -eq 200) { break }
             } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
           }
-          # Clean up zip
-          Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing
+          # Clean up zip (non-fatal)
+          try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
           Write-Host "Deployment complete!"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
