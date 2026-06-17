@@ -1,0 +1,163 @@
+@page
+@model QueryDbModel
+@{
+    ViewData["Title"] = "Query Database";
+}
+
+@section HeadContent {
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
+        .admin-wrapper { display: flex; min-height: 100vh; }
+        .admin-sidebar {
+            width: 250px; background: #1a1d23; color: #fff;
+            padding: 1.5rem 0; flex-shrink: 0;
+            position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem; }
+        .sidebar-brand h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .sidebar-brand small { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+        .sidebar-nav { list-style: none; padding: 0; }
+        .sidebar-nav li a {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1.25rem; color: rgba(255,255,255,0.65);
+            text-decoration: none; font-size: 0.9rem; font-weight: 500;
+            transition: all 0.2s ease; border-left: 3px solid transparent;
+        }
+        .sidebar-nav li a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .sidebar-nav li a.active { background: rgba(102,126,234,0.15); color: #667eea; border-left-color: #667eea; }
+        .sidebar-nav li a i { width: 20px; text-align: center; }
+        .admin-main { margin-left: 250px; flex: 1; padding: 2rem; min-height: 100vh; }
+        .admin-header { margin-bottom: 2rem; }
+        .admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
+        .admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+
+        .query-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .query-card label { font-size: 0.85rem; font-weight: 600; color: #333; display: block; margin-bottom: 0.5rem; }
+        .query-card textarea {
+            width: 100%; min-height: 120px; padding: 0.75rem; border: 1px solid #ddd;
+            border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem;
+            resize: vertical; outline: none; transition: border-color 0.2s;
+        }
+        .query-card textarea:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .query-actions { display: flex; gap: 0.75rem; margin-top: 1rem; align-items: center; }
+        .btn-run {
+            padding: 0.6rem 1.5rem; background: linear-gradient(135deg, #667eea, #5a67d8);
+            color: #fff; border: none; border-radius: 8px; font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+
+        .result-info { font-size: 0.8rem; color: #888; margin-bottom: 1rem; }
+        .result-info strong { color: #333; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        thead { background: #f8f9fa; }
+        th { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; white-space: nowrap; border-bottom: 2px solid #e8e8e8; }
+        td { padding: 0.5rem 0.75rem; color: #333; border-bottom: 1px solid #f0f0f0; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        tr:hover td { background: rgba(102,126,234,0.02); }
+        td.null-value { color: #aaa; font-style: italic; }
+
+        .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #999; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
+
+        @@media (max-width: 768px) {
+            .admin-sidebar { width: 60px; }
+            .sidebar-brand h2, .sidebar-brand small, .sidebar-nav li a span { display: none; }
+            .sidebar-nav li a { justify-content: center; padding: 0.75rem; }
+            .admin-main { margin-left: 60px; padding: 1rem; }
+        }
+    </style>
+}
+
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <h2>EMONTI</h2>
+            <small>Admin Panel</small>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="/Admin/Dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <li><a href="/Admin/ManageOrders"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
+            <li><a href="/Admin/ManageProducts"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <li><a href="/Admin/ManageCustomers"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <li><a href="/Admin/ManageStaff"><i class="fas fa-users"></i><span>Staff</span></a></li>
+            <li><a href="/Admin/QueryDb" class="active"><i class="fas fa-database"></i><span>Query DB</span></a></li>
+            <li style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem;">
+                <a href="/"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a>
+            </li>
+            <li>
+                <a href="/Logout" class="logout" style="color: #ff6b6b;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <h1><i class="fas fa-database"></i> Query Database</h1>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i> @Model.ErrorMessage</div>
+        }
+
+        <div class="query-card">
+            <form method="post">
+                <label for="sqlQuery">SQL Query (SELECT / PRAGMA / WITH only)</label>
+                <textarea id="sqlQuery" name="SqlQuery" placeholder="SELECT * FROM Customer LIMIT 10;">@Model.SqlQuery</textarea>
+                <div class="query-actions">
+                    <button type="submit" class="btn-run"><i class="fas fa-play"></i> Run Query</button>
+                    <span style="font-size:0.8rem;color:#999;"><i class="fas fa-info-circle"></i> Read-only — only SELECT, PRAGMA, and WITH are allowed</span>
+                </div>
+            </form>
+        </div>
+
+        @if (Model.Rows.Count > 0 || Model.Columns.Count > 0)
+        {
+            <div class="query-card">
+                <div class="result-info">
+                    <strong>@Model.RowCount</strong> row(s) returned in <strong>@Model.ElapsedMs.ToString("F1")</strong> ms
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                @foreach (var col in Model.Columns)
+                                {
+                                    <th>@col</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int r = 0; r < Model.Rows.Count; r++)
+                            {
+                                <tr>
+                                    <td style="color:#999;font-size:0.75rem;">@(r + 1)</td>
+                                    @for (int c = 0; c < Model.Columns.Count; c++)
+                                    {
+                                        var val = Model.Rows[r][c];
+                                        <td class="@(val == "NULL" ? "null-value" : "")">@(val == "NULL" ? "NULL" : val)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        @if (Model.RowCount == 0 && Model.Columns.Count == 0 && string.IsNullOrEmpty(Model.ErrorMessage) && !string.IsNullOrEmpty(Model.SqlQuery))
+        {
+            <div class="query-card">
+                <div class="result-info">Query executed successfully. <strong>0</strong> row(s) returned.</div>
+            </div>
+        }
+    </main>
+</div>

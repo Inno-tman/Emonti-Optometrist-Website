@@ -25,16 +25,18 @@ jobs:
         uses: NuGet/setup-nuget@v1.0.5
 
       - name: Restore NuGet packages
-        run: nuget restore
+        working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
+        run: nuget restore ..\..\Emonti-Optometrist-Website.sln
 
       - name: Publish to folder
-        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
+        working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
+        run: msbuild Emonti-Optometrist-Website.csproj /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="$env:GITHUB_WORKSPACE\published" /p:OutDir="$env:GITHUB_WORKSPACE\published\\"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: ASP-app
-          path: '/published/**'
+          path: '${{ github.workspace }}\published\**'
 
   deploy:
     runs-on: windows-latest
