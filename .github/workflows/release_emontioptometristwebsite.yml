@@ -26,7 +26,7 @@ jobs:
 
       - name: Restore NuGet packages
         working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
-        run: nuget restore ..\..\Emonti-Optometrist-Website.sln
+        run: nuget restore ..\Emonti-Optometrist-Website.sln
 
       - name: Publish to folder
         working-directory: Emonti-Optometrist-Website/Emonti-Optometrist-Website
