@@ -37,7 +37,13 @@ jobs:
           robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln *.docx *.doc *.mdf *.ldf /XD obj packages Properties .vs App_Data bin /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
           Write-Host "Removing unnecessary large files from published output..."
-          # Keep roslyn - needed by DotNetCompilerPlatform for runtime compilation of ASPX files
+          # Copy roslyn compiler - needed by DotNetCompilerPlatform for runtime compilation
+          $roslynSrc = "..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
+          if (Test-Path $roslynSrc) {
+            $roslynDest = "$pub\bin\roslyn"
+            robocopy $roslynSrc $roslynDest /E /NDL /NJH /NJS /NP
+            Write-Host "Roslyn compiler copied to published output."
+          } else { Write-Host "WARNING: Roslyn source not found at $roslynSrc" }
           Remove-Item -Recurse -Force "$pub\bin\_PublishedWebsites" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.xml" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.pdb" -ErrorAction SilentlyContinue
@@ -78,13 +84,6 @@ jobs:
         with:
           name: ASP-app
           path: publish
-      
-      - name: List publish contents
-        shell: pwsh
-        run: |
-          Get-ChildItem "$env:GITHUB_WORKSPACE\publish" | Select-Object Name, Length, Mode
-          Write-Host "---"
-          Get-ChildItem "$env:GITHUB_WORKSPACE\publish" -Filter "*.config" -Recurse | Select-Object FullName, Length
       
       - name: Deploy via FTPS + .NET server-side extraction
         shell: pwsh
