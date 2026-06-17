@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Mail;
 using EmontiOptometrist.Web.Services;
 using Microsoft.Data.Sqlite;
 
@@ -73,6 +75,39 @@ app.UseSession();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+app.MapGet("/api/test-email", async (HttpContext http) =>
+{
+    try
+    {
+        var to = http.Request.Query["to"].FirstOrDefault() ?? "emonti.istn3si@gmail.com";
+        var smtpHost = app.Configuration["Smtp:Host"] ?? "smtp.gmail.com";
+        var smtpPort = int.Parse(app.Configuration["Smtp:Port"] ?? "587");
+        var smtpEmail = app.Configuration["Smtp:Email"] ?? "";
+        var smtpPassword = app.Configuration["Smtp:Password"] ?? "";
+        var smtpFromName = app.Configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+        var enableSsl = bool.Parse(app.Configuration["Smtp:EnableSsl"] ?? "true");
+
+        if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+            return Results.Json(new { success = false, message = "SMTP not configured", smtpEmail, smtpPassword = string.IsNullOrEmpty(smtpPassword) ? "empty" : "set" });
+
+        using var smtp = new SmtpClient(smtpHost, smtpPort);
+        smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
+        smtp.EnableSsl = enableSsl;
+        smtp.Timeout = 15000;
+        using var msg = new MailMessage();
+        msg.From = new MailAddress(smtpEmail, smtpFromName);
+        msg.To.Add(to);
+        msg.Subject = $"Test Email from Emonti - {DateTime.Now:HH:mm:ss}";
+        msg.Body = "If you receive this, SMTP is working correctly.";
+        smtp.Send(msg);
+        return Results.Json(new { success = true, message = "Email sent", smtpEmail, to });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { success = false, message = ex.Message, inner = ex.InnerException?.Message });
+    }
+});
 
 app.MapPost("/api/chatbot/chat", async (HttpContext http) =>
 {
