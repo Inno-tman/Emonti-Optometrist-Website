@@ -66,12 +66,22 @@ jobs:
           name: ASP-app
           path: publish
       
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'EmontiOptometristWebsite'
-          slot-name: 'Production'
-          package: publish
-          type: zip
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AF073AC291564FBC91DBF4742BE8B3F2 }}
+      - name: Deploy to Azure Web App via Kudu ZIP API
+        shell: pwsh
+        run: |
+          $zipPath = "$env:RUNNER_TEMP\deploy.zip"
+          $kuduUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net/api/zipdeploy"
+          $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
+          $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
+          Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
+          Write-Host "Deploying $((Get-Item $zipPath).Length) bytes..."
+          $response = Invoke-WebRequest -Uri $kuduUrl -Method POST -InFile $zipPath -ContentType "multipart/form-data" -Headers @{Authorization = "Basic $encodedCreds"} -UseBasicParsing
+          if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 202) {
+            Write-Host "Deployment successful!"
+          } else {
+            Write-Error "Deployment failed with status $($response.StatusCode)"
+            exit 1
+          }
+        env:
+          AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
+          AZURE_KUDU_PASSWORD: ${{ secrets.AZURE_KUDU_PASSWORD }}
