@@ -1,7 +1,3 @@
-using System.Net;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
 using EmontiOptometrist.Web.Services;
 using Microsoft.Data.Sqlite;
 
@@ -44,6 +40,7 @@ builder.Services.AddSingleton<ProductDatabase>();
 builder.Services.AddSingleton<CartDatabase>();
 builder.Services.AddSingleton<WishlistDatabase>();
 builder.Services.AddSingleton<OrderDatabase>();
+builder.Services.AddSingleton<BrevoEmailService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
@@ -80,47 +77,10 @@ app.MapRazorPages();
 
 app.MapGet("/api/test-email", async (HttpContext http) =>
 {
-    var results = new List<object>();
-    var to = http.Request.Query["to"].FirstOrDefault() ?? "emonti.istn3si@gmail.com";
-    var smtpHost = app.Configuration["Smtp:Host"] ?? "smtp.gmail.com";
-    var smtpPort = int.Parse(app.Configuration["Smtp:Port"] ?? "587");
-    var smtpEmail = app.Configuration["Smtp:Email"] ?? "";
-    var smtpPassword = app.Configuration["Smtp:Password"] ?? "";
-    var smtpFromName = app.Configuration["Smtp:FromName"] ?? "Emonti Optometrist";
-    var smtpUsername = app.Configuration["Smtp:Username"] ?? smtpEmail;
-
-    if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-        return Results.Json(new { success = false, message = "SMTP not configured", smtpEmail, smtpPassword = string.IsNullOrEmpty(smtpPassword) ? "empty" : "set" });
-
-    var configs = new[] {
-        new { host = smtpHost, port = 587, ssl = SecureSocketOptions.StartTls, label = "STARTTLS 587" },
-        new { host = smtpHost, port = 465, ssl = SecureSocketOptions.SslOnConnect, label = "SSL 465" },
-    };
-
-    foreach (var cfg in configs)
-    {
-        try
-        {
-            using var client = new MailKit.Net.Smtp.SmtpClient();
-            client.Timeout = 15000;
-            client.Connect(cfg.host, cfg.port, cfg.ssl);
-            client.Authenticate(smtpUsername, smtpPassword);
-            var msg = new MimeMessage();
-            msg.From.Add(new MailboxAddress(smtpFromName, smtpEmail));
-            msg.To.Add(new MailboxAddress(to, to));
-            msg.Subject = $"Test {cfg.label} - {DateTime.Now:HH:mm:ss}";
-            msg.Body = new TextPart("plain") { Text = $"Sent via {cfg.label}" };
-            client.Send(msg);
-            client.Disconnect(true);
-            results.Add(new { config = cfg.label, success = true });
-        }
-        catch (Exception ex)
-        {
-            results.Add(new { config = cfg.label, success = false, error = ex.Message, inner = ex.InnerException?.Message });
-        }
-    }
-
-    return Results.Json(new { to, results, smtpEmail });
+    var to = http.Request.Query["to"].FirstOrDefault() ?? "220004486@stu.ukzn.ac.za";
+    var emailService = http.RequestServices.GetRequiredService<BrevoEmailService>();
+    var result = await emailService.TestEmailAsync(to);
+    return Results.Json(result);
 });
 
 app.MapPost("/api/chatbot/chat", async (HttpContext http) =>

@@ -51,3 +51,6 @@ x86/
 */Web.config
 *.Web.config
 **/Web.config
+
+publish_test/
+SUMMARY.md

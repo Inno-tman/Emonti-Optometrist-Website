@@ -1,8 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Net;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -14,11 +10,13 @@ public class BookAppointmentModel : PageModel
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<BookAppointmentModel> _logger;
+    private readonly BrevoEmailService _brevoEmail;
 
-    public BookAppointmentModel(IConfiguration configuration, ILogger<BookAppointmentModel> logger)
+    public BookAppointmentModel(IConfiguration configuration, ILogger<BookAppointmentModel> logger, BrevoEmailService brevoEmail)
     {
         _configuration = configuration;
         _logger = logger;
+        _brevoEmail = brevoEmail;
     }
 
     [BindProperty]
@@ -345,43 +343,7 @@ public class BookAppointmentModel : PageModel
 
     private void SendEmail(string toEmail, string subject, string htmlBody)
     {
-        try
-        {
-            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
-            var smtpPortString = _configuration["Smtp:Port"] ?? "587";
-            var smtpEmail = _configuration["Smtp:Email"] ?? "";
-            var smtpPassword = _configuration["Smtp:Password"] ?? "";
-            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
-            var smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
-
-            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-            {
-                _logger.LogWarning("SMTP credentials not configured, skipping email");
-                return;
-            }
-
-            int.TryParse(smtpPortString, out var smtpPort);
-            if (smtpPort == 0) smtpPort = 587;
-
-            using var client = new MailKit.Net.Smtp.SmtpClient();
-            client.Timeout = 30000;
-            client.Connect(smtpHost, smtpPort, smtpPort == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls);
-            client.Authenticate(smtpUsername, smtpPassword);
-
-            var msg = new MimeMessage();
-            msg.From.Add(new MailboxAddress(smtpFromName, smtpEmail));
-            msg.To.Add(new MailboxAddress(toEmail, toEmail));
-            msg.Subject = subject;
-            msg.Body = new TextPart("html") { Text = htmlBody };
-
-            client.Send(msg);
-            client.Disconnect(true);
-            _logger.LogInformation("Email sent to {Email}: {Subject}", toEmail, subject);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send email to {Email}", toEmail);
-        }
+        _ = _brevoEmail.SendEmailAsync(toEmail, null, subject, htmlBody);
     }
 
     private void SendOptometristNotification(string staffId, string patientName, string patientPhone, DateTime date, string slotText)

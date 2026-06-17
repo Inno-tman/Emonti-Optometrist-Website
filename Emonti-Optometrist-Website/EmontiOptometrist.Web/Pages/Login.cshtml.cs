@@ -10,11 +10,13 @@ public class LoginModel : PageModel
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<LoginModel> _logger;
+    private readonly BrevoEmailService _brevoEmail;
 
-    public LoginModel(IConfiguration configuration, ILogger<LoginModel> logger)
+    public LoginModel(IConfiguration configuration, ILogger<LoginModel> logger, BrevoEmailService brevoEmail)
     {
         _configuration = configuration;
         _logger = logger;
+        _brevoEmail = brevoEmail;
     }
 
     [BindProperty]
@@ -188,27 +190,12 @@ public class LoginModel : PageModel
         ShowResetPasswordModal = true;
         ShowForgotPasswordModal = false;
 
-        string smtpEmail = _configuration["Smtp:Email"];
-        string smtpPassword = _configuration["Smtp:Password"];
-        string smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
-        if (!string.IsNullOrEmpty(smtpEmail) && !string.IsNullOrEmpty(smtpPassword))
+        var smtpEmail = _configuration["Smtp:Email"];
+        if (!string.IsNullOrEmpty(smtpEmail))
         {
-            try
-            {
-                using var smtp = new System.Net.Mail.SmtpClient(
-                    _configuration["Smtp:Host"] ?? "smtp.gmail.com",
-                    int.Parse(_configuration["Smtp:Port"] ?? "587"));
-                smtp.Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword);
-                smtp.EnableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
-                using var msg = new System.Net.Mail.MailMessage(smtpEmail, forgotPasswordEmail,
-                    "Password Reset Code - Emonti Optometrist",
-                    $"Your reset code is: {resetCode}");
-                smtp.Send(msg);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send reset email");
-            }
+            _ = _brevoEmail.SendEmailAsync(forgotPasswordEmail, null,
+                "Password Reset Code - Emonti Optometrist",
+                $"<p>Your reset code is: <strong>{resetCode}</strong></p>");
         }
 
         return Page();

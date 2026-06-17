@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
 using EmontiOptometrist.Web.Models;
 using EmontiOptometrist.Web.Services;
-using System.Net;
-using System.Net.Mail;
 
 namespace EmontiOptometrist.Web.Pages;
 
@@ -14,6 +12,7 @@ public class CheckoutModel : PageModel
     private readonly OrderDatabase _orderDb;
     private readonly IConfiguration _configuration;
     private readonly ILogger<CheckoutModel> _logger;
+    private readonly BrevoEmailService _brevoEmail;
     private readonly string _connectionString;
 
     public List<CartItem> CartItems { get; set; } = new();
@@ -50,12 +49,13 @@ public class CheckoutModel : PageModel
     public bool IsLoggedIn => AuthSession.IsCustomerLoggedIn(HttpContext);
     public string PaystackPublicKey => _configuration["Paystack:PublicKey"] ?? "";
 
-    public CheckoutModel(CartDatabase cartDb, OrderDatabase orderDb, IConfiguration configuration, ILogger<CheckoutModel> logger)
+    public CheckoutModel(CartDatabase cartDb, OrderDatabase orderDb, IConfiguration configuration, ILogger<CheckoutModel> logger, BrevoEmailService brevoEmail)
     {
         _cartDb = cartDb;
         _orderDb = orderDb;
         _configuration = configuration;
         _logger = logger;
+        _brevoEmail = brevoEmail;
         _connectionString = configuration.GetConnectionString("DefaultConnection") ?? "DataSource=app.db;Cache=Shared";
     }
 
@@ -316,33 +316,7 @@ public class CheckoutModel : PageModel
 
     private void SendOrderConfirmationEmail(int orderId, string customerEmail, string firstName)
     {
-        try
-        {
-            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "587");
-            var smtpEmail = _configuration["Smtp:Email"] ?? "";
-            var smtpPassword = _configuration["Smtp:Password"] ?? "";
-            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
-            var smtpUsername = _configuration["Smtp:Username"] ?? smtpEmail;
-            var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
-
-            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-            {
-                _logger.LogWarning("SMTP not configured, skipping order confirmation email");
-                return;
-            }
-
-            using var smtp = new SmtpClient(smtpHost, smtpPort);
-            smtp.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
-            smtp.EnableSsl = enableSsl;
-            smtp.Timeout = 30000;
-
-            using var message = new MailMessage();
-            message.From = new MailAddress(smtpEmail, smtpFromName);
-            message.To.Add(customerEmail);
-            message.Subject = $"Order Confirmed - #{orderId} - Emonti Optometrist";
-
-            var body = $@"<!DOCTYPE html>
+        var body = $@"<!DOCTYPE html>
 <html><head><meta charset=""utf-8""></head>
 <body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
 <table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
@@ -360,20 +334,13 @@ public class CheckoutModel : PageModel
 <p style=""margin:0;color:#666;font-size:14px;""><strong>Delivery Address:</strong> {Address}, {City}, {PostalCode}</p>
 </div>
 <p style=""margin:20px 0 0 0;color:#555;font-size:14px;"">You can view your order details and track its status in your account dashboard.</p>
-<p style=""margin:20px 0 0 0;color:#999;font-size:12px;"">If you have any questions, please contact us at {smtpEmail}</p>
 </td></tr>
 </table>
 </td></tr>
 </table>
 </body></html>";
-            message.Body = body;
-            message.IsBodyHtml = true;
-            smtp.Send(message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to send order confirmation email for order {OrderId}", orderId);
-        }
+
+        _ = _brevoEmail.SendEmailAsync(customerEmail, firstName, $"Order Confirmed - #{orderId} - Emonti Optometrist", body);
     }
 
     private void ClearCart()
