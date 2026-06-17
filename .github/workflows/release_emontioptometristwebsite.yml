@@ -79,9 +79,19 @@ jobs:
           name: ASP-app
           path: publish
       
-      - name: Deploy via FTPS + server-side unzip
+      - name: Deploy via FTPS + app_offline + server-side unzip
         shell: pwsh
         run: |
+          $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
+          $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
+          $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
+          $headers = @{Authorization = "Basic $encodedCreds"}
+          # Take app offline to release file locks (especially Web.config)
+          Write-Host "Taking app offline..."
+          $offlineContent = '<html><body>Deploying...</body></html>'
+          Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/app_offline.htm" -Method PUT -Body $offlineContent -ContentType "text/plain" -Headers $headers -UseBasicParsing
+          Start-Sleep -Seconds 5
+          # Upload zip via FTPS
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
           $ftpUrl = "ftps://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
@@ -91,13 +101,7 @@ jobs:
           curl.exe -T "$zipPath" "$ftpUrl" --user "${ftpUser}:${ftpPass}" --ssl --insecure
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host "FTPS upload complete."
-          # Extract server-side via Kudu command API
-          $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
-          $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
-          $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
-          $headers = @{Authorization = "Basic $encodedCreds"}
-          Write-Host "Waiting for app to stabilize..."
-          Start-Sleep -Seconds 15
+          # Extract server-side
           $extractCmd = 'powershell -Command "Expand-Archive -Path D:\home\site\wwwroot\deploy.zip -DestinationPath D:\home\site\wwwroot -Force"'
           $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
           for ($i = 0; $i -lt 5; $i++) {
@@ -107,8 +111,11 @@ jobs:
               if ($cmdResponse.StatusCode -eq 200) { break }
             } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
           }
-          # Clean up zip (non-fatal)
+          # Remove deploy.zip
           try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
+          # Bring app back online
+          Write-Host "Bringing app online..."
+          try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/app_offline.htm" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
           Write-Host "Deployment complete!"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
