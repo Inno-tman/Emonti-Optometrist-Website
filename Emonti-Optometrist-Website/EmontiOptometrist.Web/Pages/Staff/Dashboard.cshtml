@@ -180,6 +180,10 @@
             font-weight: 600;
             text-transform: capitalize;
         }
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #f57f17;
+        }
         .status-badge.scheduled {
             background: #cce5ff;
             color: #004085;
@@ -413,7 +417,14 @@
                                 <td>@apt.AppointmentDate.ToString("MMM dd, yyyy")</td>
                                 <td>@apt.Timeslot</td>
                                 <td><span class="status-badge @apt.Status.ToLower()">@apt.Status</span></td>
-                                <td>
+                                <td style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                                    @if (apt.Status == "Pending")
+                                    {
+                                        <form method="post" asp-page-handler="AcceptAppointment" onsubmit="return confirm('Accept this appointment?');">
+                                            <input type="hidden" name="appointmentId" value="@apt.AppointmentId" />
+                                            <button type="submit" style="padding:0.25rem 0.65rem;border:1px solid #28a745;border-radius:5px;background:white;color:#28a745;font-size:0.75rem;font-weight:600;cursor:pointer;">Accept</button>
+                                        </form>
+                                    }
                                     <form method="post" asp-page-handler="CancelAppointment" onsubmit="return confirm('Cancel this appointment?');">
                                         <input type="hidden" name="appointmentId" value="@apt.AppointmentId" />
                                         <button type="submit" style="padding:0.25rem 0.65rem;border:1px solid #dc3545;border-radius:5px;background:white;color:#dc3545;font-size:0.75rem;font-weight:600;cursor:pointer;">Cancel</button>

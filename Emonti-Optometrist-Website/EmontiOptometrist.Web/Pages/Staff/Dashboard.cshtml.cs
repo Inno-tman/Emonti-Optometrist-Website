@@ -152,6 +152,40 @@ public class DashboardModel : PageModel
         return RedirectToPage();
     }
 
+    public IActionResult OnPostAcceptAppointment(int appointmentId)
+    {
+        if (!AuthSession.IsStaffLoggedInCheck(HttpContext))
+            return RedirectToPage("/Login");
+
+        var connStr = _configuration.GetConnectionString("DefaultConnection") ?? "";
+        if (string.IsNullOrEmpty(connStr))
+        {
+            TempData["ErrorMessage"] = "Database connection not configured.";
+            return RedirectToPage();
+        }
+
+        try
+        {
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE Appointment SET Appoinment_Status = 'Confirmed' WHERE Appointment_ID = @Id AND Appoinment_Status = 'Pending'";
+            cmd.Parameters.AddWithValue("@Id", appointmentId);
+            int rows = cmd.ExecuteNonQuery();
+
+            if (rows > 0)
+                TempData["SuccessMessage"] = "Appointment accepted successfully.";
+            else
+                TempData["ErrorMessage"] = "Appointment could not be accepted (not found or already accepted/cancelled).";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error accepting appointment: {ex.Message}";
+        }
+
+        return RedirectToPage();
+    }
+
     public JsonResult OnGetGetTimeslots(string date)
     {
         if (!AuthSession.IsStaffLoggedInCheck(HttpContext))

@@ -323,6 +323,7 @@ public class BookAppointmentModel : PageModel
                 SendConfirmationEmail(customerEmail, date, slot.Text);
 
             var optometristName = Optometrists.FirstOrDefault(o => o.Value == Input.OptometristId)?.Text ?? "";
+            SendOptometristNotification(Input.OptometristId, CustomerName, CustomerPhone, date, slot.Text);
             if (IsRebooking)
                 SuccessMessage = $"Rebooking successful! Your appointment has been confirmed for {date:dddd, MMMM dd, yyyy} at {slot.Text} with {optometristName}.";
             else
@@ -336,6 +337,85 @@ public class BookAppointmentModel : PageModel
         {
             ErrorMessage = $"Failed to book appointment: {ex.Message}";
             return Page();
+        }
+    }
+
+    private void SendOptometristNotification(string staffId, string patientName, string patientPhone, DateTime date, string slotText)
+    {
+        try
+        {
+            var connStr = _configuration.GetConnectionString("DefaultConnection");
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Staff_Name, Staff_Surname, Staff_Email FROM Staff WHERE Staff_ID = @Id";
+            cmd.Parameters.AddWithValue("@Id", staffId);
+            using var rdr = cmd.ExecuteReader();
+            if (!rdr.Read()) return;
+            var staffEmail = rdr["Staff_Email"]?.ToString() ?? "";
+            if (string.IsNullOrEmpty(staffEmail)) return;
+            var staffName = $"{rdr["Staff_Name"]} {rdr["Staff_Surname"]}";
+
+            var smtpHost = _configuration["Smtp:Host"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_configuration["Smtp:Port"] ?? "587");
+            var smtpEmail = _configuration["Smtp:Email"] ?? "";
+            var smtpPassword = _configuration["Smtp:Password"] ?? "";
+            var smtpFromName = _configuration["Smtp:FromName"] ?? "Emonti Optometrist";
+            var enableSsl = bool.Parse(_configuration["Smtp:EnableSsl"] ?? "true");
+
+            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+            {
+                _logger.LogWarning("SMTP credentials not configured, skipping optometrist notification");
+                return;
+            }
+
+            using var smtp = new SmtpClient(smtpHost, smtpPort);
+            smtp.Credentials = new NetworkCredential(smtpEmail, smtpPassword);
+            smtp.EnableSsl = enableSsl;
+            smtp.Timeout = 30000;
+
+            using var message = new MailMessage();
+            message.From = new MailAddress(smtpEmail, smtpFromName);
+            message.To.Add(staffEmail);
+            message.Subject = "New Appointment Booking - Emonti Optometrist";
+
+            var body = $@"<!DOCTYPE html>
+<html><head><meta charset=""utf-8""></head>
+<body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
+<tr><td align=""center"">
+<table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
+<tr><td style=""background-color:#28a745;padding:25px;text-align:center;"">
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">New Appointment Booking</h1>
+</td></tr>
+<tr><td style=""padding:30px;"">
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;"">Dear {staffName},</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">A new appointment has been booked with you. Please log in to the staff dashboard to accept or manage this booking.</p>
+<div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #28a745;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Patient:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{patientName}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Phone:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{patientPhone}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{date:dddd, MMMM dd, yyyy}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#28a745;font-size:14px;font-weight:600;"">{slotText}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Status:</strong></td><td style=""padding:8px 0;color:#ffc107;font-size:14px;font-weight:600;"">Pending</td></tr>
+</table></div>
+<p style=""margin:25px 0 0 0;color:#555;font-size:15px;"">Please review and accept this appointment at your earliest convenience.</p>
+</td></tr>
+<tr><td style=""background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;"">
+<p style=""margin:0 0 5px 0;color:#666;font-size:13px;font-weight:600;"">Emonti Optometrist</p>
+<p style=""margin:0;color:#888;font-size:12px;"">Shop 7 New Colonnade, Devereaux Ave, Vincent, East London 5247</p>
+</td></tr>
+</table></td></tr></table></body></html>";
+
+            message.Body = body;
+            message.IsBodyHtml = true;
+
+            smtp.Send(message);
+            _logger.LogInformation("Optometrist notification sent to {Email}", staffEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send optometrist notification");
         }
     }
 
