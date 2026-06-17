@@ -37,7 +37,7 @@ jobs:
           robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln *.docx *.doc *.mdf *.ldf /XD obj packages Properties .vs App_Data bin /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
           Write-Host "Removing unnecessary large files from published output..."
-          Remove-Item -Recurse -Force "$pub\bin\roslyn" -ErrorAction SilentlyContinue
+          # Keep roslyn - needed by DotNetCompilerPlatform for runtime compilation of ASPX files
           Remove-Item -Recurse -Force "$pub\bin\_PublishedWebsites" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.xml" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.pdb" -ErrorAction SilentlyContinue
@@ -86,30 +86,16 @@ jobs:
           Write-Host "---"
           Get-ChildItem "$env:GITHUB_WORKSPACE\publish" -Filter "*.config" -Recurse | Select-Object FullName, Length
       
-      - name: Deploy via FTPS + app_offline + server-side unzip
+      - name: Deploy via FTPS + .NET server-side extraction
         shell: pwsh
         run: |
           $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
           $headers = @{Authorization = "Basic $encodedCreds"}
-          # Take app offline to release file locks (especially Web.config)
-          Write-Host "Taking app offline..."
-          $offlineContent = '<html><body>Deploying...</body></html>'
-          Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/app_offline.htm" -Method PUT -Body $offlineContent -ContentType "text/plain" -Headers $headers -UseBasicParsing
-          Start-Sleep -Seconds 5
           # Upload zip via FTPS
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
-          # Debug: check zip contents
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
-          Write-Host "Zip contains $($zip.Entries.Count) entries"
-          $configEntries = $zip.Entries | Where-Object { $_.Name -like '*.config' } | Select-Object FullName, Length
-          if ($configEntries) { $configEntries | ForEach-Object { Write-Host "  Config in zip: $($_.FullName) ($($_.Length) bytes)" } }
-          else { Write-Host "  WARNING: No .config files found in zip!" }
-          $zip.Dispose()
-          # FTPS upload
           $ftpUrl = "ftps://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
           $ftpUser = "EmontiOptometristWebsite" + [char]92 + '$EmontiOptometristWebsite'
           $ftpPass = $env:AZURE_KUDU_PASSWORD
@@ -117,24 +103,22 @@ jobs:
           curl.exe -T "$zipPath" "$ftpUrl" --user "${ftpUser}:${ftpPass}" --ssl --insecure
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host "FTPS upload complete."
-          # Extract server-side
-          $extractCmd = 'powershell -Command "Expand-Archive -Path D:\home\site\wwwroot\deploy.zip -DestinationPath D:\home\site\wwwroot -Force"'
+          # Extract via .NET (Expand-Archive fails in Kudu sandbox - no console handle)
+          $extractCmd = 'Add-Type -AssemblyName System.IO.Compression.FileSystem; Get-ChildItem D:\home\site\wwwroot -Exclude deploy.zip,app_offline.htm | Remove-Item -Recurse -Force; [System.IO.Compression.ZipFile]::ExtractToDirectory(''D:\home\site\wwwroot\deploy.zip'', ''D:\home\site\wwwroot''); Write-Output ''Extraction OK'''
           $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
-          for ($i = 0; $i -lt 5; $i++) {
+          for ($i = 0; $i -lt 3; $i++) {
             try {
-              $cmdResponse = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
-              Write-Host "Extraction result: $($cmdResponse.StatusCode)"
-              if ($cmdResponse.StatusCode -eq 200) { break }
+              $r = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
+              $rjson = $r.Content | ConvertFrom-Json
+              if ($rjson.ExitCode -eq 0 -and $rjson.Output -match 'Extraction OK') { Write-Host 'Extraction succeeded'; break }
+              else { Write-Host "Extraction issue (exit $($rjson.ExitCode)): $($rjson.Error)"; Start-Sleep -Seconds 5 }
             } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
           }
-          # Remove deploy.zip
+          # Clean up
           try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
-          # Bring app back online
-          Write-Host "Bringing app online..."
           try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/app_offline.htm" -Method DELETE -Headers $headers -UseBasicParsing } catch {}
-          Start-Sleep -Seconds 10
           # Verify deployment
-          Write-Host "Verifying deployment..."
+          Start-Sleep -Seconds 5
           try {
             $check = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" -Method GET -Headers $headers -UseBasicParsing
             Write-Host "Web.config VERIFIED on server: $($check.StatusCode)"
