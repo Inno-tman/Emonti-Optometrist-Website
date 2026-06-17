@@ -38,17 +38,13 @@ jobs:
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
           Write-Host "Removing unnecessary large files from published output..."
           # Copy roslyn compiler - needed by DotNetCompilerPlatform for runtime compilation
-          $pkgDir = "..\packages"
-          Write-Host "Packages dir: $(Resolve-Path $pkgDir)"
-          $roslynSrc = "$pkgDir\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
-          $roslynDest = "$pub\bin\roslyn"
+          $roslynSrc = Join-Path (Get-Item "..\packages").FullName "Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
           if (Test-Path $roslynSrc) {
+            $roslynDest = "$pub\bin\roslyn"
             Copy-Item -Path "$roslynSrc\*" -Destination $roslynDest -Recurse -Force
-            Write-Host "Roslyn compiler copied to published output."
-          } else {
-            Write-Host "Roslyn source NOT found at: $roslynSrc"
-            Get-ChildItem "$pkgDir\Microsoft.CodeDom.Providers.DotNetCompilerPlatform*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  Found package: $($_.Name)" }
-          }
+            $rCount = (Get-ChildItem -Recurse $roslynDest | Measure-Object).Count
+            Write-Host "Roslyn compiler copied: $rCount files"
+          } else { Write-Host "WARNING: Roslyn source not found at $roslynSrc" }
           Remove-Item -Recurse -Force "$pub\bin\_PublishedWebsites" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.xml" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.pdb" -ErrorAction SilentlyContinue
@@ -97,6 +93,14 @@ jobs:
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
           $headers = @{Authorization = "Basic $encodedCreds"}
+          # Ensure roslyn compiler is in publish output before zipping
+          $pkgBase = Join-Path $env:GITHUB_WORKSPACE "Emonti-Optometrist-Website\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45"
+          if (Test-Path $pkgBase) {
+            $roslynDest = "$env:GITHUB_WORKSPACE\publish\bin\roslyn"
+            Copy-Item -Path "$pkgBase\*" -Destination $roslynDest -Recurse -Force
+            $rCount = (Get-ChildItem -Recurse $roslynDest | Measure-Object).Count
+            Write-Host "Roslyn copied: $rCount files from $pkgBase"
+          } else { Write-Host "WARNING: Roslyn source not found at $pkgBase" }
           # Upload zip via FTPS
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
