@@ -25,6 +25,9 @@ public class BookAppointmentModel : PageModel
     public string? SuccessMessage { get; set; }
     public string? ErrorMessage { get; set; }
     public bool IsRebooking { get; set; }
+    public string CustomerName { get; set; } = "";
+    public string CustomerEmail { get; set; } = "";
+    public string CustomerPhone { get; set; } = "";
 
     public List<TimeSlotItem> TimeSlots { get; set; } = new()
     {
@@ -123,9 +126,36 @@ public class BookAppointmentModel : PageModel
     public void OnGet(string? rebook)
     {
         LoadOptometrists();
+        LoadCustomerDetails();
 
         if (!string.IsNullOrEmpty(rebook))
             LoadRebookingData(rebook);
+    }
+
+    private void LoadCustomerDetails()
+    {
+        var custId = AuthSession.GetCustId(HttpContext);
+        if (string.IsNullOrEmpty(custId)) return;
+
+        try
+        {
+            var connStr = _configuration.GetConnectionString("DefaultConnection");
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Customer_Name, Customer_Surname, Customer_Email, Customer_Phone FROM customer WHERE Cust_ID = @Id";
+            cmd.Parameters.AddWithValue("@Id", custId);
+            using var rdr = cmd.ExecuteReader();
+            if (rdr.Read())
+            {
+                var firstName = rdr["Customer_Name"]?.ToString() ?? "";
+                var surname = rdr["Customer_Surname"]?.ToString() ?? "";
+                CustomerName = $"{firstName} {surname}".Trim();
+                CustomerEmail = rdr["Customer_Email"]?.ToString() ?? "";
+                CustomerPhone = rdr["Customer_Phone"]?.ToString() ?? "";
+            }
+        }
+        catch { }
     }
 
     private void LoadOptometrists()
@@ -404,26 +434,7 @@ public class AppointmentInput
     [Display(Name = "Preferred Time")]
     public string PreferredTime { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Patient name is required")]
-    [Display(Name = "Patient Name")]
-    [StringLength(100)]
-    public string PatientName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress(ErrorMessage = "Invalid email address")]
-    [Display(Name = "Email")]
-    [StringLength(200)]
-    public string Email { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Phone number is required")]
-    [Phone(ErrorMessage = "Invalid phone number")]
-    [Display(Name = "Phone")]
-    [StringLength(20)]
-    public string Phone { get; set; } = string.Empty;
-
-    [Display(Name = "Notes / Comments")]
-    [StringLength(500)]
-    public string? Notes { get; set; }
 }
 
 public class TimeSlotItem

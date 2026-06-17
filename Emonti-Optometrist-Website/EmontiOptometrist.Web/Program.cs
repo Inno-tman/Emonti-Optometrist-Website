@@ -40,7 +40,6 @@ builder.Services.AddSingleton<ProductDatabase>();
 builder.Services.AddSingleton<CartDatabase>();
 builder.Services.AddSingleton<WishlistDatabase>();
 builder.Services.AddSingleton<OrderDatabase>();
-builder.Services.AddSingleton<MessageDatabase>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
