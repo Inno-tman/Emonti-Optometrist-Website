@@ -198,7 +198,7 @@ namespace Emonti_Optometrist_Website
                 new { Value = "7", StartHour = 15, StartMin = 0 },
             };
 
-            var slot = Array.Find(timeSlots, s => s.Value == Request.Form["ddlTimeSlot"] ?? "");
+            var slot = Array.Find(timeSlots, s => s.Value == (Request.Form["ddlTimeSlot"] ?? ""));
             if (slot == null)
             {
                 ShowErrorMessage("Invalid time slot.");
