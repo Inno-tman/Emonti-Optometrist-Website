@@ -144,12 +144,12 @@
             flex-shrink: 0; margin-left: 0.5rem;
         }
         .custom-dd.open .custom-dd-arrow { transform: rotate(180deg); }
-        .custom-dd-options {
+        .custom-dd-options, .custom-dp-popup {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
             background: #fff; border: 1px solid #e0e5f0;
             border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.15);
             max-height: 260px; overflow-y: auto; padding: 0.35rem;
-            display: none;
+            display: none; z-index: 100;
         }
         .custom-dd.open .custom-dd-options { display: block; }
         .custom-dd-opt {
@@ -171,6 +171,44 @@
         .custom-dd-options::-webkit-scrollbar-track { background: transparent; }
         .custom-dd-options::-webkit-scrollbar-thumb { background: #d0d5e0; border-radius: 3px; }
         .custom-dd-options::-webkit-scrollbar-thumb:hover { background: #b0b8d0; }
+
+        /* ===== CUSTOM DATE PICKER ===== */
+        input#inputDate { display: none !important; }
+        .custom-dp { position: relative; width: 100%; }
+        .custom-dp-trigger {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px;
+            font-size: 0.95rem; font-family: inherit; cursor: pointer;
+            background: #fafbff; color: #aaa; min-height: 48px;
+            transition: all 0.25s ease; box-sizing: border-box;
+            user-select: none; -webkit-user-select: none;
+        }
+        .custom-dp-trigger.has-val { color: #2c3e50; }
+        .custom-dp-trigger:hover { border-color: #b0b8e0; background: #f0f2ff; }
+        .custom-dp-trigger:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); background: #fff; }
+        .custom-dp-icon { font-size: 0.85rem; flex-shrink: 0; margin-left: 0.5rem; color: #667eea; }
+        .custom-dp-popup {
+            max-height: none; padding: 0.75rem; width: 280px; top: calc(100% + 4px);
+            left: 0; z-index: 200;
+        }
+        .custom-dp.open .custom-dp-popup { display: block; }
+        .dp-header { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e8ecf4; }
+        .dp-nav { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #667eea; padding: 0.25rem 0.5rem; border-radius: 6px; transition: background 0.15s; line-height: 1; }
+        .dp-nav:hover { background: #f0f2ff; }
+        .dp-month-year { font-weight: 700; font-size: 0.9rem; color: #2c3e50; }
+        .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 0.25rem; }
+        .dp-weekday { font-size: 0.7rem; font-weight: 700; color: #667eea; text-transform: uppercase; padding: 0.25rem 0; }
+        .dp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+        .dp-day {
+            text-align: center; padding: 0.4rem 0; font-size: 0.85rem; cursor: pointer;
+            border-radius: 8px; transition: all 0.15s; color: #2c3e50;
+        }
+        .dp-day:hover { background: #f0f2ff; }
+        .dp-day.selected { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; font-weight: 600; }
+        .dp-day.today { font-weight: 700; border: 1px solid #667eea; }
+        .dp-day.disabled { color: #ccc; cursor: default; }
+        .dp-day.disabled:hover { background: transparent; }
+        .dp-day.other-month { color: #d0d5e0; }
         
         .availability-status {
             margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px;
@@ -291,6 +329,13 @@
                     <div class="form-group">
                         <label><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
                         <input type="date" id="inputDate" runat="server" class="form-control" min="" />
+                        <div class="custom-dp" id="customDp">
+                            <div class="custom-dp-trigger" tabindex="0">
+                                <span class="custom-dp-text">Select Date</span>
+                                <span class="custom-dp-icon">📅</span>
+                            </div>
+                            <div class="custom-dp-popup" id="dpPopup"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
@@ -449,6 +494,7 @@
 
             // Initialize custom dropdowns (replaces native select with styled version)
             initCustomDropdowns();
+            initDatePicker();
 
             // Safety check after all handlers are set
             setTimeout(checkAvailability, 1000);
@@ -541,9 +587,84 @@
                 console.log('Custom dropdown created for select id=' + select.id);
             });
         }
-        // Close custom dropdowns when clicking outside
+        function initDatePicker() {
+            var hiddenInput = document.getElementById('<%= inputDate.ClientID %>');
+            var wrapper = document.getElementById('customDp');
+            var trigger = wrapper ? wrapper.querySelector('.custom-dp-trigger') : null;
+            var textSpan = wrapper ? wrapper.querySelector('.custom-dp-text') : null;
+            var popup = document.getElementById('dpPopup');
+            if (!hiddenInput || !trigger || !popup || !wrapper) return;
+
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            var viewMonth = today.getMonth();
+            var viewYear = today.getFullYear();
+            var selectedDate = null;
+            var minDate = null;
+
+            var minAttr = hiddenInput.getAttribute('min');
+            if (minAttr) minDate = new Date(minAttr + 'T00:00:00');
+            if (!minDate || isNaN(minDate.getTime())) minDate = new Date(today);
+            minDate.setHours(0, 0, 0, 0);
+            if (minDate < today) minDate = today;
+
+            function buildCal() {
+                var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+                var dim = new Date(viewYear, viewMonth + 1, 0).getDate();
+                var dimPrev = new Date(viewYear, viewMonth, 0).getDate();
+                var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+                var h = '<div class="dp-header"><button class="dp-nav" data-dp="prev">‹</button><span class="dp-month-year">' + months[viewMonth] + ' ' + viewYear + '</span><button class="dp-nav" data-dp="next">›</button></div>';
+                h += '<div class="dp-weekdays">';
+                ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(w) { h += '<span class="dp-weekday">' + w + '</span>'; });
+                h += '</div><div class="dp-days">';
+
+                for (var i = firstDay - 1; i >= 0; i--) h += '<span class="dp-day other-month disabled">' + (dimPrev - i) + '</span>';
+                for (var d = 1; d <= dim; d++) {
+                    var dt = new Date(viewYear, viewMonth, d);
+                    var cls = 'dp-day';
+                    if (dt < minDate) cls += ' disabled';
+                    if (selectedDate && dt.getTime() === selectedDate.getTime()) cls += ' selected';
+                    if (dt.toDateString() === today.toDateString()) cls += ' today';
+                    h += '<span class="' + cls + '" data-d="' + viewYear + '-' + String(viewMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0') + '">' + d + '</span>';
+                }
+                var rem = (7 - (firstDay + dim) % 7) % 7;
+                for (var n = 1; n <= rem; n++) h += '<span class="dp-day other-month disabled">' + n + '</span>';
+                h += '</div>';
+                popup.innerHTML = h;
+
+                popup.querySelectorAll('[data-dp="prev"]').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); viewMonth--; if (viewMonth<0) { viewMonth=11; viewYear--; } buildCal(); }; });
+                popup.querySelectorAll('[data-dp="next"]').forEach(function(b) { b.onclick = function(e) { e.stopPropagation(); viewMonth++; if (viewMonth>11) { viewMonth=0; viewYear++; } buildCal(); }; });
+                popup.querySelectorAll('.dp-day:not(.disabled)').forEach(function(el) {
+                    el.onclick = function(e) {
+                        e.stopPropagation();
+                        var ds = el.getAttribute('data-d');
+                        if (!ds) return;
+                        selectedDate = new Date(ds + 'T00:00:00');
+                        hiddenInput.value = ds;
+                        var p = ds.split('-');
+                        var dd = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+                        textSpan.textContent = dd.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+                        trigger.classList.add('has-val');
+                        wrapper.classList.remove('open');
+                        var ev = document.createEvent('HTMLEvents');
+                        ev.initEvent('change', true, false);
+                        hiddenInput.dispatchEvent(ev);
+                        buildCal();
+                    };
+                });
+            }
+
+            trigger.onclick = function(e) {
+                e.stopPropagation();
+                wrapper.classList.toggle('open');
+                if (wrapper.classList.contains('open')) buildCal();
+            };
+            buildCal();
+        }
+        // Close custom dropdowns and date picker when clicking outside
         document.addEventListener('click', function() {
-            document.querySelectorAll('.custom-dd.open').forEach(function(d) {
+            document.querySelectorAll('.custom-dd.open, .custom-dp.open').forEach(function(d) {
                 d.classList.remove('open');
             });
         });
