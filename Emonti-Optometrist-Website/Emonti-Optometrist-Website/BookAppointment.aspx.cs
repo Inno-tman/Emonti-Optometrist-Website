@@ -36,7 +36,7 @@ namespace Emonti_Optometrist_Website
 
             // Store Cust_ID for AJAX availability check
             string custIdScript = $"window.__custId = '{Session["Cust_ID"]}';";
-            ScriptManager.RegisterStartupScript(this, GetType(), "CustId", custIdScript, true);
+            ClientScript.RegisterStartupScript(GetType(), "CustId", custIdScript, true);
 
             CheckForRebooking();
         }
@@ -439,7 +439,7 @@ namespace Emonti_Optometrist_Website
             pnlMessage.CssClass = "alert alert-success";
             lblMessage.Text = message;
 
-            ScriptManager.RegisterStartupScript(this, GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
+            ClientScript.RegisterStartupScript(GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
         }
 
         private void ShowErrorMessage(string message)
@@ -448,7 +448,7 @@ namespace Emonti_Optometrist_Website
             pnlMessage.CssClass = "alert alert-danger";
             lblMessage.Text = message;
 
-            ScriptManager.RegisterStartupScript(this, GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
+            ClientScript.RegisterStartupScript(GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
         }
 
         private void ClearForm()

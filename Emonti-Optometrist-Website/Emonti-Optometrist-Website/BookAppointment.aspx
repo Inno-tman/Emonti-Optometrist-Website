@@ -155,7 +155,6 @@
 </asp:Content>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
-    <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>
     <section class="booking-hero">
         <div class="container">
             <h1>Book an Appointment</h1>
@@ -271,25 +270,33 @@
             var optometrist = getVal('<%= ddlOptometrist.ClientID %>');
             var apptType = getVal('<%= ddlAppointmentType.ClientID %>');
             var custId = window.__custId || '';
+            console.log('checkAvailability called', {apptType:apptType, date:date, time:time, optometrist:optometrist, custId:custId});
 
             if (!apptType || !date || !time || !optometrist) {
+                console.log('checkAvailability: early return - missing fields');
                 if (statusEl) { statusEl.className = 'availability-status'; statusEl.style.display = 'none'; }
                 if (btn) btn.disabled = true;
                 return;
             }
 
+            console.log('checkAvailability: all fields filled, fetching availability');
             if (statusEl) { statusEl.className = 'availability-status visible'; statusEl.innerHTML = '<span class="spinner"></span> Checking availability...'; }
             if (btn) btn.disabled = true;
 
             var url = '/CheckAvailability.ashx?date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&optometristId=' + encodeURIComponent(optometrist) + '&custId=' + encodeURIComponent(custId);
+            console.log('checkAvailability: fetch URL:', url);
 
             fetch(url)
-                .then(function(r) { return r.json(); })
+                .then(function(r) {
+                    console.log('checkAvailability: fetch response status:', r.status);
+                    return r.json();
+                })
                 .then(function(data) {
+                    console.log('checkAvailability: response data:', data);
                     if (data.available) {
                         statusEl.className = 'availability-status available visible';
                         statusEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
-                        if (btn) btn.disabled = false;
+                        if (btn) { console.log('checkAvailability: ENABLING BUTTON'); btn.disabled = false; }
                     } else {
                         statusEl.className = 'availability-status unavailable visible';
                         statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.message;
@@ -297,11 +304,15 @@
                     }
                 })
                 .catch(function(err) {
-                    console.error('Availability check failed:', err);
-                    statusEl.className = 'availability-status';
-                    statusEl.style.display = 'none';
+                    console.error('checkAvailability: fetch error:', err);
+                    if (statusEl) { statusEl.className = 'availability-status'; statusEl.style.display = 'none'; }
                     if (btn) btn.disabled = true;
                 });
+        }
+
+        function checkAvailabilityNow() {
+            console.log('checkAvailabilityNow: manual trigger');
+            checkAvailability();
         }
 
         function setupEvent(id, fn) {
@@ -341,6 +352,22 @@
             setupEvent('<%= ddlOptometrist.ClientID %>', checkAvailability);
             setupEvent('ddlTimeSlot', checkAvailability);
             if (dateInput) dateInput.addEventListener('change', checkAvailability);
+
+            // Also trigger on input (fires more eagerly than change)
+            if (dateInput) dateInput.addEventListener('input', checkAvailability);
+            var timeSelect = document.getElementById('ddlTimeSlot');
+            if (timeSelect) timeSelect.addEventListener('input', checkAvailability);
+            if (timeSelect) timeSelect.addEventListener('click', checkAvailability);
+
+            // Safety check after all handlers are set
+            setTimeout(checkAvailability, 1000);
+            console.log('Event handlers wired up, safety timeout set');
+        });
+
+        // Backup: also check on window load (in case DOMContentLoaded missed something)
+        window.addEventListener('load', function() {
+            console.log('window.load fired, running checkAvailability');
+            setTimeout(checkAvailability, 500);
         });
     </script>
 </asp:Content>
