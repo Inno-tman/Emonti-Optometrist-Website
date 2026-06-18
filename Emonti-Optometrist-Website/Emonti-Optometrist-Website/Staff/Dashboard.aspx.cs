@@ -1465,7 +1465,7 @@ namespace Emonti_Optometrist_Website
         {
             try
             {
-                string logoPath = HttpContext.Current.Server.MapPath("~/Images/Logo/Emonti Logo Banner.png");
+                string logoPath = Server.MapPath("~/Images/Logo/Emonti Logo Banner.png");
                 byte[] imageBytes = System.IO.File.ReadAllBytes(logoPath);
                 string base64 = Convert.ToBase64String(imageBytes);
                 return $"data:image/png;base64,{base64}";
