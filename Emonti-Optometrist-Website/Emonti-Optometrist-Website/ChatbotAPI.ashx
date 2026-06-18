@@ -63,53 +63,14 @@ public class ChatbotAPI : IHttpHandler
     {
         var request = GetRequestData(context);
         var userMessage = request["message"]?.ToString();
-        var sessionId = request["sessionId"]?.ToString() ?? Guid.NewGuid().ToString();
 
         if (string.IsNullOrEmpty(userMessage))
         {
-            context.Response.Write(_jsonSerializer.Serialize(new
-            {
-                success = false,
-                message = "Message is required"
-            }));
+            context.Response.Write(_jsonSerializer.Serialize(new { success = false, message = "Message is required" }));
             return;
         }
 
-        var bestMatch = _faqDatabase.FindBestMatch(userMessage);
-
-        string botResponse;
-        bool aiPowered = false;
-
-        if (bestMatch != null)
-        {
-            botResponse = bestMatch.Answer;
-        }
-        else if (_aiService.IsConfigured)
-        {
-            var faqs = _faqDatabase.GetActiveFAQs();
-            var aiResponse = _aiService.GetAIResponse(userMessage, faqs);
-            if (!string.IsNullOrEmpty(aiResponse))
-            {
-                botResponse = aiResponse;
-                aiPowered = true;
-            }
-            else
-            {
-                botResponse = GetFallbackResponse(userMessage.ToLower());
-            }
-        }
-        else
-        {
-            botResponse = GetFallbackResponse(userMessage.ToLower());
-        }
-
-        context.Response.Write(_jsonSerializer.Serialize(new
-        {
-            success = true,
-            message = botResponse,
-            aiPowered = aiPowered,
-            sessionId = sessionId
-        }));
+        context.Response.Write(_jsonSerializer.Serialize(new { success = true, message = "Test OK" }));
     }
 
     private void HandleGetFAQs(HttpContext context)
