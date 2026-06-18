@@ -40,6 +40,8 @@ namespace Emonti_Optometrist_Website.Admin
                     lblCustomerCount.Text = cmd.ExecuteScalar().ToString();
                 using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Appointment", conn))
                     lblAppointmentCount.Text = cmd.ExecuteScalar().ToString();
+                using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Product", conn))
+                    lblProductCount.Text = cmd.ExecuteScalar().ToString();
             }
         }
     }

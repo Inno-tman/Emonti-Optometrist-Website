@@ -73,6 +73,7 @@ namespace Emonti_Optometrist_Website.Admin
                 string.IsNullOrWhiteSpace(txtEmail.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
             {
                 ShowMessage("Please fill in all fields.", "alert-danger");
+                ClientScript.RegisterStartupScript(GetType(), "showModal", "showAddModal();", true);
                 return;
             }
 
