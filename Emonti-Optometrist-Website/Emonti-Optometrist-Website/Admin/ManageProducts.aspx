@@ -47,7 +47,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-.modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.modal { display: block; position: relative; background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 1001; }
 .modal h3 { font-size: 1.15rem; margin-bottom: 1.25rem; color: #1a1d23; }
 .modal .form-group { margin-bottom: 1rem; }
 .modal .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
