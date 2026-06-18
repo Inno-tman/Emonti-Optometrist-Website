@@ -56,7 +56,10 @@ namespace Emonti_Optometrist_Website.Admin
             if (string.IsNullOrEmpty(picture1))
                 return "/Images/Products/placeholder.jpg";
 
-            // If already a full path, return as is
+            // Remove any existing path prefixes to avoid double paths
+            picture1 = picture1.Replace("Images\\Products\\", "").Replace("Images/Products/", "");
+
+            // If already an absolute URL, return as is
             if (picture1.StartsWith("/") || picture1.StartsWith("http"))
                 return picture1;
 

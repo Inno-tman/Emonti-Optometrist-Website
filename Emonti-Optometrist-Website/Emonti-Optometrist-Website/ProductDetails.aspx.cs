@@ -271,36 +271,24 @@ namespace Emonti_Optometrist_Website
 
         private string GetProductImage(string picture1, string picture2)
         {
+            string picture = null;
+
             if (!string.IsNullOrEmpty(picture1))
-            {
-                // If the path already contains Images/Products, use it as is
-                if (picture1.StartsWith("Images\\Products\\") || picture1.StartsWith("Images/Products/"))
-                {
-                    return $"/Images/Products/{picture1.Replace("\\", "/").Replace("Images/Products/", "").Replace("Images\\Products\\", "")}";
-                }
-                // Otherwise, add the Images/Products prefix
-                else
-                {
-                    return $"/Images/Products/{picture1}";
-                }
-            }
+                picture = picture1;
             else if (!string.IsNullOrEmpty(picture2))
-            {
-                // If the path already contains Images/Products, use it as is
-                if (picture2.StartsWith("Images\\Products\\") || picture2.StartsWith("Images/Products/"))
-                {
-                    return $"/Images/Products/{picture2.Replace("\\", "/").Replace("Images/Products/", "").Replace("Images\\Products\\", "")}";
-                }
-                // Otherwise, add the Images/Products prefix
-                else
-                {
-                    return $"/Images/Products/{picture2}";
-                }
-            }
+                picture = picture2;
             else
-            {
                 return "/Images/Products/placeholder.jpg";
-            }
+
+            // Remove any existing path prefixes to avoid double paths
+            picture = picture.Replace("Images\\Products\\", "").Replace("Images/Products/", "");
+
+            // If it's already an absolute URL, return as is
+            if (picture.StartsWith("/") || picture.StartsWith("http"))
+                return picture;
+
+            // Otherwise prepend the absolute path
+            return $"/Images/Products/{picture}";
         }
 
 
