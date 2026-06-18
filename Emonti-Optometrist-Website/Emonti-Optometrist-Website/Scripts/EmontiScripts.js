@@ -235,8 +235,10 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // Dynamic floating pill nav bar effect on scroll (Stitch.money style)
 window.addEventListener('scroll', () => {
     const header = document.querySelector('.header');
+    if (!header) return; // Header may be hidden on admin pages
+
     const scrollY = window.scrollY;
-    
+
     if (scrollY > 50) {
         // More opaque and stronger shadow when scrolled (floating pill effect)
         header.style.background = 'rgba(255, 255, 255, 0.95)';
@@ -257,7 +259,9 @@ window.addEventListener('scroll', () => {
 // Animate hero content on load
 window.addEventListener('load', () => {
     const heroContent = document.querySelector('.hero-content');
-    heroContent.style.transform = 'translateY(0)';
+    if (heroContent) {
+        heroContent.style.transform = 'translateY(0)';
+    }
 });
 
 // Add click handlers for CTA buttons (you'll replace these with actual functionality)

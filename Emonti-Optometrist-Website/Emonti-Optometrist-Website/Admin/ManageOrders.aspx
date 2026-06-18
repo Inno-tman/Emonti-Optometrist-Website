@@ -60,7 +60,6 @@ tr:hover td { background: rgba(102,126,234,0.02); }
             <li><a href="ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
             <li><a href="ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
             <li><a href="ManageStaff.aspx"><i class="fas fa-users"></i><span>Staff</span></a></li>
-            <li><a href="QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
             <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
             <li class="divider"><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
