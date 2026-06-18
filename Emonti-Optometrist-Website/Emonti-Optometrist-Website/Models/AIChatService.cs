@@ -2,10 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
-using System.Net.Http;
+using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
 namespace Emonti_Optometrist_Website.Models
@@ -14,7 +14,6 @@ namespace Emonti_Optometrist_Website.Models
     {
         private static readonly string _apiKey;
         private readonly string _model;
-        private static readonly HttpClient _httpClient = new HttpClient();
 
         static AIChatService()
         {
@@ -48,7 +47,7 @@ namespace Emonti_Optometrist_Website.Models
 
                 var jsonSerializer = new JavaScriptSerializer();
                 string jsonRequest = jsonSerializer.Serialize(requestBody);
-                string jsonResponse = CallGroqAsync(jsonRequest).GetAwaiter().GetResult();
+                string jsonResponse = CallGroq(jsonRequest);
 
                 return ExtractResponse(jsonResponse);
             }
@@ -104,18 +103,26 @@ namespace Emonti_Optometrist_Website.Models
             return messages;
         }
 
-        private static async Task<string> CallGroqAsync(string jsonRequest)
+        private static string CallGroq(string jsonRequest)
         {
             var url = "https://api.groq.com/openai/v1/chat/completions";
-
-            var request = new HttpRequestMessage(HttpMethod.Post, url);
-            request.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "POST";
+            request.ContentType = "application/json";
             request.Headers.Add("Authorization", $"Bearer {_apiKey}");
 
-            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            byte[] data = Encoding.UTF8.GetBytes(jsonRequest);
+            request.ContentLength = data.Length;
+            using (var stream = request.GetRequestStream())
+            {
+                stream.Write(data, 0, data.Length);
+            }
 
-            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using (var response = (HttpWebResponse)request.GetResponse())
+            using (var reader = new StreamReader(response.GetResponseStream()))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         private static string ExtractResponse(string jsonResponse)
