@@ -116,10 +116,11 @@ namespace Emonti_Optometrist_Website.Account
 
                         try
                         {
-                            string staffQuery = "SELECT Staff_ID, Staff_Name, Staff_Role, Staff_Password, Staff_Email FROM Staff WHERE ( Staff_ID = @Email)";
+                            string staffQuery = "SELECT Staff_ID, Staff_Name, Staff_Role, Staff_Password, Staff_Email FROM Staff WHERE Staff_Email = @Email AND Staff_Password = @Password";
                             using (SqlCommand staffCmd = new SqlCommand(staffQuery, conn))
                             {
                                 staffCmd.Parameters.AddWithValue("@Email", Email.Text.Trim());
+                                staffCmd.Parameters.AddWithValue("@Password", Password.Text.Trim());
  
                                 using (SqlDataReader staffReader = staffCmd.ExecuteReader())
                                 {
