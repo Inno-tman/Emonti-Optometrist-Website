@@ -42,6 +42,9 @@ public class ChatbotAPI : IHttpHandler
                 case "config":
                     HandleConfig(context);
                     break;
+                case "debug":
+                    HandleDebug(context);
+                    break;
                 default:
                     HandleChatRequest(context);
                     break;
@@ -139,6 +142,16 @@ public class ChatbotAPI : IHttpHandler
         {
             success = success,
             message = success ? "Feedback submitted successfully" : "Failed to submit feedback"
+        }));
+    }
+
+    private void HandleDebug(HttpContext context)
+    {
+        context.Response.Write(_jsonSerializer.Serialize(new
+        {
+            success = true,
+            aiConfigured = _aiService.IsConfigured,
+            aiMethod = "WebRequest"
         }));
     }
 
