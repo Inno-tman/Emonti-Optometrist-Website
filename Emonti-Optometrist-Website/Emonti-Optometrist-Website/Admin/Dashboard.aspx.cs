@@ -35,7 +35,10 @@ namespace Emonti_Optometrist_Website.Admin
                     lblOrdersToday.Text = cmd.ExecuteScalar().ToString();
 
                 using (var cmd = new SqlCommand("SELECT ISNULL(SUM(Order_Total), 0) FROM [Order]", conn))
-                    lblTotalRevenue.Text = Convert.ToDecimal(cmd.ExecuteScalar()).ToString("N2");
+                {
+                    var val = cmd.ExecuteScalar();
+                    lblTotalRevenue.Text = Convert.ToDecimal(val ?? 0).ToString("N2");
+                }
 
                 using (var cmd = new SqlCommand("SELECT COUNT(*) FROM [Order] WHERE Order_Status IN ('Pending', 'Processing')", conn))
                     lblPendingOrders.Text = cmd.ExecuteScalar().ToString();
@@ -47,22 +50,13 @@ namespace Emonti_Optometrist_Website.Admin
                     lblTotalStaff.Text = cmd.ExecuteScalar().ToString();
 
                 using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Appointment WHERE CAST(Appointment_Date AS DATE) = CAST(GETDATE() AS DATE)", conn))
-                    lblTodayAppointments.Text = cmd.ExecuteScalar().ToString();
+                {
+                    var val = cmd.ExecuteScalar();
+                    lblTodayAppointments.Text = (val ?? 0).ToString();
+                }
 
-                // Customer_Create_Date may not exist in all database instances (older schema).
-                // Use conditional logic in SQL to avoid referencing a non-existent column which causes a SqlException.
-                var sqlNewCustomers = @"
-IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'customer' AND COLUMN_NAME = 'Customer_Create_Date')
-BEGIN
-    SELECT COUNT(*) FROM customer WHERE Customer_Create_Date IS NOT NULL AND CAST(Customer_Create_Date AS DATE) >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
-END
-ELSE
-BEGIN
-    -- Fallback: if the column doesn't exist return 0 to avoid misleading counts
-    SELECT 0
-END";
-                using (var cmd = new SqlCommand(sqlNewCustomers, conn))
-                    lblNewCustomers.Text = cmd.ExecuteScalar().ToString();
+                // Customer_Create_Date column removed from codebase; show 0 new customers to avoid DB dependency.
+                lblNewCustomers.Text = "0";
 
                 var orders = new DataTable();
                 using (var cmd = new SqlCommand(@"

@@ -41,6 +41,14 @@ namespace Emonti_Optometrist_Website.Admin
                         cmd.Parameters.AddWithValue("@Search", "%" + search + "%");
                     var dt = new DataTable();
                     new SqlDataAdapter(cmd).Fill(dt);
+                    // Ensure columns expected by UI exist to avoid binding errors
+                    if (!dt.Columns.Contains("OrderCount"))
+                        dt.Columns.Add("OrderCount", typeof(int));
+                    foreach (DataRow r in dt.Rows)
+                    {
+                        if (r["OrderCount"] == DBNull.Value || r["OrderCount"] == null)
+                            r["OrderCount"] = 0;
+                    }
                     gvCustomers.DataSource = dt;
                     gvCustomers.DataBind();
                 }

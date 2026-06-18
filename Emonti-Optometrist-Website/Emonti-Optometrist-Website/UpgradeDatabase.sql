@@ -19,9 +19,13 @@ BEGIN
         );
     END
 
+    -- Migration 23: removed (Last_Login and Cust_* alias columns omitted)
+
     -- Helper: check if migration version already applied
     -- Uses local table variable to track what we need to apply within this session
     DECLARE @v INT;
+    -- Count of applied migrations in this run (used by some migrations)
+    DECLARE @AppliedCount INT = 0;
 
     -- Migration 1: customer table
     IF NOT EXISTS (SELECT * FROM SchemaVersion WHERE Version = 1)
@@ -66,40 +70,7 @@ BEGIN
         END CATCH
     END
 
-    -- Migration 22: Add Customer_Create_Date column and populate from existing orders
-    IF NOT EXISTS (SELECT 1 FROM SchemaVersion WHERE Version = 22)
-    BEGIN
-        BEGIN TRANSACTION;
-        BEGIN TRY
-            -- Add the column only if it doesn't exist
-            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'customer' AND COLUMN_NAME = 'Customer_Create_Date')
-            BEGIN
-                ALTER TABLE customer ADD Customer_Create_Date DATETIME NULL;
-
-                -- Populate with earliest order date per customer when available
-                UPDATE customer
-                SET Customer_Create_Date = (
-                    SELECT MIN(o.Order_Date) FROM [Order] o
-                    WHERE CAST(o.CustID AS NVARCHAR(200)) = CAST(customer.Cust_ID AS NVARCHAR(200))
-                )
-                WHERE EXISTS (
-                    SELECT 1 FROM [Order] o WHERE CAST(o.CustID AS NVARCHAR(200)) = CAST(customer.Cust_ID AS NVARCHAR(200))
-                );
-
-                -- For remaining customers without orders, set to current date to indicate creation time
-                UPDATE customer SET Customer_Create_Date = GETDATE() WHERE Customer_Create_Date IS NULL;
-            END
-
-            INSERT INTO SchemaVersion (Version, Description) VALUES (22, 'Add Customer_Create_Date to customer and populate from earliest order or current date');
-            COMMIT TRANSACTION;
-        END TRY
-        BEGIN CATCH
-            ROLLBACK TRANSACTION;
-            DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();
-            RAISERROR('Migration 22 failed: %s', 16, 1, @ErrMsg);
-            RETURN;
-        END CATCH
-    END
+    -- Migration 22: (removed) Customer_Create_Date changes intentionally omitted to avoid dependency on missing column
 
     -- Migration 2: Extend Customer_Address column
     IF NOT EXISTS (SELECT * FROM SchemaVersion WHERE Version = 2)
