@@ -27,7 +27,8 @@ public class CheckAvailability : IHttpHandler
                 return;
             }
 
-            if (!DateTime.TryParse(dateStr, out DateTime parsedDate))
+            DateTime parsedDate;
+            if (!DateTime.TryParse(dateStr, out parsedDate))
             {
                 WriteJson(context, new { available = false, message = "Invalid date." });
                 return;
