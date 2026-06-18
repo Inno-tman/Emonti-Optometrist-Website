@@ -207,7 +207,7 @@
                     <div class="form-group">
                         <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
                         <div class="select-wrapper">
-                            <select id="ddlTimeSlot">
+                                <select id="ddlTimeSlot" name="ddlTimeSlot">
                                 <option value="">-- Select Time --</option>
                                 <optgroup label="Morning">
                                     <option value="1">08:00 - 09:00</option>
