@@ -7,9 +7,6 @@ using System.Web.Script.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// API endpoint for chatbot functionality
-/// </summary>
 public class ChatbotAPI : IHttpHandler
 {
     private readonly FAQDatabase _faqDatabase;
@@ -26,21 +23,11 @@ public class ChatbotAPI : IHttpHandler
     public void ProcessRequest(HttpContext context)
     {
         context.Response.ContentType = "application/json";
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-
-        // Handle preflight requests
-        if (context.Request.HttpMethod == "OPTIONS")
-        {
-            context.Response.StatusCode = 200;
-            return;
-        }
 
         try
         {
             var method = context.Request.QueryString["method"] ?? context.Request.Form["method"];
-            
+
             switch (method?.ToLower())
             {
                 case "chat":
@@ -56,7 +43,7 @@ public class ChatbotAPI : IHttpHandler
                     HandleConfig(context);
                     break;
                 default:
-                    HandleChatRequest(context); // Default to chat
+                    HandleChatRequest(context);
                     break;
             }
         }
@@ -88,9 +75,7 @@ public class ChatbotAPI : IHttpHandler
             return;
         }
 
-        var startTime = DateTime.Now;
         var bestMatch = _faqDatabase.FindBestMatch(userMessage);
-        var responseTime = (int)(DateTime.Now - startTime).TotalMilliseconds;
 
         string botResponse;
         bool aiPowered = false;
@@ -117,9 +102,6 @@ public class ChatbotAPI : IHttpHandler
         {
             botResponse = GetFallbackResponse(userMessage.ToLower());
         }
-
-        // Log conversation
-        _faqDatabase.LogConversation(sessionId, userMessage, botResponse, aiPowered ? 0.9f : 0.2f, responseTime);
 
         context.Response.Write(_jsonSerializer.Serialize(new
         {
@@ -174,7 +156,7 @@ public class ChatbotAPI : IHttpHandler
     private void HandleConfig(HttpContext context)
     {
         var config = new ChatbotConfig();
-        
+
         context.Response.Write(_jsonSerializer.Serialize(new
         {
             success = true,
@@ -194,13 +176,11 @@ public class ChatbotAPI : IHttpHandler
     {
         var data = new Dictionary<string, object>();
 
-        // Get from form data
         foreach (string key in context.Request.Form.AllKeys)
         {
             data[key] = context.Request.Form[key];
         }
 
-        // Get from query string
         foreach (string key in context.Request.QueryString.AllKeys)
         {
             if (key != null && !data.ContainsKey(key))

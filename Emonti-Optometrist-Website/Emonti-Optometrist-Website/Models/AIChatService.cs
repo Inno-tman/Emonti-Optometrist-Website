@@ -112,10 +112,10 @@ namespace Emonti_Optometrist_Website.Models
             request.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
             request.Headers.Add("Authorization", $"Bearer {_apiKey}");
 
-            var response = await _httpClient.SendAsync(request);
+            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsStringAsync();
+            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
 
         private static string ExtractResponse(string jsonResponse)

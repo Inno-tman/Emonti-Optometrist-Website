@@ -597,14 +597,14 @@ class FAQChatbot {
         const textSpan = document.createElement('span');
         textSpan.textContent = text;
         messageDiv.appendChild(textSpan);
-        
+
         if (type === 'bot' && aiPowered) {
             const aiBadge = document.createElement('span');
             aiBadge.className = 'chatbot-ai-badge';
             aiBadge.textContent = 'AI';
             messageDiv.appendChild(aiBadge);
         }
-        
+
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'chatbot-message-timestamp';
         timestampSpan.textContent = timeString;
