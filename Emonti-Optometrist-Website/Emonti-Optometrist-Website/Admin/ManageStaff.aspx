@@ -81,7 +81,8 @@ tr:hover td { background: rgba(102,126,234,0.02); }
             <div class="section-header"><i class="fas fa-users" style="color:#667eea;"></i><h2>All Staff Members</h2></div>
             <asp:GridView ID="gvStaff" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Staff_ID">
                 <Columns>
-                    <asp:BoundField DataField="Staff_Name" HeaderText="Name" />
+                    <asp:BoundField DataField="Staff_Name" HeaderText="First Name" />
+                    <asp:BoundField DataField="Staff_Surname" HeaderText="Surname" />
                     <asp:BoundField DataField="Staff_Email" HeaderText="Email" />
                     <asp:TemplateField HeaderText="Role">
                         <ItemTemplate>
@@ -90,7 +91,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
                     </asp:TemplateField>
                     <asp:TemplateField HeaderText="Actions">
                         <ItemTemplate>
-                            <button type="button" class="btn btn-primary btn-sm" onclick="openEditModal(<%# Eval("Staff_ID") %>, '<%# Eval("Staff_Name") %>', '<%# Eval("Staff_Email") %>', '<%# Eval("Staff_Role") %>'); return false;">Edit</button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="openEditModal(<%# Eval("Staff_ID") %>, '<%# Eval("Staff_Name") %>', '<%# Eval("Staff_Surname") %>', '<%# Eval("Staff_Email") %>', '<%# Eval("Staff_Role") %>'); return false;">Edit</button>
                         </ItemTemplate>
                     </asp:TemplateField>
                 </Columns>
@@ -107,7 +108,8 @@ tr:hover td { background: rgba(102,126,234,0.02); }
 <div id="addModal" class="modal-overlay">
     <div class="modal">
         <h3><i class="fas fa-user-plus" id="modalTitle" style="color:#667eea;"></i> <span id="modalTitleText">Add New Staff</span></h3>
-        <div class="form-group"><label>Name</label><asp:TextBox ID="txtName" runat="server" /></div>
+        <div class="form-group"><label>First Name</label><asp:TextBox ID="txtName" runat="server" /></div>
+        <div class="form-group"><label>Surname</label><asp:TextBox ID="txtSurname" runat="server" /></div>
         <div class="form-group"><label>Email</label><asp:TextBox ID="txtEmail" runat="server" TextMode="Email" /></div>
         <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" Text="Staff123" /></div>
         <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
@@ -133,10 +135,14 @@ function openAddModal() {
     staffIdField.value = '0';
     modeField.value = 'add';
     document.getElementById('<%=txtName.ClientID%>').value = '';
+    document.getElementById('<%=txtSurname.ClientID%>').value = '';
     document.getElementById('<%=txtEmail.ClientID%>').value = '';
     document.getElementById('<%=txtPassword.ClientID%>').value = 'Staff123';
     document.getElementById('<%=ddlRole.ClientID%>').value = 'Staff';
-    document.getElementById('<%=lblAddError.ClientID%>').style.display = 'none';
+
+    var lblError = document.getElementById('<%=lblAddError.ClientID%>');
+    if (lblError) lblError.style.display = 'none';
+
     document.getElementById('btnDeleteModal').style.display = 'none';
     document.getElementById('btnPromoteModal').style.display = 'none';
     document.getElementById('<%=btnAddStaff.ClientID%>').value = 'Add Staff';
@@ -144,17 +150,21 @@ function openAddModal() {
     document.getElementById('addModal').classList.add('show');
 }
 
-function openEditModal(staffId, name, email, role) {
+function openEditModal(staffId, name, surname, email, role) {
     var staffIdField = document.getElementById('<%=hiddenStaffId.ClientID%>');
     var modeField = document.getElementById('<%=hiddenMode.ClientID%>');
 
     staffIdField.value = staffId;
     modeField.value = 'edit';
     document.getElementById('<%=txtName.ClientID%>').value = name;
+    document.getElementById('<%=txtSurname.ClientID%>').value = surname;
     document.getElementById('<%=txtEmail.ClientID%>').value = email;
     document.getElementById('<%=txtPassword.ClientID%>').value = 'Staff123';
     document.getElementById('<%=ddlRole.ClientID%>').value = role;
-    document.getElementById('<%=lblAddError.ClientID%>').style.display = 'none';
+
+    var lblError = document.getElementById('<%=lblAddError.ClientID%>');
+    if (lblError) lblError.style.display = 'none';
+
     document.getElementById('<%=btnAddStaff.ClientID%>').value = 'Save Changes';
     document.getElementById('modalTitleText').textContent = 'Edit Staff Member';
 

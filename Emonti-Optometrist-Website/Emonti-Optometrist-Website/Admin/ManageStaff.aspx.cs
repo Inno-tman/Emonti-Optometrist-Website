@@ -30,7 +30,7 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Email, Staff_Role FROM Staff ORDER BY Staff_Name", conn))
+                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Role FROM Staff ORDER BY Staff_Name", conn))
                 {
                     var dt = new DataTable();
                     new SqlDataAdapter(cmd).Fill(dt);
@@ -61,13 +61,14 @@ namespace Emonti_Optometrist_Website.Admin
 
             // Handle Add or Edit
             string name = txtName.Text.Trim();
+            string surname = txtSurname.Text.Trim();
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
             string role = ddlRole.SelectedValue;
 
-            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email))
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(surname) || string.IsNullOrEmpty(email))
             {
-                lblAddError.Text = "Name and email are required.";
+                lblAddError.Text = "Name, surname and email are required.";
                 lblAddError.Visible = true;
                 return;
             }
@@ -76,15 +77,15 @@ namespace Emonti_Optometrist_Website.Admin
 
             if (mode == "add")
             {
-                AddNewStaff(connStr, name, email, password, role);
+                AddNewStaff(connStr, name, surname, email, password, role);
             }
             else if (mode == "edit")
             {
-                UpdateStaff(connStr, staffId, name, email, password, role);
+                UpdateStaff(connStr, staffId, name, surname, email, password, role);
             }
         }
 
-        private void AddNewStaff(string connStr, string name, string email, string password, string role)
+        private void AddNewStaff(string connStr, string name, string surname, string email, string password, string role)
         {
             using (var conn = new SqlConnection(connStr))
             {
@@ -102,9 +103,10 @@ namespace Emonti_Optometrist_Website.Admin
                     }
                 }
 
-                using (var cmd = new SqlCommand(@"INSERT INTO Staff (Staff_Name, Staff_Email, Staff_Password, Staff_Role) VALUES (@Name, @Email, @Password, @Role)", conn))
+                using (var cmd = new SqlCommand(@"INSERT INTO Staff (Staff_Name, Staff_Surname, Staff_Email, Staff_Password, Staff_Role) VALUES (@Name, @Surname, @Email, @Password, @Role)", conn))
                 {
                     cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Surname", surname);
                     cmd.Parameters.AddWithValue("@Email", email);
                     cmd.Parameters.AddWithValue("@Password", password);
                     cmd.Parameters.AddWithValue("@Role", role);
@@ -116,7 +118,7 @@ namespace Emonti_Optometrist_Website.Admin
             ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
         }
 
-        private void UpdateStaff(string connStr, int staffId, string name, string email, string password, string role)
+        private void UpdateStaff(string connStr, int staffId, string name, string surname, string email, string password, string role)
         {
             using (var conn = new SqlConnection(connStr))
             {
@@ -138,12 +140,13 @@ namespace Emonti_Optometrist_Website.Admin
 
                 // Update staff information
                 string updateQuery = string.IsNullOrEmpty(password) || password == "Staff123"
-                    ? "UPDATE Staff SET Staff_Name = @Name, Staff_Email = @Email, Staff_Role = @Role WHERE Staff_ID = @Id"
-                    : "UPDATE Staff SET Staff_Name = @Name, Staff_Email = @Email, Staff_Password = @Password, Staff_Role = @Role WHERE Staff_ID = @Id";
+                    ? "UPDATE Staff SET Staff_Name = @Name, Staff_Surname = @Surname, Staff_Email = @Email, Staff_Role = @Role WHERE Staff_ID = @Id"
+                    : "UPDATE Staff SET Staff_Name = @Name, Staff_Surname = @Surname, Staff_Email = @Email, Staff_Password = @Password, Staff_Role = @Role WHERE Staff_ID = @Id";
 
                 using (var cmd = new SqlCommand(updateQuery, conn))
                 {
                     cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Surname", surname);
                     cmd.Parameters.AddWithValue("@Email", email);
                     if (!string.IsNullOrEmpty(password) && password != "Staff123")
                     {
