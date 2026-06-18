@@ -271,43 +271,43 @@ namespace Emonti_Optometrist_Website
         // Public method to get product image for data binding (kept for backward compatibility)
         public string GetProductImage(object productName)
         {
-            if (productName == null) return "Images/Products/default-product.png";
-            
+            if (productName == null) return "/Images/Products/default-product.png";
+
             string product = productName.ToString();
-            
+
             // Simple mapping based on product names - you can expand this
             if (product.Contains("Holbrook"))
-                return "Images/Products/ID_2_Picture1.png";
+                return "/Images/Products/ID_2_Picture1.png";
             else if (product.Contains("Biotrue"))
-                return "Images/Products/ID_37_Picture1.png";
+                return "/Images/Products/ID_37_Picture1.png";
             else if (product.Contains("Adjustable"))
-                return "Images/Products/ID_49_Picture1.png";
+                return "/Images/Products/ID_49_Picture1.png";
             else if (product.Contains("Gaming"))
-                return "Images/Products/ID_15_Picture1.png";
+                return "/Images/Products/ID_15_Picture1.png";
             else if (product.Contains("Roebling"))
-                return "Images/Products/ID_9_Picture1.png";
+                return "/Images/Products/ID_9_Picture1.png";
             else if (product.Contains("Microfiber"))
-                return "Images/Products/ID_44_Picture1.png";
+                return "/Images/Products/ID_44_Picture1.png";
             else if (product.Contains("TF5401"))
-                return "Images/Products/ID_7_Picture1.png";
+                return "/Images/Products/ID_7_Picture1.png";
             else if (product.Contains("BOSS"))
-                return "Images/Products/ID_24_Picture1.png";
+                return "/Images/Products/ID_24_Picture1.png";
             else if (product.Contains("VE3284"))
-                return "Images/Products/ID_20_Picture1.png";
+                return "/Images/Products/ID_20_Picture1.png";
             else if (product.Contains("Varilux"))
-                return "Images/Products/ID_30_Picture1.png";
+                return "/Images/Products/ID_30_Picture1.png";
             else if (product.Contains("Razer"))
-                return "Images/Products/ID_16_Picture1.png";
+                return "/Images/Products/ID_16_Picture1.png";
             else if (product.Contains("Aviator"))
-                return "Images/Products/ID_1_Picture1.png";
+                return "/Images/Products/ID_1_Picture1.png";
             else if (product.Contains("Peahi"))
-                return "Images/Products/ID_4_Picture1.png";
+                return "/Images/Products/ID_4_Picture1.png";
             else if (product.Contains("GG0061O"))
-                return "Images/Products/ID_21_Picture1.png";
+                return "/Images/Products/ID_21_Picture1.png";
             else if (product.Contains("PO0649"))
-                return "Images/Products/ID_3_Picture1.png";
+                return "/Images/Products/ID_3_Picture1.png";
             else
-                return "Images/Products/default-product.png";
+                return "/Images/Products/default-product.png";
         }
     }
 

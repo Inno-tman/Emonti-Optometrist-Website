@@ -94,7 +94,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
             <asp:GridView ID="gvProducts" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Product_ID" OnRowDeleting="gvProducts_RowDeleting" OnRowEditing="gvProducts_RowEditing">
                 <Columns>
                     <asp:TemplateField HeaderText="Image">
-                        <ItemTemplate><img class="product-img" src='<%# Eval("Picture1") %>' alt='<%# Eval("Product_Name") %>' onerror="this.style.display='none'" /></ItemTemplate>
+                        <ItemTemplate><img class="product-img" src='<%# GetProductImageUrl(Eval("Picture1").ToString()) %>' alt='<%# Eval("Product_Name") %>' onerror="this.style.display='none'" /></ItemTemplate>
                     </asp:TemplateField>
                     <asp:BoundField DataField="Product_Name" HeaderText="Name" />
                     <asp:BoundField DataField="Product_Brand" HeaderText="Brand" />

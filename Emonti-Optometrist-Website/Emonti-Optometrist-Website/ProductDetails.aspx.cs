@@ -276,12 +276,12 @@ namespace Emonti_Optometrist_Website
                 // If the path already contains Images/Products, use it as is
                 if (picture1.StartsWith("Images\\Products\\") || picture1.StartsWith("Images/Products/"))
                 {
-                    return $"~/{picture1.Replace("\\", "/")}";
+                    return $"/Images/Products/{picture1.Replace("\\", "/").Replace("Images/Products/", "").Replace("Images\\Products\\", "")}";
                 }
                 // Otherwise, add the Images/Products prefix
                 else
                 {
-                    return $"~/Images/Products/{picture1}";
+                    return $"/Images/Products/{picture1}";
                 }
             }
             else if (!string.IsNullOrEmpty(picture2))
@@ -289,17 +289,17 @@ namespace Emonti_Optometrist_Website
                 // If the path already contains Images/Products, use it as is
                 if (picture2.StartsWith("Images\\Products\\") || picture2.StartsWith("Images/Products/"))
                 {
-                    return $"~/{picture2.Replace("\\", "/")}";
+                    return $"/Images/Products/{picture2.Replace("\\", "/").Replace("Images/Products/", "").Replace("Images\\Products\\", "")}";
                 }
                 // Otherwise, add the Images/Products prefix
                 else
                 {
-                    return $"~/Images/Products/{picture2}";
+                    return $"/Images/Products/{picture2}";
                 }
             }
             else
             {
-                return "~/Images/Products/placeholder.jpg";
+                return "/Images/Products/placeholder.jpg";
             }
         }
 

@@ -51,6 +51,19 @@ namespace Emonti_Optometrist_Website.Admin
             LoadProducts(txtSearch.Text.Trim());
         }
 
+        public string GetProductImageUrl(string picture1)
+        {
+            if (string.IsNullOrEmpty(picture1))
+                return "/Images/Products/placeholder.jpg";
+
+            // If already a full path, return as is
+            if (picture1.StartsWith("/") || picture1.StartsWith("http"))
+                return picture1;
+
+            // Otherwise prepend the absolute path
+            return $"/Images/Products/{picture1}";
+        }
+
         protected void btnAddProduct_Click(object sender, EventArgs e)
         {
             string name = txtAddName.Text.Trim();
