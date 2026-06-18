@@ -208,7 +208,7 @@
                         <div class="form-group">
                             <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
                             <div class="select-wrapper">
-                                <select id="ddlTimeSlot" runat="server">
+                                <select id="ddlTimeSlot">
                                     <option value="">-- Select Time --</option>
                                     <optgroup label="Morning">
                                         <option value="1">08:00 - 09:00</option>
@@ -266,7 +266,7 @@
 
         function checkAvailability() {
             var date = getVal('<%= inputDate.ClientID %>');
-            var time = getVal('<%= ddlTimeSlot.ClientID %>');
+            var time = getVal('ddlTimeSlot');
             var optometrist = getVal('<%= ddlOptometrist.ClientID %>');
             var apptType = getVal('<%= ddlAppointmentType.ClientID %>');
             var custId = window.__custId || '';
@@ -340,7 +340,7 @@
             // Wire up availability check
             setupEvent('<%= ddlAppointmentType.ClientID %>', checkAvailability);
             setupEvent('<%= ddlOptometrist.ClientID %>', checkAvailability);
-            setupEvent('<%= ddlTimeSlot.ClientID %>', checkAvailability);
+            setupEvent('ddlTimeSlot', checkAvailability);
             if (dateInput) dateInput.addEventListener('change', checkAvailability);
         });
     </script>

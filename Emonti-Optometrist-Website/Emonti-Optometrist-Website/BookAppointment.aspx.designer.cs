@@ -23,8 +23,6 @@ namespace Emonti_Optometrist_Website
 
         protected global::System.Web.UI.HtmlControls.HtmlInputGenericControl inputDate;
 
-        protected global::System.Web.UI.HtmlControls.HtmlSelect ddlTimeSlot;
-
         protected global::System.Web.UI.WebControls.HiddenField hfCustomerName;
 
         protected global::System.Web.UI.WebControls.HiddenField hfCustomerEmail;

@@ -181,7 +181,7 @@ namespace Emonti_Optometrist_Website
             }
 
             // Validate time slot
-            if (string.IsNullOrEmpty(ddlTimeSlot.Value))
+            if (string.IsNullOrEmpty(Request.Form["ddlTimeSlot"] ?? ""))
             {
                 ShowErrorMessage("Please select an appointment time.");
                 return false;
@@ -198,7 +198,7 @@ namespace Emonti_Optometrist_Website
                 new { Value = "7", StartHour = 15, StartMin = 0 },
             };
 
-            var slot = Array.Find(timeSlots, s => s.Value == ddlTimeSlot.Value);
+            var slot = Array.Find(timeSlots, s => s.Value == Request.Form["ddlTimeSlot"] ?? "");
             if (slot == null)
             {
                 ShowErrorMessage("Invalid time slot.");
@@ -294,7 +294,7 @@ namespace Emonti_Optometrist_Website
                         cmd.Parameters.AddWithValue("@CustId", Session["Cust_ID"]);
                         cmd.Parameters.AddWithValue("@StaffId", ddlOptometrist.SelectedValue);
                         cmd.Parameters.AddWithValue("@AppointmentDate", selectedDate);
-                        cmd.Parameters.AddWithValue("@AppointmentTimeId", ddlTimeSlot.Value);
+                        cmd.Parameters.AddWithValue("@AppointmentTimeId", Request.Form["ddlTimeSlot"] ?? "");
                         cmd.Parameters.AddWithValue("@Status", "Pending");
                         cmd.Parameters.AddWithValue("@Type", ddlAppointmentType.SelectedValue);
 
@@ -331,7 +331,7 @@ namespace Emonti_Optometrist_Website
                 if (string.IsNullOrEmpty(customerName)) customerName = "Valued Customer";
 
                 string optometristName = ddlOptometrist.SelectedItem?.Text ?? "Selected Optometrist";
-                string timeSlot = GetTimeSlotText(ddlTimeSlot.Value);
+                string timeSlot = GetTimeSlotText(Request.Form["ddlTimeSlot"] ?? "");
                 string logoBase64 = GetLogoBase64();
 
                 string body = $@"<!DOCTYPE html>
@@ -432,7 +432,7 @@ namespace Emonti_Optometrist_Website
         private void ShowSuccessMessage()
         {
             DateTime appointmentDate = DateTime.Parse(inputDate.Value);
-            string timeSlot = GetTimeSlotText(ddlTimeSlot.Value);
+            string timeSlot = GetTimeSlotText(Request.Form["ddlTimeSlot"] ?? "");
             string message = $"Appointment booked successfully! Confirmation details have been sent to your email. We look forward to seeing you on {appointmentDate:MMMM dd, yyyy} at {timeSlot}.";
 
             pnlMessage.Visible = true;
@@ -456,7 +456,6 @@ namespace Emonti_Optometrist_Website
             ddlAppointmentType.SelectedIndex = 0;
             ddlOptometrist.SelectedIndex = 0;
             inputDate.Value = "";
-            ddlTimeSlot.SelectedIndex = 0;
             hfRebooking.Value = "";
         }
 
