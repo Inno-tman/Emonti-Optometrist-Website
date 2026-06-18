@@ -32,8 +32,28 @@ namespace Emonti_Optometrist_Website.Account
             }
         }
 
-         protected void LogIn(object sender, EventArgs e)
+        private const int MaxFailedAttempts = 5;
+        private const int LockoutMinutes = 5;
+
+        protected void LogIn(object sender, EventArgs e)
         {
+            string email = Email.Text.Trim();
+            var failedKey = $"FailedAttempts_{email.ToLower()}";
+            var lockoutKey = $"LockoutEnd_{email.ToLower()}";
+
+            var lockoutEnd = Session[lockoutKey] as DateTime?;
+            if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
+            {
+                FailureText.Text = $"Account is locked. Try again after {lockoutEnd.Value:HH:mm}.";
+                ErrorMessage.Visible = true;
+                return;
+            }
+            if (lockoutEnd.HasValue)
+            {
+                Session.Remove(failedKey);
+                Session.Remove(lockoutKey);
+            }
+
             string connectionString = System.Configuration.ConfigurationManager
                 .ConnectionStrings["ProductConnection"].ConnectionString;
 
@@ -52,6 +72,10 @@ namespace Emonti_Optometrist_Website.Account
 
                     if (reader.Read())
                     {
+                        // Clear failed attempts on successful login
+                        Session.Remove(failedKey);
+                        Session.Remove(lockoutKey);
+
                         // Store customer data in session
                         string custId = reader["Cust_ID"].ToString();
                         Session["Cust_ID"] = custId;
@@ -102,6 +126,10 @@ namespace Emonti_Optometrist_Website.Account
                                     // existing staff login handling (unchanged)
                                     if (staffReader.Read())
                                     {
+                                        // Clear failed attempts on successful staff login
+                                        Session.Remove(failedKey);
+                                        Session.Remove(lockoutKey);
+
                                         // handle staff login
                                         Session["IsStaffLoggedIn"] = true;
                                         Session["Staff_ID"] = staffReader["Staff_ID"].ToString();
@@ -111,8 +139,20 @@ namespace Emonti_Optometrist_Website.Account
                                     }
                                     else
                                     {
-                                        // invalid credentials
-                                        FailureText.Text = "Invalid login attempt";
+                                        // Track failed attempts
+                                        var attempts = Session[failedKey] as int? ?? 0;
+                                        attempts++;
+                                        Session[failedKey] = attempts;
+
+                                        if (attempts >= MaxFailedAttempts)
+                                        {
+                                            Session[lockoutKey] = DateTime.Now.AddMinutes(LockoutMinutes);
+                                            FailureText.Text = $"Too many failed attempts. Account locked for {LockoutMinutes} minutes.";
+                                        }
+                                        else
+                                        {
+                                            FailureText.Text = $"Invalid login attempt. {MaxFailedAttempts - attempts} attempt(s) remaining.";
+                                        }
                                         ErrorMessage.Visible = true;
                                     }
                                 }

@@ -458,6 +458,13 @@
             <!-- Address Information Section -->
             <div class="form-section">
                 <h3 class="section-title">Address Information <span class="required">*</span></h3>
+                <div class="form-row" style="margin-bottom:1.5rem;">
+                    <div class="form-group" style="position:relative;">
+                        <label><i class="fas fa-search-location"></i> Search for your address</label>
+                        <input type="text" id="addressSearch" autocomplete="off" placeholder="Start typing your address..." style="background:#f0f4ff;border-color:#667eea;padding:1rem;border:2px solid #e0e0e0;border-radius:8px;font-size:1rem;width:100%;box-sizing:border-box;" />
+                        <div id="addressResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+                    </div>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Street Number</label>
@@ -633,6 +640,83 @@
         window.onload = function() {
             trackChanges();
             toggleMedicalAidDetails();
+
+            // === Nominatim address autocomplete ===
+            var searchInput = document.getElementById('addressSearch');
+            var resultsBox = document.getElementById('addressResults');
+            var searchTimeout;
+
+            function setField(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.value = val;
+            }
+
+            function selectAddress(item) {
+                var addr = item.address || {};
+                searchInput.value = (item.display_name || '').split(',')[0];
+                resultsBox.style.display = 'none';
+
+                setField('<%= txtStreetNumber.ClientID %>', addr.house_number || '');
+                setField('<%= txtStreetName.ClientID %>', addr.road || addr.pedestrian || addr.footway || '');
+                setField('<%= txtCity.ClientID %>', addr.city || addr.town || addr.village || addr.suburb || '');
+                setField('<%= txtPostalCode.ClientID %>', addr.postcode || '');
+
+                var province = addr.state || '';
+                if (province) {
+                    var sel = document.getElementById('<%= ddlProvince.ClientID %>');
+                    if (sel) {
+                        for (var i = 0; i < sel.options.length; i++) {
+                            if (sel.options[i].value.toLowerCase() === province.toLowerCase()) {
+                                sel.value = sel.options[i].value; break;
+                            }
+                        }
+                    }
+                }
+
+                var suburb = (addr.suburb || addr.neighbourhood || '').toLowerCase();
+                var road = (addr.road || '').toLowerCase();
+                var complexNames = ['estate', 'village', 'park', 'manor', 'heights', 'ridge', 'view', 'park', 'gardens', 'close', 'lane', 'court'];
+                var matched = '';
+                complexNames.forEach(function(cn) {
+                    if (suburb.indexOf(cn) > -1) matched = addr.suburb;
+                    if (!matched && road.indexOf(cn) > -1) matched = addr.road;
+                });
+                setField('<%= txtComplexName.ClientID %>', matched || '');
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    var q = this.value.trim();
+                    if (q.length < 5) { resultsBox.style.display = 'none'; return; }
+                    searchTimeout = setTimeout(function() {
+                        fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&addressdetails=1&limit=5&countrycodes=za', {
+                            headers: { 'User-Agent': 'EmontiOptometrist/1.0' }
+                        })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            resultsBox.innerHTML = '';
+                            if (!data || data.length === 0) { resultsBox.style.display = 'none'; return; }
+                            data.forEach(function(item) {
+                                var div = document.createElement('div');
+                                div.textContent = item.display_name;
+                                div.style.cssText = 'padding:0.6rem 0.75rem;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f0;';
+                                div.addEventListener('mouseenter', function(){ this.style.background = '#f0f4ff'; });
+                                div.addEventListener('mouseleave', function(){ this.style.background = ''; });
+                                div.addEventListener('click', function() { selectAddress(item); });
+                                resultsBox.appendChild(div);
+                            });
+                            resultsBox.style.display = 'block';
+                        })
+                        .catch(function() { resultsBox.style.display = 'none'; });
+                    }, 600);
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target))
+                        resultsBox.style.display = 'none';
+                });
+            }
         };
 
         window.addEventListener('beforeunload', function(e) {
