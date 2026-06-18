@@ -63,7 +63,6 @@ public class ChatbotAPI : IHttpHandler
     {
         var request = GetRequestData(context);
         var userMessage = request["message"]?.ToString();
-        var sessionId = request["sessionId"]?.ToString() ?? Guid.NewGuid().ToString();
 
         if (string.IsNullOrEmpty(userMessage))
         {
@@ -72,17 +71,7 @@ public class ChatbotAPI : IHttpHandler
         }
 
         var bestMatch = _faqDatabase.FindBestMatch(userMessage);
-
-        string botResponse = bestMatch != null
-            ? bestMatch.Answer
-            : GetFallbackResponse(userMessage.ToLower());
-
-        context.Response.Write(_jsonSerializer.Serialize(new
-        {
-            success = true,
-            message = botResponse,
-            sessionId = sessionId
-        }));
+        context.Response.Write(_jsonSerializer.Serialize(new { success = true, message = bestMatch?.Answer ?? GetFallbackResponse(userMessage.ToLower()) }));
     }
 
     private void HandleGetFAQs(HttpContext context)
