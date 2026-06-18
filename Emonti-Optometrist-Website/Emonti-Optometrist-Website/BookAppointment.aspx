@@ -1182,7 +1182,8 @@
                     <div class="date-picker">
                         <h3>Choose Date</h3>
                         <asp:Calendar ID="calAppointment" runat="server" OnSelectionChanged="calAppointment_SelectionChanged"
-                            CssClass="appointment-calendar" FirstDayOfWeek="Monday">
+                            CssClass="appointment-calendar" FirstDayOfWeek="Monday"
+                            SelectedDayStyle-CssClass="selected" TodayDayStyle-CssClass="today">
                         </asp:Calendar>
                     </div>
                     <div class="time-slots">
@@ -1228,12 +1229,12 @@
         // ===== BOOK BUTTON STATE MANAGER =====
         function setBookButtonState() {
             var btn = document.querySelector('[id$="_btnBookAppointment"]');
-            var ddl = document.querySelector('[id$="_ddlOptometrist"]');
-            var hf = document.querySelector('[id$="_hfSelectedTime"]');
+            var ddl = document.querySelector('[id$="_ddlOptometrist"]') || document.querySelector('select[id*="ddlOptometrist"]');
+            var hf = document.querySelector('[id$="_hfSelectedTime"]') || document.querySelector('input[type="hidden"][id*="hfSelectedTime"]');
             var optSelected = ddl && ddl.value !== '';
             var timeSelected = hf && hf.value !== '';
             
-            // Check if date is selected via calendar (look for .selected or today class)
+            // Check if date is selected via calendar
             var selectedCell = document.querySelector('.appointment-calendar .selected, .appointment-calendar .today');
             var dateSelected = !!selectedCell;
             
