@@ -182,10 +182,10 @@
                         </asp:LinkButton>
                         <!-- Login/Register buttons (shown when not logged in) -->
                         <asp:PlaceHolder ID="phAuth" runat="server">
-                            <asp:LinkButton ID="btnLogin" runat="server" CssClass="auth-button" OnClick="btnLogin_Click">
+                            <asp:LinkButton ID="btnLogin" runat="server" CssClass="auth-button" OnClick="btnLogin_Click" CausesValidation="false">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </asp:LinkButton>
-                            <asp:LinkButton ID="btnRegister" runat="server" CssClass="auth-button" OnClick="btnRegister_Click">
+                            <asp:LinkButton ID="btnRegister" runat="server" CssClass="auth-button" OnClick="btnRegister_Click" CausesValidation="false">
                                 <i class="fas fa-user-plus"></i> Register
                             </asp:LinkButton>
                         </asp:PlaceHolder>

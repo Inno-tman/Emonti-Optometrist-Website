@@ -454,9 +454,6 @@
                         document.getElementById('<%= mainMemberDetails.ClientID %>').style.display = 'none';
                     }
                 }
-                window.onload = function() {
-                    toggleMedicalAidSection();
-                };
             </script>
 
             <!-- Address Information Section -->
@@ -567,15 +564,72 @@
 
             <!-- Create Account Button -->
             <div class="form-section" style="text-align: center; margin-top: 2rem;">
-                <asp:Button ID="btnCreateAccount" runat="server" Text="Create Account" CssClass="btn-register" OnClick="btnCreateAccount_Click" style="font-size: 1.1rem; padding: 1.2rem 3rem;" />
+                <asp:Button ID="btnCreateAccount" runat="server" Text="Create Account" CssClass="btn-register" OnClick="btnCreateAccount_Click" style="font-size: 1.1rem; padding: 1.2rem 3rem;" OnClientClick="formChanged = false;" />
             </div>
             
             <!-- Login Link -->
             <div class="links-section">
-                <asp:HyperLink runat="server" NavigateUrl="~/Account/Login.aspx">
+                <asp:HyperLink runat="server" NavigateUrl="~/Account/Login.aspx" onclick="return confirmLeave();">
                     <i class="fas fa-sign-in-alt"></i> Already have an account? Sign in
                 </asp:HyperLink>
             </div>
         </div>
     </div>
+
+    <script>
+        var formChanged = false;
+        var formFields = [
+            '<%= txtFirstName.ClientID %>',
+            '<%= txtLastName.ClientID %>',
+            '<%= txtPhone.ClientID %>',
+            '<%= txtDateOfBirth.ClientID %>',
+            '<%= txtEmail.ClientID %>',
+            '<%= txtPassword.ClientID %>',
+            '<%= txtConfirmPassword.ClientID %>',
+            '<%= txtMedicalAid.ClientID %>',
+            '<%= txtMedicalAidNumber.ClientID %>',
+            '<%= txtMainMemberName.ClientID %>',
+            '<%= txtMainMemberSurname.ClientID %>',
+            '<%= txtMainMemberID.ClientID %>',
+            '<%= txtStreetNumber.ClientID %>',
+            '<%= txtStreetName.ClientID %>',
+            '<%= txtComplexName.ClientID %>',
+            '<%= txtUnitNumber.ClientID %>',
+            '<%= txtCity.ClientID %>',
+            '<%= txtPostalCode.ClientID %>'
+        ];
+
+        function trackChanges() {
+            formFields.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', function() { formChanged = true; });
+                    el.addEventListener('keyup', function() { formChanged = true; });
+                }
+            });
+            var gender = document.getElementById('<%= ddlGender.ClientID %>');
+            if (gender) gender.addEventListener('change', function() { formChanged = true; });
+            var province = document.getElementById('<%= ddlProvince.ClientID %>');
+            if (province) province.addEventListener('change', function() { formChanged = true; });
+        }
+
+        function confirmLeave() {
+            if (formChanged) {
+                return confirm('You have unsaved changes. Are you sure you want to leave this page?');
+            }
+            return true;
+        }
+
+        window.onload = function() {
+            trackChanges();
+            toggleMedicalAidSection();
+        };
+
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
 </asp:Content>
