@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
-using System.Net;
+using System.Data.SqlClient;
+using System.Configuration;
 using System.Net.Mail;
 using System.Web;
-using System.Web.UI;
 using System.Web.UI.WebControls;
 
 namespace Emonti_Optometrist_Website
@@ -14,7 +12,6 @@ namespace Emonti_Optometrist_Website
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Check if user is logged in using session
             if (Session["IsLoggedIn"] == null || !(bool)Session["IsLoggedIn"])
             {
                 Response.Redirect("~/Account/Login.aspx?ReturnUrl=" + Server.UrlEncode(Request.Url.ToString()));
@@ -25,50 +22,24 @@ namespace Emonti_Optometrist_Website
             {
                 InitializePage();
             }
-            else
-            {
-                // On postback, restore summary state from server controls
-                RestoreSummaryState();
-            }
-
-            // Pass exact client IDs and current state to JavaScript
-            string cidScript = $@"
-window.__ctrlIds = {{
-    btn: '{btnBookAppointment.ClientID}',
-    ddl: '{ddlOptometrist.ClientID}',
-    hf: '{hfSelectedTime.ClientID}'
-}};
-window.__bookingState = {{
-    optSelected: {(ddlOptometrist.SelectedValue != "" ? "true" : "false")},
-    timeSelected: {(hfSelectedTime.Value != "" ? "true" : "false")}
-}};
-";
-            ScriptManager.RegisterStartupScript(this, GetType(), "ControlIds", cidScript, true);
         }
 
         private void InitializePage()
         {
-            // Set minimum date to today (allow same-day bookings)
-            calAppointment.SelectedDate = DateTime.Today;
-            calAppointment.VisibleDate = DateTime.Today;
-
-            // Set calendar properties
-            calAppointment.SelectionMode = CalendarSelectionMode.Day;
-
-            // Update selected date label
-            UpdateSelectedDateLabel();
-
-            // Update summary date on initial load
-            string script = $"document.getElementById('summaryDate').textContent = '{calAppointment.SelectedDate:dddd, MMMM dd, yyyy}';";
-            ScriptManager.RegisterStartupScript(this, GetType(), "UpdateSummaryDateInitial", script, true);
-
-            // Load available optometrists
             LoadOptometrists();
-            
-            // Check if this is a rebooking
+
+            // Load customer info into hidden fields
+            hfCustomerName.Value = $"{Session["FirstName"]} {Session["LastName"]}";
+            hfCustomerEmail.Value = Session["UserEmail"]?.ToString() ?? "";
+            hfCustomerPhone.Value = Session["Cellphone"]?.ToString() ?? "";
+
+            // Store Cust_ID for AJAX availability check
+            string custIdScript = $"window.__custId = '{Session["Cust_ID"]}';";
+            ScriptManager.RegisterStartupScript(this, GetType(), "CustId", custIdScript, true);
+
             CheckForRebooking();
         }
-        
+
         private void CheckForRebooking()
         {
             string rebookId = Request.QueryString["rebook"];
@@ -77,42 +48,37 @@ window.__bookingState = {{
                 LoadRebookingData(rebookId);
             }
         }
-        
+
         private void LoadRebookingData(string appointmentId)
         {
             try
             {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
                 {
                     string query = @"
-                        SELECT a.Appointment_Date, a.Staff_ID, s.Staff_Name, s.Staff_Surname
+                        SELECT a.Staff_ID, s.Staff_Name, s.Staff_Surname
                         FROM Appointment a
                         INNER JOIN Staff s ON a.Staff_ID = s.Staff_ID
-                        WHERE a.Appointment_ID = @AppointmentId 
+                        WHERE a.Appointment_ID = @AppointmentId
                         AND a.Cust_ID = @CustomerId";
 
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
+                    using (var cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@AppointmentId", appointmentId);
                         cmd.Parameters.AddWithValue("@CustomerId", Session["Cust_ID"]);
                         conn.Open();
-                        
-                        using (System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReader())
+
+                        using (var reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                // Pre-select the same optometrist
                                 string staffId = reader["Staff_ID"].ToString();
-                                ddlOptometrist.SelectedValue = staffId;
-                                
-                                // Update summary using the helper method
-                                UpdateOptometristSummary();
-                                
-                                // Show rebooking message
-                                ShowRebookingMessage();
+                                if (ddlOptometrist.Items.FindByValue(staffId) != null)
+                                {
+                                    ddlOptometrist.SelectedValue = staffId;
+                                }
+                                hfRebooking.Value = "true";
                             }
                         }
                     }
@@ -123,46 +89,34 @@ window.__bookingState = {{
                 System.Diagnostics.Debug.WriteLine($"Error loading rebooking data: {ex.Message}");
             }
         }
-        
-        private void ShowRebookingMessage()
-        {
-            string script = @"
-                var messageDiv = document.createElement('div');
-                messageDiv.className = 'alert alert-info';
-                messageDiv.innerHTML = '<i class=""fas fa-info-circle""></i> <strong>Rebooking Appointment:</strong> You are rebooking a missed appointment. The same optometrist has been pre-selected for your convenience.';
-                document.querySelector('.booking-form').insertBefore(messageDiv, document.querySelector('.booking-form').firstChild);
-            ";
-            ScriptManager.RegisterStartupScript(this, GetType(), "ShowRebookingMessage", script, true);
-        }
 
         private void LoadOptometrists()
         {
             try
             {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
                 {
                     string query = @"
-                        SELECT Staff_ID, Staff_Name, Staff_Surname 
-                        FROM Staff 
-                        WHERE Staff_Role = 'Optometrist' 
+                        SELECT Staff_ID, Staff_Name, Staff_Surname
+                        FROM Staff
+                        WHERE Staff_Role = 'Optometrist'
                         ORDER BY Staff_Name, Staff_Surname";
 
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
+                    using (var cmd = new SqlCommand(query, conn))
                     {
                         conn.Open();
-                        System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReader();
-
-                        ddlOptometrist.Items.Clear();
-                        ddlOptometrist.Items.Add(new ListItem("Please select an optometrist", ""));
-
-                        while (reader.Read())
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            string staffId = reader["Staff_ID"].ToString();
-                            string staffName = $"{reader["Staff_Name"]} {reader["Staff_Surname"]}";
-                            ddlOptometrist.Items.Add(new ListItem(staffName, staffId));
+                            ddlOptometrist.Items.Clear();
+                            ddlOptometrist.Items.Add(new ListItem("-- Select Optometrist --", ""));
+
+                            while (reader.Read())
+                            {
+                                string staffId = reader["Staff_ID"].ToString();
+                                string staffName = $"{reader["Staff_Name"]} {reader["Staff_Surname"]}";
+                                ddlOptometrist.Items.Add(new ListItem(staffName, staffId));
+                            }
                         }
                     }
                 }
@@ -171,422 +125,6 @@ window.__bookingState = {{
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading optometrists: {ex.Message}");
             }
-        }
-
-        protected void calAppointment_SelectionChanged(object sender, EventArgs e)
-        {
-            UpdateSelectedDateLabel();
-
-            // Update summary
-            string script = $"document.getElementById('summaryDate').textContent = '{calAppointment.SelectedDate:dddd, MMMM dd, yyyy}';";
-            ScriptManager.RegisterStartupScript(this, GetType(), "UpdateSummaryDate", script, true);
-
-            // Load time slots if optometrist is selected
-            if (!string.IsNullOrEmpty(ddlOptometrist.SelectedValue))
-            {
-                LoadAvailableTimeSlots();
-            }
-        }
-
-        protected void ddlOptometrist_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(ddlOptometrist.SelectedValue))
-            {
-                LoadAvailableTimeSlots();
-                
-                // Update optometrist summary
-                UpdateOptometristSummary();
-            }
-            else
-            {
-                // Clear summary and time slots if optometrist is deselected
-                string clearScript = @"
-                    document.getElementById('summaryOptometrist').textContent = 'Please select an optometrist';
-                    document.getElementById('summaryTime').textContent = 'Please select a time';
-                    document.getElementById('timeSlots').innerHTML = '';
-                    document.getElementById('" + hfSelectedTime.ClientID + @"').value = '';
-                    if (window.__bookingState) { window.__bookingState.optSelected = false; window.__bookingState.timeSelected = false; }
-                    if (typeof setBookButtonState === 'function') setBookButtonState();
-                ";
-                ScriptManager.RegisterStartupScript(this, GetType(), "ClearOptometristSummary", clearScript, true);
-            }
-        }
-
-        private void LoadAvailableTimeSlots()
-        {
-            try
-            {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    // Get all time slots from database (TimeID 1-15)
-                    string allSlotsQuery = @"
-                        SELECT t.TimeID, t.Timeslot
-                        FROM tblTime t
-                        WHERE t.TimeID IS NOT NULL
-                        ORDER BY t.TimeID";
-
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(allSlotsQuery, conn))
-                    {
-                        conn.Open();
-                        System.Data.SqlClient.SqlDataReader reader = cmd.ExecuteReader();
-
-                        // Clear existing time slots
-                        string clearScript = "document.getElementById('timeSlots').innerHTML = '';";
-                        ScriptManager.RegisterStartupScript(this, GetType(), "ClearTimeSlots", clearScript, true);
-
-                        while (reader.Read())
-                        {
-                            string timeId = reader["TimeID"].ToString();
-                            string timeSlot = reader["Timeslot"].ToString();
-                            
-                            // Check if this time slot is available (not booked)
-                            bool isAvailable = IsTimeSlotAvailable(timeId, ddlOptometrist.SelectedValue, calAppointment.SelectedDate.Date);
-                            
-                            // Check if time slot is within business hours
-                            bool isWithinBusinessHours = IsWithinBusinessHours(calAppointment.SelectedDate.Date, timeSlot);
-                            
-                            // Check if time has passed (only for today)
-                            bool hasTimePassed = false;
-                            if (calAppointment.SelectedDate.Date == DateTime.Today.Date)
-                            {
-                                hasTimePassed = HasTimeSlotPassed(timeSlot);
-                            }
-                            
-                            // Check if booking time is valid (2-hour advance notice for same-day)
-                            bool isValidBookingTime = IsValidBookingTime(calAppointment.SelectedDate.Date, timeSlot);
-                            
-                            // Determine if slot should be disabled
-                            bool isDisabled = !isAvailable || hasTimePassed || !isWithinBusinessHours || !isValidBookingTime;
-                            string disabledClass = isDisabled ? " unavailable" : "";
-                            string disabledAttr = isDisabled ? " disabled" : "";
-                            
-                            // Determine tooltip message
-                            string tooltip = "";
-                            if (!isAvailable)
-                                tooltip = "This time slot is already booked";
-                            else if (hasTimePassed)
-                                tooltip = "This time slot has already passed";
-                            else if (!isWithinBusinessHours)
-                                tooltip = "This time slot is outside business hours";
-                            else if (!isValidBookingTime)
-                                tooltip = "Same-day appointments require at least 2 hours advance notice";
-                            
-                            // Add time slot to JavaScript with proper database format
-                            string addSlotScript = $@"
-                                var timeSlots = document.getElementById('timeSlots');
-                                var slot = document.createElement('label');
-                                slot.className = 'time-slot{disabledClass}';
-                                slot.title = '{tooltip}';
-                                slot.innerHTML = '<input type=""radio"" name=""timeSlot"" value=""{timeId}""{disabledAttr}>{timeSlot}';
-                                {(!isDisabled ? $@"slot.addEventListener('click', function() {{
-                                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-                                    this.classList.add('selected');
-                                    document.getElementById('{hfSelectedTime.ClientID}').value = '{timeId}';
-                                    document.getElementById('summaryTime').textContent = '{timeSlot}';
-                                    if (window.__bookingState) window.__bookingState.timeSelected = true;
-                                    if (typeof setBookButtonState === 'function') setBookButtonState();
-                                }});" : "")}
-                                timeSlots.appendChild(slot);
-                            ";
-                            ScriptManager.RegisterStartupScript(this, GetType(), $"AddSlot_{timeId}", addSlotScript, true);
-                        }
-                        
-                        // After all slots are rendered, update button state
-                        string finalScript = "if (typeof setBookButtonState === 'function') setTimeout(setBookButtonState, 50);";
-                        ScriptManager.RegisterStartupScript(this, GetType(), "FinalSlotState", finalScript, true);
-                        
-                        // Check if no slots were added and show message
-                        string noSlotsCheck = @"
-                            setTimeout(function() {
-                                var ts = document.getElementById('timeSlots');
-                                if (ts && ts.children.length === 0) {
-                                    ts.innerHTML = '<div class=""no-slots-message"">No available time slots for this date. Please try another date.</div>';
-                                    if (typeof setBookButtonState === 'function') setBookButtonState();
-                                }
-                            }, 100);
-                        ";
-                        ScriptManager.RegisterStartupScript(this, GetType(), "NoSlotsCheck", noSlotsCheck, true);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading time slots: {ex.Message}");
-            }
-        }
-
-        private bool IsTimeSlotAvailable(string timeId, string staffId, DateTime date)
-        {
-            try
-            {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    // Check if slot is booked OR blocked
-                    string query = @"
-                        SELECT 
-                            (SELECT COUNT(*) 
-                             FROM Appointment a
-                             WHERE a.Staff_ID = @StaffId 
-                             AND CAST(a.Appointment_Date AS DATE) = @Date
-                             AND a.AppointmentTimeID = @TimeId
-                             AND a.Appoinment_Status != 'Cancelled') +
-                            (SELECT COUNT(*) 
-                             FROM BlockedTimeslots b
-                             WHERE b.Staff_ID = @StaffId 
-                             AND b.Blocked_Date = @Date
-                             AND b.TimeID = @TimeId) as TotalCount";
-
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@StaffId", staffId);
-                        cmd.Parameters.AddWithValue("@Date", date.Date);
-                        cmd.Parameters.AddWithValue("@TimeId", timeId);
-                        
-                        conn.Open();
-                        int count = (int)cmd.ExecuteScalar();
-                        return count == 0; // Available only if NOT booked AND NOT blocked
-                    }
-                }
-            }
-            catch
-            {
-                return false; // If error, assume not available
-            }
-        }
-
-        private bool CustomerHasAppointmentOnDate(string customerId, DateTime date)
-        {
-            try
-            {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    string query = @"
-                        SELECT COUNT(*) 
-                        FROM Appointment a
-                        WHERE a.Cust_ID = @CustomerId 
-                        AND CAST(a.Appointment_Date AS DATE) = @Date
-                        AND a.Appoinment_Status != 'Cancelled'";
-
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@CustomerId", customerId);
-                        cmd.Parameters.AddWithValue("@Date", date);
-                        
-                        conn.Open();
-                        int count = (int)cmd.ExecuteScalar();
-                        return count > 0; // Returns true if customer has appointment on this date
-                    }
-                }
-            }
-            catch
-            {
-                return false; // If error, assume no existing appointment
-            }
-        }
-
-        private bool IsWithinBusinessHours(DateTime appointmentDate, string timeSlot)
-        {
-            try
-            {
-                var dayOfWeek = appointmentDate.DayOfWeek;
-                
-                // Check if it's Sunday (closed)
-                if (dayOfWeek == DayOfWeek.Sunday)
-                    return false;
-                
-                // Parse time slot to get start time
-                var startTime = ParseTimeSlot(timeSlot);
-                if (startTime == TimeSpan.Zero)
-                    return false;
-                
-                // Check business hours
-                if (dayOfWeek >= DayOfWeek.Monday && dayOfWeek <= DayOfWeek.Friday)
-                {
-                    // Monday-Friday: 8:00 AM - 5:00 PM
-                    return startTime >= new TimeSpan(8, 0, 0) && startTime < new TimeSpan(17, 0, 0);
-                }
-                else if (dayOfWeek == DayOfWeek.Saturday)
-                {
-                    // Saturday: 8:00 AM - 2:00 PM
-                    return startTime >= new TimeSpan(8, 0, 0) && startTime < new TimeSpan(14, 0, 0);
-                }
-                
-                return false;
-            }
-            catch
-            {
-                return false; // If parsing fails, assume not within business hours
-            }
-        }
-
-        private TimeSpan ParseTimeSlot(string timeSlot)
-        {
-            try
-            {
-                // Parse database time slot format "9h30 - 10h00" to get start time
-                var startTime = timeSlot.Split('-')[0].Trim(); // Gets "9h30"
-                var timeParts = startTime.Replace("h", ":").Split(':'); // Gets ["9", "30"]
-                
-                int hour = int.Parse(timeParts[0]);
-                int minute = int.Parse(timeParts[1]);
-                
-                return new TimeSpan(hour, minute, 0);
-            }
-            catch
-            {
-                return TimeSpan.Zero; // If parsing fails, return zero
-            }
-        }
-
-        private bool HasTimeSlotPassed(string timeSlot)
-        {
-            try
-            {
-                // Parse database time slot format "9h30 - 10h00" to get start time
-                var startTime = timeSlot.Split('-')[0].Trim(); // Gets "9h30"
-                var timeParts = startTime.Replace("h", ":").Split(':'); // Gets ["9", "30"]
-                
-                int hour = int.Parse(timeParts[0]);
-                int minute = int.Parse(timeParts[1]);
-                
-                var slotDateTime = new DateTime(
-                    DateTime.Today.Year, 
-                    DateTime.Today.Month, 
-                    DateTime.Today.Day, 
-                    hour, 
-                    minute, 
-                    0
-                );
-                
-                return DateTime.Now >= slotDateTime;
-            }
-            catch
-            {
-                return false; // If parsing fails, assume not passed
-            }
-        }
-
-        private bool IsValidBookingTime(DateTime appointmentDate, string timeSlot)
-        {
-            var currentTime = DateTime.Now;
-            
-            // For same-day bookings, require at least 2 hours advance notice
-            if (appointmentDate.Date == currentTime.Date)
-            {
-                var startTime = ParseTimeSlot(timeSlot);
-                if (startTime == TimeSpan.Zero)
-                    return false;
-                
-                var appointmentDateTime = appointmentDate.Date.Add(startTime);
-                var minimumAdvanceTime = currentTime.AddHours(2);
-                
-                if (appointmentDateTime < minimumAdvanceTime)
-                {
-                    return false; // Too soon for same-day booking
-                }
-            }
-            
-            return true;
-        }
-
-        private string GetTimeSlotFromDatabase(string timeId)
-        {
-            try
-            {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    string query = @"
-                        SELECT t.Timeslot
-                        FROM tblTime t
-                        WHERE t.TimeID = @TimeId";
-
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@TimeId", timeId);
-                        
-                        conn.Open();
-                        object result = cmd.ExecuteScalar();
-                        return result?.ToString() ?? "";
-                    }
-                }
-            }
-            catch
-            {
-                return ""; // If error, return empty string
-            }
-        }
-
-        private void UpdateSelectedDateLabel()
-        {
-            if (calAppointment.SelectedDate != DateTime.MinValue)
-            {
-                lblSelectedDate.Text = calAppointment.SelectedDate.ToString("dddd, MMMM dd, yyyy");
-            }
-            else
-            {
-                lblSelectedDate.Text = "Please select a date";
-            }
-        }
-
-        private void RestoreSummaryState()
-        {
-            // Restore optometrist in summary if selected
-            if (!string.IsNullOrEmpty(ddlOptometrist.SelectedValue))
-            {
-                UpdateOptometristSummary();
-            }
-            
-            // Restore date in summary if selected
-            if (calAppointment.SelectedDate != DateTime.MinValue)
-            {
-                string dateScript = $"document.getElementById('summaryDate').textContent = '{calAppointment.SelectedDate:dddd, MMMM dd, yyyy}';";
-                ScriptManager.RegisterStartupScript(this, GetType(), "RestoreDateSummary", dateScript, true);
-            }
-            
-            // Restore time in summary if selected
-            if (!string.IsNullOrEmpty(hfSelectedTime.Value))
-            {
-                string timeSlot = GetTimeSlotFromDatabase(hfSelectedTime.Value);
-                if (!string.IsNullOrEmpty(timeSlot))
-                {
-                    string timeScript = $"document.getElementById('summaryTime').textContent = '{EscapeJavaScriptString(timeSlot)}';";
-                    ScriptManager.RegisterStartupScript(this, GetType(), "RestoreTimeSummary", timeScript, true);
-                }
-            }
-        }
-
-        private void UpdateOptometristSummary()
-        {
-            if (!string.IsNullOrEmpty(ddlOptometrist.SelectedValue) && ddlOptometrist.SelectedItem != null)
-            {
-                string optometristName = EscapeJavaScriptString(ddlOptometrist.SelectedItem.Text);
-                string script = $"document.getElementById('summaryOptometrist').textContent = '{optometristName}';";
-                ScriptManager.RegisterStartupScript(this, GetType(), "UpdateOptometristSummary", script, true);
-            }
-        }
-
-        private string EscapeJavaScriptString(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return string.Empty;
-            
-            // Escape single quotes, backslashes, and newlines for JavaScript
-            return input.Replace("\\", "\\\\")
-                        .Replace("'", "\\'")
-                        .Replace("\r", "\\r")
-                        .Replace("\n", "\\n");
         }
 
         protected void btnBookAppointment_Click(object sender, EventArgs e)
@@ -607,140 +145,164 @@ window.__bookingState = {{
 
         private bool ValidateBookingForm()
         {
-            bool isValid = true;
-
-            // Check if date is selected
-            if (calAppointment.SelectedDate == DateTime.MinValue || calAppointment.SelectedDate < DateTime.Today)
+            // Validate appointment type
+            if (string.IsNullOrEmpty(ddlAppointmentType.SelectedValue))
             {
-                ShowErrorMessage("Please select a valid date for your appointment (today or future).");
-                isValid = false;
+                ShowErrorMessage("Please select an appointment type.");
+                return false;
             }
 
-            // Check if it's Sunday (closed)
-            if (isValid && calAppointment.SelectedDate.DayOfWeek == DayOfWeek.Sunday)
-            {
-                ShowErrorMessage("We are closed on Sundays. Please select a different date.");
-                isValid = false;
-            }
-
-            // Check if optometrist is selected
+            // Validate optometrist
             if (string.IsNullOrEmpty(ddlOptometrist.SelectedValue))
             {
                 ShowErrorMessage("Please select an optometrist.");
-                isValid = false;
+                return false;
             }
 
-            // Check if time is selected
-            if (string.IsNullOrEmpty(hfSelectedTime.Value))
+            // Validate date
+            DateTime selectedDate;
+            if (string.IsNullOrEmpty(inputDate.Value) || !DateTime.TryParse(inputDate.Value, out selectedDate))
+            {
+                ShowErrorMessage("Please select a valid date.");
+                return false;
+            }
+
+            if (selectedDate.Date < DateTime.Today)
+            {
+                ShowErrorMessage("Please select a future date.");
+                return false;
+            }
+
+            if (selectedDate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                ShowErrorMessage("We are closed on Sundays. Please select a different date.");
+                return false;
+            }
+
+            // Validate time slot
+            if (string.IsNullOrEmpty(ddlTimeSlot.Value))
             {
                 ShowErrorMessage("Please select an appointment time.");
-                isValid = false;
+                return false;
             }
 
-            // Additional validation for selected time slot
-            if (isValid && !string.IsNullOrEmpty(hfSelectedTime.Value))
+            // Validate same-day 2-hour rule server-side
+            var timeSlots = new[] {
+                new { Value = "1", StartHour = 8, StartMin = 0 },
+                new { Value = "2", StartHour = 9, StartMin = 0 },
+                new { Value = "3", StartHour = 10, StartMin = 0 },
+                new { Value = "4", StartHour = 11, StartMin = 0 },
+                new { Value = "5", StartHour = 13, StartMin = 0 },
+                new { Value = "6", StartHour = 14, StartMin = 0 },
+                new { Value = "7", StartHour = 15, StartMin = 0 },
+            };
+
+            var slot = Array.Find(timeSlots, s => s.Value == ddlTimeSlot.Value);
+            if (slot == null)
             {
-                // Get the selected time slot from the database
-                string selectedTimeSlot = GetTimeSlotFromDatabase(hfSelectedTime.Value);
-                
-                if (!string.IsNullOrEmpty(selectedTimeSlot))
+                ShowErrorMessage("Invalid time slot.");
+                return false;
+            }
+
+            var slotStart = new TimeSpan(slot.StartHour, slot.StartMin, 0);
+            var businessClose = selectedDate.DayOfWeek == DayOfWeek.Saturday ? new TimeSpan(14, 0, 0) : new TimeSpan(17, 0, 0);
+
+            if (slotStart < new TimeSpan(8, 0, 0) || slotStart >= businessClose)
+            {
+                ShowErrorMessage("The selected time is outside our business hours.");
+                return false;
+            }
+
+            if (selectedDate == DateTime.Today)
+            {
+                var slotDateTime = DateTime.Today.Add(slotStart);
+                if (DateTime.Now >= slotDateTime)
                 {
-                    // Check if time slot is within business hours
-                    if (!IsWithinBusinessHours(calAppointment.SelectedDate.Date, selectedTimeSlot))
-                    {
-                        ShowErrorMessage("The selected time slot is outside our business hours.");
-                        isValid = false;
-                    }
-                    // Check if booking time is valid (2-hour advance notice for same-day)
-                    else if (!IsValidBookingTime(calAppointment.SelectedDate.Date, selectedTimeSlot))
-                    {
-                        ShowErrorMessage("Same-day appointments require at least 2 hours advance notice.");
-                        isValid = false;
-                    }
+                    ShowErrorMessage("This time has already passed.");
+                    return false;
+                }
+                if (slotDateTime <= DateTime.Now.AddHours(2))
+                {
+                    ShowErrorMessage("Same-day bookings need at least 2 hours notice.");
+                    return false;
                 }
             }
 
-            // Check if customer already has an appointment on this date
-            if (isValid && Session["Cust_ID"] != null)
+            // Check for duplicate appointment per day
+            if (CustomerHasAppointmentOnDate(Session["Cust_ID"].ToString(), selectedDate))
             {
-                if (CustomerHasAppointmentOnDate(Session["Cust_ID"].ToString(), calAppointment.SelectedDate.Date))
-                {
-                    ShowErrorMessage("You already have an appointment scheduled on this date. You can only book one appointment per day.");
-                    isValid = false;
-                }
+                ShowErrorMessage("You already have an appointment on this date. Only one appointment per day allowed.");
+                return false;
             }
 
-            return isValid;
+            return true;
+        }
+
+        private bool CustomerHasAppointmentOnDate(string customerId, DateTime date)
+        {
+            try
+            {
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
+                {
+                    string query = @"
+                        SELECT COUNT(*)
+                        FROM Appointment
+                        WHERE Cust_ID = @CustomerId
+                        AND CAST(Appointment_Date AS DATE) = @Date
+                        AND Appoinment_Status != 'Cancelled'";
+
+                    using (var cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                        cmd.Parameters.AddWithValue("@Date", date);
+                        conn.Open();
+                        int count = (int)cmd.ExecuteScalar();
+                        return count > 0;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private bool SaveAppointment()
         {
             try
             {
-                // Debug: Log all values before saving
-                System.Diagnostics.Debug.WriteLine($"=== SAVE APPOINTMENT DEBUG ===");
-                System.Diagnostics.Debug.WriteLine($"Cust_ID: {Session["Cust_ID"]}");
-                System.Diagnostics.Debug.WriteLine($"Staff_ID: {ddlOptometrist.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"Appointment_Date: {calAppointment.SelectedDate}");
-                System.Diagnostics.Debug.WriteLine($"AppointmentTimeID: {hfSelectedTime.Value}");
-                System.Diagnostics.Debug.WriteLine($"===============================");
-
-                // Validate required data
                 if (Session["Cust_ID"] == null)
                 {
-                    System.Diagnostics.Debug.WriteLine("ERROR: Cust_ID is null");
                     ShowErrorMessage("Customer session expired. Please log in again.");
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(ddlOptometrist.SelectedValue))
-                {
-                    System.Diagnostics.Debug.WriteLine("ERROR: No optometrist selected");
-                    ShowErrorMessage("Please select an optometrist.");
-                    return false;
-                }
+                DateTime selectedDate = DateTime.Parse(inputDate.Value);
 
-                if (string.IsNullOrEmpty(hfSelectedTime.Value))
-                {
-                    System.Diagnostics.Debug.WriteLine("ERROR: No time slot selected");
-                    ShowErrorMessage("Please select a time slot.");
-                    return false;
-                }
-
-                // Final check to prevent double booking
-                if (CustomerHasAppointmentOnDate(Session["Cust_ID"].ToString(), calAppointment.SelectedDate.Date))
-                {
-                    ShowErrorMessage("You already have an appointment scheduled on this date. You can only book one appointment per day.");
-                    return false;
-                }
-
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
                 {
                     string query = @"
-                        INSERT INTO Appointment 
-                        (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status) 
-                        VALUES (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
+                        INSERT INTO Appointment
+                        (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status, Appointment_Type)
+                        VALUES (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status, @Type)";
 
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
+                    using (var cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@CustId", Session["Cust_ID"]);
                         cmd.Parameters.AddWithValue("@StaffId", ddlOptometrist.SelectedValue);
-                        cmd.Parameters.AddWithValue("@AppointmentDate", calAppointment.SelectedDate);
-                        cmd.Parameters.AddWithValue("@AppointmentTimeId", hfSelectedTime.Value);
+                        cmd.Parameters.AddWithValue("@AppointmentDate", selectedDate);
+                        cmd.Parameters.AddWithValue("@AppointmentTimeId", ddlTimeSlot.Value);
                         cmd.Parameters.AddWithValue("@Status", "Pending");
+                        cmd.Parameters.AddWithValue("@Type", ddlAppointmentType.SelectedValue);
 
                         conn.Open();
                         int rowsAffected = cmd.ExecuteNonQuery();
 
-                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
-
                         if (rowsAffected > 0)
                         {
-                            // Send confirmation email
-                            SendConfirmationEmail();
+                            SendConfirmationEmail(selectedDate);
                             return true;
                         }
                         return false;
@@ -750,38 +312,25 @@ window.__bookingState = {{
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error saving appointment: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 ShowErrorMessage($"Failed to save appointment: {ex.Message}");
                 return false;
             }
         }
 
-        private void SendConfirmationEmail()
+        private void SendConfirmationEmail(DateTime appointmentDate)
         {
             try
             {
-                // Get customer email and name from session
                 string customerEmail = Session["UserEmail"]?.ToString();
-                if (string.IsNullOrEmpty(customerEmail))
-                {
-                    System.Diagnostics.Debug.WriteLine("No customer email found in session");
-                    return;
-                }
+                if (string.IsNullOrEmpty(customerEmail)) return;
 
-                // Get customer name from session
                 string firstName = Session["FirstName"]?.ToString() ?? "";
                 string lastName = Session["LastName"]?.ToString() ?? "";
                 string customerName = $"{firstName} {lastName}".Trim();
-                if (string.IsNullOrEmpty(customerName))
-                {
-                    customerName = "Valued Customer";
-                }
+                if (string.IsNullOrEmpty(customerName)) customerName = "Valued Customer";
 
-                // Get optometrist name
                 string optometristName = ddlOptometrist.SelectedItem?.Text ?? "Selected Optometrist";
-                
-                // Get time slot
-                string timeSlot = GetTimeSlotText(hfSelectedTime.Value);
+                string timeSlot = GetTimeSlotText(ddlTimeSlot.Value);
                 string logoBase64 = GetLogoBase64();
 
                 string body = $@"<!DOCTYPE html>
@@ -796,13 +345,14 @@ window.__bookingState = {{
 <h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">Appointment Confirmed</h1>
 </td></tr>
 <tr><td style=""padding:30px;"">
-<p style=""margin:0 0 20px 0;color:#333;font-size:16px;line-height:1.6;"">Dear {System.Web.HttpUtility.HtmlEncode(customerName)},</p>
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;line-height:1.6;"">Dear {HttpUtility.HtmlEncode(customerName)},</p>
 <p style=""margin:0 0 25px 0;color:#555;font-size:15px;line-height:1.6;"">Your appointment has been successfully confirmed. We're looking forward to seeing you!</p>
 <div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #667eea;"">
 <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
-<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Optometrist:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{System.Web.HttpUtility.HtmlEncode(optometristName)}</td></tr>
-<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{calAppointment.SelectedDate:dddd, MMMM dd, yyyy}</td></tr>
-<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#667eea;font-size:14px;font-weight:600;"">{System.Web.HttpUtility.HtmlEncode(timeSlot)}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Type:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{HttpUtility.HtmlEncode(ddlAppointmentType.SelectedItem?.Text ?? "Eye Exam")}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Optometrist:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{HttpUtility.HtmlEncode(optometristName)}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{appointmentDate:dddd, MMMM dd, yyyy}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#667eea;font-size:14px;font-weight:600;"">{HttpUtility.HtmlEncode(timeSlot)}</td></tr>
 </table></div>
 <div style=""background-color:#e7f3ff;border-left:4px solid #2196F3;padding:15px;margin:20px 0;border-radius:4px;"">
 <p style=""margin:0 0 8px 0;color:#1976D2;font-size:14px;font-weight:600;"">Important Reminders</p>
@@ -823,64 +373,35 @@ window.__bookingState = {{
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                // Get SMTP configuration from web.config
-                // NOTE: For Gmail, you must use an App Password, not your regular Gmail password
-                // To create an App Password: Google Account > Security > 2-Step Verification > App Passwords
-                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
-                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
-                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                string smtpHost = ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
+                int smtpPort = int.Parse(ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
+                string smtpEmail = ConfigurationManager.AppSettings["SmtpEmail"];
+                string smtpPassword = ConfigurationManager.AppSettings["SmtpPassword"];
+                string smtpFromName = ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
+                bool enableSsl = bool.Parse(ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
 
-                // Validate SMTP credentials are configured
-                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
-                {
-                    System.Diagnostics.Debug.WriteLine("ERROR: SMTP credentials not configured in web.config");
-                    System.Diagnostics.Debug.WriteLine("For Gmail, ensure you're using an App Password in web.config (SmtpPassword)");
-                    return;
-                }
+                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword)) return;
 
-                // Use using statements to ensure proper resource disposal
-                using (SmtpClient smtp = new SmtpClient(smtpHost, smtpPort))
+                using (var smtp = new SmtpClient(smtpHost, smtpPort))
                 {
                     smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
                     smtp.EnableSsl = enableSsl;
-                    smtp.Timeout = 30000; // 30 seconds timeout
+                    smtp.Timeout = 30000;
 
-                    using (MailMessage message = new MailMessage())
+                    using (var message = new MailMessage())
                     {
                         message.From = new MailAddress(smtpEmail, smtpFromName);
                         message.To.Add(customerEmail);
                         message.Subject = "Appointment Confirmation - Emonti Optometrist";
                         message.Body = body;
                         message.IsBodyHtml = true;
-
                         smtp.Send(message);
-                        System.Diagnostics.Debug.WriteLine($"Confirmation email sent to: {customerEmail}");
                     }
                 }
-            }
-            catch (SmtpException smtpEx)
-            {
-                System.Diagnostics.Debug.WriteLine($"SMTP Error sending email: {smtpEx.Message}");
-                System.Diagnostics.Debug.WriteLine($"SMTP Status Code: {smtpEx.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"Inner Exception: {smtpEx.InnerException?.Message ?? "None"}");
-                // Common Gmail errors:
-                // - 535: Authentication failed (usually means need App Password)
-                // - 534: Authentication failed (check credentials)
-                if ((int)smtpEx.StatusCode == 535 || (int)smtpEx.StatusCode == 534)
-                {
-                    System.Diagnostics.Debug.WriteLine("TIP: Gmail requires an App Password. Check web.config SmtpPassword setting.");
-                }
-                // Log but don't fail appointment booking if email fails
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException?.Message ?? "None"}");
-                // Log but don't fail appointment booking if email fails
             }
         }
 
@@ -888,13 +409,11 @@ window.__bookingState = {{
         {
             try
             {
-                string connectionString = System.Configuration.ConfigurationManager
-                    .ConnectionStrings["ProductConnection"].ConnectionString;
-
-                using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString))
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
                 {
                     string query = "SELECT Timeslot FROM tblTime WHERE TimeID = @TimeId";
-                    using (System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn))
+                    using (var cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@TimeId", timeId);
                         conn.Open();
@@ -909,118 +428,53 @@ window.__bookingState = {{
             }
         }
 
-
         private void ShowSuccessMessage()
         {
-            string timeSlot = GetTimeSlotText(hfSelectedTime.Value);
-            string message = $"Appointment booked successfully! Confirmation details have been sent to your email. We look forward to seeing you on {calAppointment.SelectedDate:MMMM dd, yyyy} at {timeSlot}.";
-            
+            DateTime appointmentDate = DateTime.Parse(inputDate.Value);
+            string timeSlot = GetTimeSlotText(ddlTimeSlot.Value);
+            string message = $"Appointment booked successfully! Confirmation details have been sent to your email. We look forward to seeing you on {appointmentDate:MMMM dd, yyyy} at {timeSlot}.";
+
             pnlMessage.Visible = true;
             pnlMessage.CssClass = "alert alert-success";
-            lblMessage.Text = $"✅ {message}";
-            
-            // Register script to show modal popup
-            string escapedMessage = EscapeJavaScriptString(message);
-            string script = $@"
-                var retryCount = 0;
-                function tryShowSuccessModal() {{
-                    retryCount++;
-                    var modal = document.getElementById('messageModal');
-                    if (modal && typeof window.showMessageModal === 'function') {{
-                        window.showMessageModal('success', '{escapedMessage}');
-                    }} else if (retryCount < 20) {{
-                        setTimeout(tryShowSuccessModal, 100);
-                    }}
-                }}
-                tryShowSuccessModal();";
-            ScriptManager.RegisterStartupScript(this, GetType(), "ShowSuccessModal", script, true);
+            lblMessage.Text = message;
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
         }
 
         private void ShowErrorMessage(string message)
         {
-            // Remove emoji if present
-            string cleanMessage = message.Replace("❌", "").Trim();
-            
             pnlMessage.Visible = true;
-            pnlMessage.CssClass = "alert alert-error";
-            lblMessage.Text = "❌ " + cleanMessage;
-            
-            // Register script to show modal popup
-            string escapedMessage = EscapeJavaScriptString(cleanMessage);
-            string script = $@"
-                var retryCount = 0;
-                function tryShowErrorModal() {{
-                    retryCount++;
-                    var modal = document.getElementById('messageModal');
-                    if (modal && typeof window.showMessageModal === 'function') {{
-                        window.showMessageModal('error', '{escapedMessage}');
-                    }} else if (retryCount < 20) {{
-                        setTimeout(tryShowErrorModal, 100);
-                    }}
-                }}
-                tryShowErrorModal();";
-            ScriptManager.RegisterStartupScript(this, GetType(), "ShowErrorModal", script, true);
-        }
+            pnlMessage.CssClass = "alert alert-danger";
+            lblMessage.Text = message;
 
-        private void ClearMessages()
-        {
-            pnlMessage.Visible = false;
-            pnlMessage.CssClass = "alert";
-            lblMessage.Text = "";
+            ScriptManager.RegisterStartupScript(this, GetType(), "ScrollToTop", "window.scrollTo({top:0,behavior:'smooth'});", true);
         }
 
         private void ClearForm()
         {
+            ddlAppointmentType.SelectedIndex = 0;
             ddlOptometrist.SelectedIndex = 0;
-            calAppointment.SelectedDate = DateTime.Today.AddDays(1);
-            hfSelectedTime.Value = "";
-
-            // Clear time selection UI
-            string clearScript = @"
-                document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
-                document.getElementById('summaryTime').textContent = 'Please select a time';
-                document.getElementById('summaryOptometrist').textContent = 'Please select an optometrist';
-            ";
-            ScriptManager.RegisterStartupScript(this, GetType(), "ClearTimeSelection", clearScript, true);
+            inputDate.Value = "";
+            ddlTimeSlot.SelectedIndex = 0;
+            hfRebooking.Value = "";
         }
 
         protected void btnCancel_Click(object sender, EventArgs e)
         {
-            // Redirect back to home page or previous page
             Response.Redirect("~/Default.aspx");
-        }
-
-        // Calendar day render event to disable past dates and weekends if needed
-        protected void calAppointment_DayRender(object sender, DayRenderEventArgs e)
-        {
-            // Disable past dates
-            if (e.Day.Date < DateTime.Today)
-            {
-                e.Day.IsSelectable = false;
-                e.Cell.ForeColor = System.Drawing.Color.Gray;
-            }
-
-            // Optionally disable Sundays (if practice is closed)
-            if (e.Day.Date.DayOfWeek == DayOfWeek.Sunday)
-            {
-                e.Day.IsSelectable = false;
-                e.Cell.ForeColor = System.Drawing.Color.Gray;
-                e.Cell.ToolTip = "Closed on Sundays";
-            }
         }
 
         private string GetLogoBase64()
         {
             try
             {
-                string logoPath = HttpContext.Current.Server.MapPath("~/Images/Logo/Emonti Logo Banner.png");
+                string logoPath = Server.MapPath("~/Images/Logo/Emonti Logo Banner.png");
                 byte[] imageBytes = System.IO.File.ReadAllBytes(logoPath);
                 string base64 = Convert.ToBase64String(imageBytes);
                 return $"data:image/png;base64,{base64}";
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading logo: {ex.Message}");
                 return "";
             }
         }

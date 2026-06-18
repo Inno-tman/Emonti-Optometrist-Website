@@ -10,89 +10,33 @@
 namespace Emonti_Optometrist_Website
 {
 
-
     public partial class BookAppointment
     {
 
-        /// <summary>
-        /// pnlMessage control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlMessage;
 
-        /// <summary>
-        /// lblMessage control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
         protected global::System.Web.UI.WebControls.Label lblMessage;
 
-        /// <summary>
-        /// ddlOptometrist control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlAppointmentType;
+
         protected global::System.Web.UI.WebControls.DropDownList ddlOptometrist;
 
-        /// <summary>
-        /// rfvOptometrist control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvOptometrist;
+        protected global::System.Web.UI.HtmlControls.HtmlInputText inputDate;
 
-        /// <summary>
-        /// calAppointment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Calendar calAppointment;
+        protected global::System.Web.UI.HtmlControls.HtmlSelect ddlTimeSlot;
 
-        /// <summary>
-        /// lblSelectedDate control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblSelectedDate;
+        protected global::System.Web.UI.WebControls.HiddenField hfCustomerName;
 
-        /// <summary>
-        /// hfSelectedTime control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfCustomerEmail;
+
+        protected global::System.Web.UI.WebControls.HiddenField hfCustomerPhone;
+
         protected global::System.Web.UI.WebControls.HiddenField hfSelectedTime;
 
-        /// <summary>
-        /// btnCancel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfRebooking;
+
         protected global::System.Web.UI.WebControls.Button btnCancel;
 
-        /// <summary>
-        /// btnBookAppointment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnBookAppointment;
     }
 }
