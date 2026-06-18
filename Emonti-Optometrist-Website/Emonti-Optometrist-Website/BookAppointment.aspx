@@ -155,6 +155,7 @@
 </asp:Content>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
+    <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>
     <section class="booking-hero">
         <div class="container">
             <h1>Book an Appointment</h1>
@@ -263,6 +264,8 @@
         function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
 
         function checkAvailability() {
+            var statusEl = document.getElementById('availabilityStatus');
+            var btn = document.getElementById('<%= btnBookAppointment.ClientID %>');
             var date = getVal('<%= inputDate.ClientID %>');
             var time = getVal('ddlTimeSlot');
             var optometrist = getVal('<%= ddlOptometrist.ClientID %>');
@@ -270,14 +273,12 @@
             var custId = window.__custId || '';
 
             if (!apptType || !date || !time || !optometrist) {
-                statusEl.className = 'availability-status';
-                statusEl.style.display = 'none';
+                if (statusEl) { statusEl.className = 'availability-status'; statusEl.style.display = 'none'; }
                 if (btn) btn.disabled = true;
                 return;
             }
 
-            statusEl.className = 'availability-status visible';
-            statusEl.innerHTML = '<span class="spinner"></span> Checking availability...';
+            if (statusEl) { statusEl.className = 'availability-status visible'; statusEl.innerHTML = '<span class="spinner"></span> Checking availability...'; }
             if (btn) btn.disabled = true;
 
             var url = '/CheckAvailability.ashx?date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time) + '&optometristId=' + encodeURIComponent(optometrist) + '&custId=' + encodeURIComponent(custId);
