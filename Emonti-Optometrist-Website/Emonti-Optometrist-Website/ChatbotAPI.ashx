@@ -1,11 +1,11 @@
 <%@ WebHandler Language="C#" Class="ChatbotAPI" %>
 
+using Emonti_Optometrist_Website.Models;
 using System;
 using System.Web;
 using System.Web.Script.Serialization;
 using System.Collections.Generic;
 using System.Linq;
-using Emonti_Optometrist_Website.Models;
 
 /// <summary>
 /// API endpoint for chatbot functionality
@@ -13,11 +13,13 @@ using Emonti_Optometrist_Website.Models;
 public class ChatbotAPI : IHttpHandler
 {
     private readonly FAQDatabase _faqDatabase;
+    private readonly AIChatService _aiService;
     private readonly JavaScriptSerializer _jsonSerializer;
 
     public ChatbotAPI()
     {
         _faqDatabase = new FAQDatabase();
+        _aiService = new AIChatService();
         _jsonSerializer = new JavaScriptSerializer();
     }
 
@@ -91,28 +93,39 @@ public class ChatbotAPI : IHttpHandler
         var responseTime = (int)(DateTime.Now - startTime).TotalMilliseconds;
 
         string botResponse;
-        float confidence = 0f;
+        bool aiPowered = false;
 
         if (bestMatch != null)
         {
             botResponse = bestMatch.Answer;
-            confidence = 0.8f; // High confidence for keyword matches
+        }
+        else if (_aiService.IsConfigured)
+        {
+            var faqs = _faqDatabase.GetActiveFAQs();
+            var aiResponse = _aiService.GetAIResponse(userMessage, faqs);
+            if (!string.IsNullOrEmpty(aiResponse))
+            {
+                botResponse = aiResponse;
+                aiPowered = true;
+            }
+            else
+            {
+                botResponse = GetFallbackResponse(userMessage.ToLower());
+            }
         }
         else
         {
             botResponse = GetFallbackResponse(userMessage.ToLower());
-            confidence = 0.2f; // Low confidence for fallback
         }
 
         // Log conversation
-        _faqDatabase.LogConversation(sessionId, userMessage, botResponse, confidence, responseTime);
+        _faqDatabase.LogConversation(sessionId, userMessage, botResponse, aiPowered ? 0.9f : 0.2f, responseTime);
 
         context.Response.Write(_jsonSerializer.Serialize(new
         {
             success = true,
             message = botResponse,
-            confidence = confidence,
-            responseTime = responseTime,
+            aiPowered = aiPowered,
             sessionId = sessionId
         }));
     }

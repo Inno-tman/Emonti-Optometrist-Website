@@ -433,8 +433,10 @@ class FAQChatbot {
             
             // Add bot response with slight delay
             setTimeout(() => {
-                this.addMessage('bot', response);
-                this.messageHistory.push({ type: 'bot', content: response, timestamp: new Date() });
+                const botText = typeof response === 'object' ? response.message : response;
+                const aiPowered = typeof response === 'object' ? response.aiPowered : false;
+                this.addMessage('bot', botText, aiPowered);
+                this.messageHistory.push({ type: 'bot', content: botText, timestamp: new Date() });
                 
                 // Remove loading state
                 this.elements.container.classList.remove('chatbot-loading');
@@ -469,7 +471,7 @@ class FAQChatbot {
         }
 
         // Fall back to local keyword matching
-        return this.findLocalAnswer(message);
+        return { message: this.findLocalAnswer(message), aiPowered: false };
     }
 
     /**
@@ -498,7 +500,7 @@ class FAQChatbot {
             throw new Error(data.message || 'API request failed');
         }
         
-        return data.message || 'I\'m sorry, I couldn\'t process your request.';
+        return { message: data.message, aiPowered: data.aiPowered || false };
     }
 
     /**
@@ -580,7 +582,7 @@ class FAQChatbot {
     /**
      * Add message to chat
      */
-    addMessage(type, text) {
+    addMessage(type, text, aiPowered) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chatbot-message ${type}`;
         
@@ -595,6 +597,13 @@ class FAQChatbot {
         const textSpan = document.createElement('span');
         textSpan.textContent = text;
         messageDiv.appendChild(textSpan);
+        
+        if (type === 'bot' && aiPowered) {
+            const aiBadge = document.createElement('span');
+            aiBadge.className = 'chatbot-ai-badge';
+            aiBadge.textContent = 'AI';
+            messageDiv.appendChild(aiBadge);
+        }
         
         const timestampSpan = document.createElement('span');
         timestampSpan.className = 'chatbot-message-timestamp';
