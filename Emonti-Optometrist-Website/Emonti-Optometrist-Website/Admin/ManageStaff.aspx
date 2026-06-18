@@ -80,7 +80,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
         <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert" style="padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.85rem;"></asp:Panel>
         <div class="section-card">
             <div class="section-header"><i class="fas fa-users" style="color:#667eea;"></i><h2>All Staff Members</h2></div>
-            <asp:GridView ID="gvStaff" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" OnRowDeleting="gvStaff_RowDeleting" DataKeyNames="Staff_ID">
+            <asp:GridView ID="gvStaff" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Staff_ID">
                 <Columns>
                     <asp:BoundField DataField="Staff_Name" HeaderText="Name" />
                     <asp:BoundField DataField="Staff_Email" HeaderText="Email" />
