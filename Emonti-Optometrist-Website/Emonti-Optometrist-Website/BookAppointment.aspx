@@ -931,6 +931,96 @@
                 transform: rotate(360deg);
             }
         }
+        
+        /* ===== STEP PROGRESS INDICATOR ===== */
+        .step-progress {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 500;
+        }
+        .step-item .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-circle {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+        .step-item.active {
+            color: #667eea;
+        }
+        .step-item.completed .step-circle {
+            background: #28a745;
+        }
+        .step-item.completed {
+            color: #28a745;
+        }
+        .step-connector {
+            width: 40px;
+            height: 2px;
+            background: #e0e0e0;
+            align-self: center;
+        }
+        .step-connector.completed {
+            background: #28a745;
+        }
+        
+        /* ===== BOOK BUTTON DISABLED STATE ===== */
+        .btn-book.disabled {
+            background: #ccc !important;
+            animation: none !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            box-shadow: none !important;
+            pointer-events: none;
+        }
+        .btn-book.disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ===== SECTION STATUS INDICATOR ===== */
+        .section-status {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .section-status.valid { color: #28a745; }
+        .section-status.invalid { color: #dc3545; }
+        
+        /* ===== NO TIME SLOTS MESSAGE ===== */
+        .no-slots-message {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-size: 0.95rem;
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #e0e0e0;
+        }
     </style>
     
     <!-- Modal Popup JavaScript Functions - Load Early -->
@@ -1040,8 +1130,24 @@
         </div>
     </div>
 
-    <!-- Booking Form -->
+    <!-- Step Progress Indicator -->
     <div class="booking-container">
+        <div class="step-progress">
+            <div class="step-item" id="step1">
+                <div class="step-circle">1</div>
+                <span>Optometrist</span>
+            </div>
+            <div class="step-connector" id="conn1"></div>
+            <div class="step-item" id="step2">
+                <div class="step-circle">2</div>
+                <span>Date & Time</span>
+            </div>
+            <div class="step-connector" id="conn2"></div>
+            <div class="step-item" id="step3">
+                <div class="step-circle">3</div>
+                <span>Confirm</span>
+            </div>
+        </div>
         <div class="booking-form">
             <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert">
                 <asp:Label ID="lblMessage" runat="server"></asp:Label>
@@ -1062,6 +1168,7 @@
                         <asp:RequiredFieldValidator ID="rfvOptometrist" runat="server" ControlToValidate="ddlOptometrist" 
                             ErrorMessage="Please select an optometrist" CssClass="text-danger" Display="Dynamic"></asp:RequiredFieldValidator>
                     </div>
+                    <div id="statusOptometrist" class="section-status invalid">✗ Optometrist not selected</div>
                 </div>
 
             </div>
@@ -1086,8 +1193,10 @@
                         </div>
                         <asp:HiddenField ID="hfSelectedTime" runat="server" />
                     </div>
+                    <div id="statusDateTime" class="section-status invalid">✗ Date and time not selected</div>
                 </div>
             </div>
+
 
 
             <!-- Appointment Summary -->
@@ -1110,24 +1219,79 @@
             <!-- Form Actions -->
             <div class="form-actions">
                 <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-cancel" OnClick="btnCancel_Click" CausesValidation="false" />
-                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book" OnClick="btnBookAppointment_Click" />
+                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book disabled" OnClick="btnBookAppointment_Click" UseSubmitBehavior="false" />
             </div>
         </div>
     </div>
 
     <script type="text/javascript">
+        // ===== BOOK BUTTON STATE MANAGER =====
+        function setBookButtonState() {
+            var btn = document.getElementById('<%= btnBookAppointment.ClientID %>');
+            var ddl = document.getElementById('<%= ddlOptometrist.ClientID %>');
+            var hf = document.getElementById('<%= hfSelectedTime.ClientID %>');
+            var optSelected = ddl && ddl.value !== '';
+            var dateSelected = true;
+            var timeSelected = hf && hf.value !== '';
+            
+            // Check if date is selected via calendar
+            var calTables = document.querySelectorAll('.appointment-calendar table');
+            if (calTables.length > 0) {
+                var selectedCells = document.querySelectorAll('.appointment-calendar .selected');
+                dateSelected = selectedCells.length > 0;
+            }
+            
+            var canBook = optSelected && dateSelected && timeSelected;
+            
+            if (btn) {
+                if (canBook) {
+                    btn.classList.remove('disabled');
+                    btn.disabled = false;
+                } else {
+                    btn.classList.add('disabled');
+                    btn.disabled = true;
+                }
+            }
+            
+            // Update step progress
+            var s1 = document.getElementById('step1');
+            var s2 = document.getElementById('step2');
+            var s3 = document.getElementById('step3');
+            var c1 = document.getElementById('conn1');
+            var c2 = document.getElementById('conn2');
+            
+            if (s1) { s1.className = 'step-item' + (optSelected ? ' completed' : ''); }
+            if (s2) { s2.className = 'step-item' + (timeSelected ? ' completed' : ''); }
+            if (s3) { s3.className = 'step-item' + (canBook ? ' active' : ''); }
+            if (c1) { c1.className = 'step-connector' + (optSelected ? ' completed' : ''); }
+            if (c2) { c2.className = 'step-connector' + (timeSelected ? ' completed' : ''); }
+            
+            // Update section status indicators
+            var st1 = document.getElementById('statusOptometrist');
+            var st2 = document.getElementById('statusDateTime');
+            if (st1) {
+                st1.className = 'section-status ' + (optSelected ? 'valid' : 'invalid');
+                st1.innerHTML = optSelected ? '✓ Optometrist selected' : '✗ Optometrist not selected';
+            }
+            if (st2) {
+                st2.className = 'section-status ' + (timeSelected ? 'valid' : 'invalid');
+                st2.innerHTML = timeSelected ? '✓ Date and time selected' : (dateSelected ? '✗ Please select a time slot' : '✗ Date and time not selected');
+            }
+        }
+        
         // Wait for page to load
         window.addEventListener('DOMContentLoaded', function () {
             
             // ===== RESET BUTTON STATE ON PAGE LOAD =====
             // In case of postback, reset any loading states
-            const bookButton = document.querySelector('.btn-book');
+            var bookButton = document.querySelector('.btn-book');
             if (bookButton) {
                 bookButton.classList.remove('loading');
                 bookButton.style.pointerEvents = '';
                 bookButton.style.opacity = '';
-                bookButton.disabled = false;
             }
+            // Let setBookButtonState handle the disabled state
+            setBookButtonState();
             
             // ===== SCROLL REVEAL ANIMATIONS =====
             const revealElements = document.querySelectorAll('.form-section, .summary-section, .form-actions');
@@ -1163,6 +1327,11 @@
                     // Add selected class to clicked slot
                     e.target.classList.add('selected');
                     
+                    // Update book button state
+                    if (typeof setBookButtonState === 'function') {
+                        setTimeout(setBookButtonState, 50);
+                    }
+                    
                     // Add a subtle animation
                     e.target.style.animation = 'pulse 0.3s ease';
                     setTimeout(function() {
@@ -1170,6 +1339,17 @@
                     }, 300);
                 }
             });
+            
+            // ===== MUTATION OBSERVER FOR DYNAMIC TIME SLOTS =====
+            var timeSlotsContainer = document.getElementById('timeSlots');
+            if (timeSlotsContainer) {
+                var slotObserver = new MutationObserver(function() {
+                    if (typeof setBookButtonState === 'function') {
+                        setBookButtonState();
+                    }
+                });
+                slotObserver.observe(timeSlotsContainer, { childList: true, subtree: true });
+            }
             
             // ===== FORM INPUT ANIMATIONS =====
             const formInputs = document.querySelectorAll('.form-group input, .form-group select, .form-group textarea');

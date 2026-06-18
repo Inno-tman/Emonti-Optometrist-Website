@@ -429,6 +429,24 @@ namespace Emonti_Optometrist_Website.Account
         protected global::System.Web.UI.WebControls.RegularExpressionValidator revPostalCode;
 
         /// <summary>
+        /// rbHasMedicalAidYes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbHasMedicalAidYes;
+
+        /// <summary>
+        /// rbHasMedicalAidNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbHasMedicalAidNo;
+
+        /// <summary>
         /// btnCreateAccount control.
         /// </summary>
         /// <remarks>

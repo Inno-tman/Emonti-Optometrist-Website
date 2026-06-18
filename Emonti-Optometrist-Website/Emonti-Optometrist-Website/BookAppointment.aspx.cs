@@ -185,8 +185,14 @@ namespace Emonti_Optometrist_Website
             }
             else
             {
-                // Clear summary if optometrist is deselected
-                string clearScript = "document.getElementById('summaryOptometrist').textContent = 'Please select an optometrist';";
+                // Clear summary and time slots if optometrist is deselected
+                string clearScript = @"
+                    document.getElementById('summaryOptometrist').textContent = 'Please select an optometrist';
+                    document.getElementById('summaryTime').textContent = 'Please select a time';
+                    document.getElementById('timeSlots').innerHTML = '';
+                    document.getElementById('" + hfSelectedTime.ClientID + @"').value = '';
+                    if (typeof setBookButtonState === 'function') setBookButtonState();
+                ";
                 ScriptManager.RegisterStartupScript(this, GetType(), "ClearOptometristSummary", clearScript, true);
             }
         }
@@ -265,11 +271,28 @@ namespace Emonti_Optometrist_Website
                                     this.classList.add('selected');
                                     document.getElementById('{hfSelectedTime.ClientID}').value = '{timeId}';
                                     document.getElementById('summaryTime').textContent = '{timeSlot}';
+                                    if (typeof setBookButtonState === 'function') setBookButtonState();
                                 }});" : "")}
                                 timeSlots.appendChild(slot);
                             ";
                             ScriptManager.RegisterStartupScript(this, GetType(), $"AddSlot_{timeId}", addSlotScript, true);
                         }
+                        
+                        // After all slots are rendered, update button state
+                        string finalScript = "if (typeof setBookButtonState === 'function') setTimeout(setBookButtonState, 50);";
+                        ScriptManager.RegisterStartupScript(this, GetType(), "FinalSlotState", finalScript, true);
+                        
+                        // Check if no slots were added and show message
+                        string noSlotsCheck = @"
+                            setTimeout(function() {
+                                var ts = document.getElementById('timeSlots');
+                                if (ts && ts.children.length === 0) {
+                                    ts.innerHTML = '<div class=""no-slots-message"">No available time slots for this date. Please try another date.</div>';
+                                    if (typeof setBookButtonState === 'function') setBookButtonState();
+                                }
+                            }, 100);
+                        ";
+                        ScriptManager.RegisterStartupScript(this, GetType(), "NoSlotsCheck", noSlotsCheck, true);
                     }
                 }
             }

@@ -211,7 +211,7 @@
                                     <i class="fas fa-heart"></i> Wishlist
                                 </asp:LinkButton>
                                 <div class="dropdown-divider"></div>
-                                <asp:LinkButton ID="btnLogout" runat="server" CssClass="dropdown-item logout-item" OnClick="btnLogout_Click">
+                                <asp:LinkButton ID="btnLogout" runat="server" CssClass="dropdown-item logout-item" OnClick="btnLogout_Click" CausesValidation="false" OnClientClick="if (typeof formChanged !== 'undefined') formChanged = false;">
                                     <i class="fas fa-sign-out-alt"></i> Logout
                                 </asp:LinkButton>
                             </div>
