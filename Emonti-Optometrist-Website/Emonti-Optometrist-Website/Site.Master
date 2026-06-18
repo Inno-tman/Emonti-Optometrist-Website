@@ -262,6 +262,8 @@
 
                 <!-- Staff specific nav (visible only on staff pages when staff logged in) -->
                 <ul class="staff-nav" id="staffNav" runat="server" style="display:none;">
+                    <li><a href="~/Shop.aspx"><i class="fas fa-shopping-bag"></i> Shop</a></li>
+                    <li><a href="~/AppointmentStart.aspx"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
                     <li><a href="~/Reports.aspx"><i class="fas fa-chart-bar"></i> View Report</a></li>
                     <li id="adminDashboardLink" runat="server" visible="false"><a href="~/Admin/Dashboard.aspx"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li id="adminStaffLink" runat="server" visible="false"><a href="~/Admin/ManageStaff.aspx"><i class="fas fa-users-cog"></i> Staff</a></li>
