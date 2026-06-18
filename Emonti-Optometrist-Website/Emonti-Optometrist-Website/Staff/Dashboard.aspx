@@ -322,8 +322,9 @@
             display: flex;
             gap: 0.5rem;
         }
-        
-        .btn-primary {
+
+        .btn-primary, .btn-primary:link, .btn-primary:visited {
+            display: inline-block;
             background: linear-gradient(135deg, #2c5aa0, #1e4080);
             color: white;
             border: none;
@@ -335,6 +336,8 @@
             font-size: 0.9rem;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
         .btn-primary::before {
@@ -351,14 +354,15 @@
         .btn-primary:hover::before {
             left: 100%;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(44, 90, 160, 0.4);
             color: white;
         }
-        
-        .btn-secondary {
+
+        .btn-secondary, .btn-secondary:link, .btn-secondary:visited {
+            display: inline-block;
             background: transparent;
             color: #2c5aa0;
             border: 2px solid #2c5aa0;
@@ -369,8 +373,10 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 0.9rem;
             position: relative;
+            cursor: pointer;
+            white-space: nowrap;
         }
-        
+
         .btn-secondary:hover {
             background: #2c5aa0;
             color: white;

@@ -8,6 +8,7 @@ namespace Emonti_Optometrist_Website
 {
 	public partial class SiteMaster : MasterPage
 	{
+		protected global::System.Web.UI.HtmlControls.HtmlGenericControl mainHeader; // server-side reference to main header
 		protected global::System.Web.UI.HtmlControls.HtmlGenericControl navMenu;
 		protected global::System.Web.UI.HtmlControls.HtmlGenericControl navContainer; // server-side reference to nav container
 		protected global::System.Web.UI.HtmlControls.HtmlGenericControl staffNav; // server-side reference to staff nav
@@ -57,6 +58,12 @@ namespace Emonti_Optometrist_Website
 			{
 				mainFooter.Visible = !isStaffLoggedIn;
 			}
+
+			// Hide header (navbar with Emonti logo) when admin is logged in
+			if (mainHeader != null)
+			{
+				mainHeader.Visible = !showStaffNav;
+			}
 			}
 		}
 
@@ -90,6 +97,12 @@ namespace Emonti_Optometrist_Website
 	if (mainFooter != null)
 	{
 		mainFooter.Visible = !isStaffLoggedIn;
+	}
+
+	// Hide header (navbar with Emonti logo) when admin is logged in
+	if (mainHeader != null)
+	{
+		mainHeader.Visible = !showStaffNav;
 	}
 	
 	// Show admin-only navigation links

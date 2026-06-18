@@ -225,7 +225,7 @@
 <body>
     <form runat="server">
         <!-- Custom Header - Floating Pill Nav Bar (Stitch.money style) -->
-        <header class="header navbar-pill_component" role="banner">
+        <header id="mainHeader" runat="server" class="header navbar-pill_component" role="banner">
             <div class="navbar-pill_container">
                 <asp:HyperLink ID="logoLink" runat="server" NavigateUrl="~/Default.aspx" CssClass="navbar-pill_logo-link logo">
                     <span class="logo-brand">EMONTI</span>
