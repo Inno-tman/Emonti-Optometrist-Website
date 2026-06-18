@@ -21,7 +21,7 @@ namespace Emonti_Optometrist_Website
 
         protected global::System.Web.UI.WebControls.DropDownList ddlOptometrist;
 
-        protected global::System.Web.UI.HtmlControls.HtmlInputText inputDate;
+        protected global::System.Web.UI.HtmlControls.HtmlInputGenericControl inputDate;
 
         protected global::System.Web.UI.HtmlControls.HtmlSelect ddlTimeSlot;
 
