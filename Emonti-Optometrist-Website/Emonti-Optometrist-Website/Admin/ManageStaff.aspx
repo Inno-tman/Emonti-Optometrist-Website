@@ -70,8 +70,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
             <li><a href="ManageStaff.aspx" class="active"><i class="fas fa-users"></i><span>Staff</span></a></li>
             <li><a href="QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
             <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
-            <li class="divider"><a href="../Default.aspx"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a></li>
-            <li><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            <li class="divider"><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
     </aside>
     <main class="admin-main">
@@ -91,7 +90,6 @@ tr:hover td { background: rgba(102,126,234,0.02); }
                             <span class='role-badge <%# Eval("Staff_Role").ToString().ToLower() %>'><%# Eval("Staff_Role") %></span>
                         </ItemTemplate>
                     </asp:TemplateField>
-                    <asp:CheckBoxField DataField="Can_Mark_Attendance" HeaderText="Attendance" ReadOnly="true" />
                     <asp:TemplateField HeaderText="Actions">
                         <ItemTemplate>
                             <asp:Button ID="btnPromote" runat="server" Text="Promote" CommandName="Promote" CommandArgument='<%# Eval("Staff_ID") %>' CssClass="btn btn-success btn-sm" OnClick="btnPromote_Click" Visible='<%# Eval("Staff_Role").ToString() != "Admin" %>' />
@@ -113,9 +111,6 @@ tr:hover td { background: rgba(102,126,234,0.02); }
         <div class="form-group"><label>Email</label><asp:TextBox ID="txtEmail" runat="server" TextMode="Email" /></div>
         <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" Text="Staff123" /></div>
         <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
-        <div class="form-group">
-            <asp:CheckBox ID="chkAttendance" runat="server" Text="Can mark attendance" Checked="true" style="display:flex;align-items:center;gap:0.5rem;" />
-        </div>
         <asp:Label ID="lblAddError" runat="server" ForeColor="Red" Visible="false" style="font-size:0.85rem;" />
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('show'); return false;">Cancel</button>

@@ -846,9 +846,7 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <asp:LinkButton ID="btnViewReports" runat="server" CssClass="btn-primary" OnClick="btnViewReports_Click">
-                            View Reports
-                        </asp:LinkButton>
+                        <a href="../Reports.aspx" class="btn-primary"><i class="fas fa-chart-bar"></i> View Reports</a>
                     </div>
                 </div>
             </div>
@@ -1094,19 +1092,6 @@
         </div>
     </div>
 
-    <!-- BI Reports Modal -->
-    <div id="reportsModal" class="modal">
-        <div class="modal-content" style="max-width: 90%; width: 1000px;">
-            <div class="modal-header">
-                <h2><i class="fas fa-chart-bar"></i> BI Reports</h2>
-                <button type="button" class="close" onclick="closeModal('reportsModal')">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 0; text-align: center;">
-                <iframe title="M3 REPORTS" width="1024" height="1060" src="https://app.powerbi.com/view?r=eyJrIjoiNjA0NjQ4NDctMjI5Ny00NGNiLWFhMDQtNTU2NDhiOWFlZDVlIiwidCI6IjIyNjgyN2Q2LWE5ZDAtNDcwZC04YzE1LWIxNDZiMDE5MmQ1MSIsImMiOjh9" frameborder="0" allowFullScreen="true"></iframe>
-            </div>
-        </div>
-    </div>
-
     <script>
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'block';
@@ -1146,7 +1131,6 @@
             var manageModal = document.getElementById('manageModal');
             var manageAllModal = document.getElementById('manageAllModal');
             var updateTimeslotsModal = document.getElementById('updateTimeslotsModal');
-            var reportsModal = document.getElementById('reportsModal');
             if (event.target == viewAllModal) {
                 viewAllModal.style.display = 'none';
             }
@@ -1158,9 +1142,6 @@
             }
             if (event.target == updateTimeslotsModal) {
                 updateTimeslotsModal.style.display = 'none';
-            }
-            if (event.target == reportsModal) {
-                reportsModal.style.display = 'none';
             }
         }
 

@@ -30,7 +30,7 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Email, Staff_Role, Can_Mark_Attendance FROM Staff ORDER BY Staff_Name", conn))
+                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Email, Staff_Role FROM Staff ORDER BY Staff_Name", conn))
                 {
                     var dt = new DataTable();
                     new SqlDataAdapter(cmd).Fill(dt);
@@ -46,7 +46,6 @@ namespace Emonti_Optometrist_Website.Admin
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
             string role = ddlRole.SelectedValue;
-            bool canMark = chkAttendance.Checked;
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email))
             {
@@ -72,13 +71,12 @@ namespace Emonti_Optometrist_Website.Admin
                     }
                 }
 
-                using (var cmd = new SqlCommand(@"INSERT INTO Staff (Staff_Name, Staff_Email, Staff_Password, Staff_Role, Can_Mark_Attendance) VALUES (@Name, @Email, @Password, @Role, @CanMark)", conn))
+                using (var cmd = new SqlCommand(@"INSERT INTO Staff (Staff_Name, Staff_Email, Staff_Password, Staff_Role) VALUES (@Name, @Email, @Password, @Role)", conn))
                 {
                     cmd.Parameters.AddWithValue("@Name", name);
                     cmd.Parameters.AddWithValue("@Email", email);
                     cmd.Parameters.AddWithValue("@Password", password);
                     cmd.Parameters.AddWithValue("@Role", role);
-                    cmd.Parameters.AddWithValue("@CanMark", canMark);
                     cmd.ExecuteNonQuery();
                 }
             }

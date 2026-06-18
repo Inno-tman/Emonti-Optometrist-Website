@@ -30,10 +30,10 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                string sql = "SELECT ProductID, ProductName, Brand, Price, Stock, Category, Description, ImageURL FROM Products2";
+                string sql = "SELECT Product_ID, Product_Name, Product_Brand, Product_Price, QuantityOnHand, Product_Category, Product_Description, Picture1 FROM Products2";
                 if (!string.IsNullOrEmpty(search))
-                    sql += " WHERE ProductName LIKE @Search OR Brand LIKE @Search OR Category LIKE @Search";
-                sql += " ORDER BY ProductName";
+                    sql += " WHERE Product_Name LIKE @Search OR Product_Brand LIKE @Search OR Product_Category LIKE @Search";
+                sql += " ORDER BY Product_Name";
                 using (var cmd = new SqlCommand(sql, conn))
                 {
                     if (!string.IsNullOrEmpty(search))
@@ -72,7 +72,7 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand(@"INSERT INTO Products2 (ProductName, Brand, Price, Stock, Category, Description, ImageURL) VALUES (@Name, @Brand, @Price, @Stock, @Category, @Desc, @Image)", conn))
+                using (var cmd = new SqlCommand(@"INSERT INTO Products2 (Product_Name, Product_Brand, Product_Price, QuantityOnHand, Product_Category, Product_Description, Picture1) VALUES (@Name, @Brand, @Price, @Stock, @Category, @Desc, @Image)", conn))
                 {
                     cmd.Parameters.AddWithValue("@Name", name);
                     cmd.Parameters.AddWithValue("@Brand", brand);
@@ -96,22 +96,22 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand("SELECT ProductID, ProductName, Brand, Price, Stock, Category, Description, ImageURL FROM Products2 WHERE ProductID = @Id", conn))
+                using (var cmd = new SqlCommand("SELECT Product_ID, Product_Name, Product_Brand, Product_Price, QuantityOnHand, Product_Category, Product_Description, Picture1 FROM Products2 WHERE Product_ID = @Id", conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", productId);
                     using (var reader = cmd.ExecuteReader())
                     {
                         if (reader.Read())
                         {
-                            hfEditId.Value = reader["ProductID"].ToString();
-                            txtEditName.Text = reader["ProductName"].ToString();
-                            txtEditBrand.Text = reader["Brand"].ToString();
-                            txtEditPrice.Text = Convert.ToDecimal(reader["Price"]).ToString("N2");
-                            txtEditStock.Text = reader["Stock"].ToString();
-                            if (!reader.IsDBNull(reader.GetOrdinal("Category")))
-                                ddlEditCategory.SelectedValue = reader["Category"].ToString();
-                            txtEditDesc.Text = reader["Description"]?.ToString() ?? "";
-                            txtEditImage.Text = reader["ImageURL"]?.ToString() ?? "";
+                            hfEditId.Value = reader["Product_ID"].ToString();
+                            txtEditName.Text = reader["Product_Name"].ToString();
+                            txtEditBrand.Text = reader["Product_Brand"].ToString();
+                            txtEditPrice.Text = Convert.ToDecimal(reader["Product_Price"]).ToString("N2");
+                            txtEditStock.Text = reader["QuantityOnHand"].ToString();
+                            if (!reader.IsDBNull(reader.GetOrdinal("Product_Category")))
+                                ddlEditCategory.SelectedValue = reader["Product_Category"].ToString();
+                            txtEditDesc.Text = reader["Product_Description"]?.ToString() ?? "";
+                            txtEditImage.Text = reader["Picture1"]?.ToString() ?? "";
                         }
                     }
                 }
@@ -144,7 +144,7 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand(@"UPDATE Products2 SET ProductName=@Name, Brand=@Brand, Price=@Price, Stock=@Stock, Category=@Category, Description=@Desc, ImageURL=@Image WHERE ProductID=@Id", conn))
+                using (var cmd = new SqlCommand(@"UPDATE Products2 SET Product_Name=@Name, Product_Brand=@Brand, Product_Price=@Price, QuantityOnHand=@Stock, Product_Category=@Category, Product_Description=@Desc, Picture1=@Image WHERE Product_ID=@Id", conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", productId);
                     cmd.Parameters.AddWithValue("@Name", name);
@@ -167,7 +167,7 @@ namespace Emonti_Optometrist_Website.Admin
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand("DELETE FROM Products2 WHERE ProductID = @Id", conn))
+                using (var cmd = new SqlCommand("DELETE FROM Products2 WHERE Product_ID = @Id", conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", productId);
                     cmd.ExecuteNonQuery();
