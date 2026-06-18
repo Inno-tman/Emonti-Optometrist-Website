@@ -304,6 +304,7 @@ namespace Emonti_Optometrist_Website
             {
                 // Get selected appointment ID from form
                 string selectedAppointmentId = Request.Form["selectedAppointment"];
+                string cancelReason = Request.Form["cancelReason"] ?? "";
                 
                 if (string.IsNullOrEmpty(selectedAppointmentId))
                 {
@@ -319,7 +320,7 @@ namespace Emonti_Optometrist_Website
                 }
 
                 // Cancel the appointment (this will also validate again)
-                CancelAppointment(selectedAppointmentId);
+                CancelAppointment(selectedAppointmentId, cancelReason);
                 
                 // Reload the manage appointments list
                 LoadManageAppointments();
@@ -335,7 +336,6 @@ namespace Emonti_Optometrist_Website
             }
             catch (InvalidOperationException ex)
             {
-                // Handle validation errors specifically
                 System.Diagnostics.Debug.WriteLine($"Validation error cancelling appointment: {ex.Message}");
                 ShowMessage(ex.Message, false);
             }
@@ -426,7 +426,7 @@ namespace Emonti_Optometrist_Website
             return false;
         }
 
-        private void CancelAppointment(string appointmentId)
+        private void CancelAppointment(string appointmentId, string reason)
         {
             // Double-check validation before cancelling (safety check)
             if (!CanCancelAppointment(appointmentId))
@@ -436,20 +436,56 @@ namespace Emonti_Optometrist_Website
 
             try
             {
+                string customerEmail = null;
+                string customerName = null;
+                string appointmentDate = null;
+                string appointmentTime = null;
+                string optometristName = null;
+
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    string query = @"
+                    conn.Open();
+
+                    // Fetch customer details before cancelling
+                    using (SqlCommand getInfo = new SqlCommand(@"
+                        SELECT c.Customer_Email, c.Customer_Name, 
+                               a.Appointment_Date, t.Timeslot, 
+                               s.Staff_Name, s.Staff_Surname
+                        FROM Appointment a
+                        INNER JOIN customer c ON a.Cust_ID = c.Cust_ID
+                        LEFT JOIN tblTime t ON a.AppointmentTimeID = t.TimeID
+                        LEFT JOIN Staff s ON a.Staff_ID = s.Staff_ID
+                        WHERE a.Appointment_ID = @Id", conn))
+                    {
+                        getInfo.Parameters.AddWithValue("@Id", appointmentId);
+                        using (SqlDataReader reader = getInfo.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                customerEmail = reader["Customer_Email"]?.ToString();
+                                customerName = reader["Customer_Name"]?.ToString();
+                                appointmentDate = reader["Appointment_Date"] != DBNull.Value
+                                    ? Convert.ToDateTime(reader["Appointment_Date"]).ToString("dddd, MMMM dd, yyyy")
+                                    : "N/A";
+                                appointmentTime = reader["Timeslot"]?.ToString() ?? "N/A";
+                                var staffName = reader["Staff_Name"]?.ToString() ?? "";
+                                var staffSurname = reader["Staff_Surname"]?.ToString() ?? "";
+                                optometristName = $"{staffName} {staffSurname}".Trim();
+                                if (string.IsNullOrEmpty(optometristName)) optometristName = "N/A";
+                            }
+                        }
+                    }
+
+                    // Update status to Cancelled
+                    using (SqlCommand cmd = new SqlCommand(@"
                         UPDATE Appointment 
                         SET Appoinment_Status = 'Cancelled' 
                         WHERE Appointment_ID = @AppointmentId 
                         AND Staff_ID = @StaffId
-                        AND Appoinment_Status != 'Cancelled'";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                        AND Appoinment_Status != 'Cancelled'", conn))
                     {
                         cmd.Parameters.AddWithValue("@AppointmentId", appointmentId);
                         cmd.Parameters.AddWithValue("@StaffId", Session["Staff_ID"]?.ToString());
-                        conn.Open();
                         int rowsAffected = cmd.ExecuteNonQuery();
                         
                         if (rowsAffected == 0)
@@ -458,15 +494,99 @@ namespace Emonti_Optometrist_Website
                         }
                     }
                 }
+
+                // Send cancellation email with reason
+                if (!string.IsNullOrEmpty(customerEmail))
+                {
+                    SendCancellationEmail(customerEmail, customerName, appointmentDate, appointmentTime, optometristName, reason);
+                }
             }
             catch (InvalidOperationException)
             {
-                throw; // Re-throw validation exceptions
+                throw;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error cancelling appointment in database: {ex.Message}");
                 throw;
+            }
+        }
+
+        private void SendCancellationEmail(string customerEmail, string customerName, string appointmentDate, string appointmentTime, string optometristName, string reason)
+        {
+            try
+            {
+                string reasonText = string.IsNullOrWhiteSpace(reason) ? "No reason provided." : reason;
+
+                string logoBase64 = GetLogoBase64();
+
+                string body = $@"<!DOCTYPE html>
+<html>
+<head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1.0""></head>
+<body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
+<tr><td align=""center"">
+<table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
+<tr><td style=""background-color:#6c757d;padding:25px;text-align:center;"">
+<img src=""{logoBase64}"" alt=""Emonti Optometrist"" style=""max-width:350px;height:auto;display:block;margin:0 auto 15px;"" />
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">Appointment Cancelled</h1>
+</td></tr>
+<tr><td style=""padding:30px;"">
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;line-height:1.6;"">Dear {System.Web.HttpUtility.HtmlEncode(customerName ?? "Valued Customer")},</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;line-height:1.6;"">This email confirms that your appointment has been cancelled.</p>
+<div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #6c757d;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Optometrist:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;text-align:right;"">{System.Web.HttpUtility.HtmlEncode(optometristName)}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;text-align:right;"">{appointmentDate}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;text-align:right;"">{System.Web.HttpUtility.HtmlEncode(appointmentTime)}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Reason:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;text-align:right;"">{System.Web.HttpUtility.HtmlEncode(reasonText)}</td></tr>
+</table></div>
+<div style=""background-color:#e7f3ff;border-left:4px solid #2196F3;padding:15px;margin:20px 0;border-radius:4px;text-align:center;"">
+<p style=""margin:0 0 8px 0;color:#1976D2;font-size:15px;font-weight:600;"">Need to reschedule?</p>
+<p style=""margin:0;color:#1565C0;font-size:14px;line-height:1.6;"">We'd be happy to help you book a new appointment. Call us at <a href=""tel:0764631930"" style=""color:#1976D2;text-decoration:underline;font-weight:600;"">076 463 1930</a> or book online.</p>
+</div>
+<p style=""margin:25px 0 0 0;color:#555;font-size:15px;line-height:1.6;"">Thank you for choosing Emonti Optometrist. We hope to serve you in the future!</p>
+</td></tr>
+<tr><td style=""background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;"">
+<p style=""margin:0 0 5px 0;color:#666;font-size:13px;font-weight:600;"">Emonti Optometrist</p>
+<p style=""margin:0;color:#888;font-size:12px;"">Shop 7 New Colonnade, Devereaux Ave, Vincent, East London 5247</p>
+</td></tr>
+</table></td></tr></table></body></html>";
+
+                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
+                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
+                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
+                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
+                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
+                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+
+                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+                {
+                    System.Diagnostics.Debug.WriteLine("SMTP credentials not configured");
+                    return;
+                }
+
+                using (System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(smtpHost, smtpPort))
+                {
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
+                    smtp.EnableSsl = enableSsl;
+                    smtp.Timeout = 30000;
+
+                    using (System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage())
+                    {
+                        message.From = new System.Net.Mail.MailAddress(smtpEmail, smtpFromName);
+                        message.To.Add(customerEmail);
+                        message.Subject = "Appointment Cancelled - Emonti Optometrist";
+                        message.Body = body;
+                        message.IsBodyHtml = true;
+
+                        smtp.Send(message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error sending cancellation email: {ex.Message}");
             }
         }
 
@@ -598,6 +718,7 @@ namespace Emonti_Optometrist_Website
             {
                 // Get selected appointment ID from form
                 string selectedAppointmentId = Request.Form["selectedAllAppointment"];
+                string cancelReason = Request.Form["cancelReasonAll"] ?? "";
                 
                 if (string.IsNullOrEmpty(selectedAppointmentId))
                 {
@@ -613,7 +734,7 @@ namespace Emonti_Optometrist_Website
                 }
 
                 // Cancel the appointment (this will also validate again)
-                CancelAppointment(selectedAppointmentId);
+                CancelAppointment(selectedAppointmentId, cancelReason);
                 
                 // Reload the manage all appointments list
                 LoadManageAllAppointments();
@@ -629,7 +750,6 @@ namespace Emonti_Optometrist_Website
             }
             catch (InvalidOperationException ex)
             {
-                // Handle validation errors specifically
                 System.Diagnostics.Debug.WriteLine($"Validation error cancelling appointment: {ex.Message}");
                 ShowMessage(ex.Message, false);
             }
@@ -1341,6 +1461,22 @@ namespace Emonti_Optometrist_Website
         /// <summary>
         /// Checks if the appointment time slot has passed (for today's appointments)
         /// </summary>
+        private string GetLogoBase64()
+        {
+            try
+            {
+                string logoPath = HttpContext.Current.Server.MapPath("~/Images/Logo/Emonti Logo Banner.png");
+                byte[] imageBytes = System.IO.File.ReadAllBytes(logoPath);
+                string base64 = Convert.ToBase64String(imageBytes);
+                return $"data:image/png;base64,{base64}";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading logo: {ex.Message}");
+                return "";
+            }
+        }
+
         private bool HasAppointmentTimePassed(string timeslot)
         {
             if (string.IsNullOrEmpty(timeslot) || timeslot == "N/A")

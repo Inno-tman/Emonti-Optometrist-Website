@@ -978,6 +978,7 @@
                     <p>You have no future appointments scheduled.</p>
                 </asp:Panel>
                 <div style="margin-top: 2rem; text-align: right;">
+                    <input type="hidden" name="cancelReasonAll" id="cancelReasonAll" value="" />
                     <asp:Button ID="btnCancelAllAppointment" runat="server" 
                         CssClass="btn-cancel-appointment" 
                         Text="Cancel Selected Appointment" 
@@ -1034,6 +1035,7 @@
                     <p>You have no appointments scheduled for today.</p>
                 </asp:Panel>
                 <div style="margin-top: 2rem; text-align: right;">
+                    <input type="hidden" name="cancelReason" id="cancelReason" value="" />
                     <asp:Button ID="btnCancelAppointment" runat="server" 
                         CssClass="btn-cancel-appointment" 
                         Text="Cancel Selected Appointment" 
@@ -1120,7 +1122,10 @@
                 alert('Please select an appointment to cancel.');
                 return false;
             }
-            return confirm('Are you sure you want to cancel this appointment?');
+            var reason = prompt('Enter the reason for cancellation:');
+            if (reason === null) return false;
+            document.getElementById('cancelReason').value = reason;
+            return true;
         }
 
         function confirmCancelAll() {
@@ -1129,7 +1134,10 @@
                 alert('Please select an appointment to cancel.');
                 return false;
             }
-            return confirm('Are you sure you want to cancel this appointment?');
+            var reason = prompt('Enter the reason for cancellation:');
+            if (reason === null) return false;
+            document.getElementById('cancelReasonAll').value = reason;
+            return true;
         }
 
         // Close modal when clicking outside of it
