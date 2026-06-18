@@ -1228,15 +1228,16 @@
     <script type="text/javascript">
         // ===== BOOK BUTTON STATE MANAGER =====
         function setBookButtonState() {
-            var btn = document.querySelector('[id$="_btnBookAppointment"]');
-            var ddl = document.querySelector('[id$="_ddlOptometrist"]') || document.querySelector('select[id*="ddlOptometrist"]');
-            var hf = document.querySelector('[id$="_hfSelectedTime"]') || document.querySelector('input[type="hidden"][id*="hfSelectedTime"]');
-            var optSelected = ddl && ddl.value !== '';
-            var timeSelected = (hf && hf.value !== '') || !!document.querySelector('.time-slot.selected');
+            var ids = window.__ctrlIds || {};
+            var state = window.__bookingState || {};
+            var btn = ids.btn ? document.getElementById(ids.btn) : null;
+            var ddl = ids.ddl ? document.getElementById(ids.ddl) : null;
+            var hf = ids.hf ? document.getElementById(ids.hf) : null;
+            var optSelected = state.optSelected || (ddl && ddl.value !== '');
+            var timeSelected = state.timeSelected || (hf && hf.value !== '') || !!document.querySelector('.time-slot.selected');
             
-            // Check if date is selected via calendar
-            var selectedCell = document.querySelector('.appointment-calendar .selected, .appointment-calendar .today');
-            var dateSelected = !!selectedCell;
+            // Date is always selected (calendar starts with today and never deselects)
+            var dateSelected = true;
             
             var canBook = optSelected && dateSelected && timeSelected;
             

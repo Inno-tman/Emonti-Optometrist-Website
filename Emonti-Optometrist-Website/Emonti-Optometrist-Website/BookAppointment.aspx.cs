@@ -30,6 +30,20 @@ namespace Emonti_Optometrist_Website
                 // On postback, restore summary state from server controls
                 RestoreSummaryState();
             }
+
+            // Pass exact client IDs and current state to JavaScript
+            string cidScript = $@"
+window.__ctrlIds = {{
+    btn: '{btnBookAppointment.ClientID}',
+    ddl: '{ddlOptometrist.ClientID}',
+    hf: '{hfSelectedTime.ClientID}'
+}};
+window.__bookingState = {{
+    optSelected: {(ddlOptometrist.SelectedValue != "" ? "true" : "false")},
+    timeSelected: {(hfSelectedTime.Value != "" ? "true" : "false")}
+}};
+";
+            ScriptManager.RegisterStartupScript(this, GetType(), "ControlIds", cidScript, true);
         }
 
         private void InitializePage()
@@ -191,6 +205,7 @@ namespace Emonti_Optometrist_Website
                     document.getElementById('summaryTime').textContent = 'Please select a time';
                     document.getElementById('timeSlots').innerHTML = '';
                     document.getElementById('" + hfSelectedTime.ClientID + @"').value = '';
+                    if (window.__bookingState) { window.__bookingState.optSelected = false; window.__bookingState.timeSelected = false; }
                     if (typeof setBookButtonState === 'function') setBookButtonState();
                 ";
                 ScriptManager.RegisterStartupScript(this, GetType(), "ClearOptometristSummary", clearScript, true);
@@ -271,6 +286,7 @@ namespace Emonti_Optometrist_Website
                                     this.classList.add('selected');
                                     document.getElementById('{hfSelectedTime.ClientID}').value = '{timeId}';
                                     document.getElementById('summaryTime').textContent = '{timeSlot}';
+                                    if (window.__bookingState) window.__bookingState.timeSelected = true;
                                     if (typeof setBookButtonState === 'function') setBookButtonState();
                                 }});" : "")}
                                 timeSlots.appendChild(slot);
