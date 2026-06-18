@@ -1220,7 +1220,7 @@
             <!-- Form Actions -->
             <div class="form-actions">
                 <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-cancel" OnClick="btnCancel_Click" CausesValidation="false" />
-                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book disabled" OnClick="btnBookAppointment_Click" UseSubmitBehavior="false" OnClientClick="return !this.classList.contains('disabled');" />
+                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book disabled" OnClick="btnBookAppointment_Click" UseSubmitBehavior="false" OnClientClick="if (this.classList.contains('disabled')) return false;" />
             </div>
         </div>
     </div>
@@ -1232,7 +1232,7 @@
             var ddl = document.querySelector('[id$="_ddlOptometrist"]') || document.querySelector('select[id*="ddlOptometrist"]');
             var hf = document.querySelector('[id$="_hfSelectedTime"]') || document.querySelector('input[type="hidden"][id*="hfSelectedTime"]');
             var optSelected = ddl && ddl.value !== '';
-            var timeSelected = hf && hf.value !== '';
+            var timeSelected = (hf && hf.value !== '') || !!document.querySelector('.time-slot.selected');
             
             // Check if date is selected via calendar
             var selectedCell = document.querySelector('.appointment-calendar .selected, .appointment-calendar .today');
