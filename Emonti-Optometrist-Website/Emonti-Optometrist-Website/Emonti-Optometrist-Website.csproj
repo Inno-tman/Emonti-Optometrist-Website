@@ -534,6 +534,7 @@
     <Compile Include="Models\OrderItem.cs" />
     <Compile Include="Models\OrderDatabase.cs" />
     <Compile Include="Models\FAQModels.cs" />
+    <Compile Include="Models\AIChatService.cs" />
     <Compile Include="Orders.aspx.cs">
       <DependentUpon>Orders.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
