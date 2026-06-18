@@ -29,6 +29,17 @@ namespace Emonti_Optometrist_Website.Account
             }
         }
 
+        protected void Page_PreRender(object sender, EventArgs e)
+        {
+            // Keep validators consistent with main member visibility on postback
+            rfvMainMemberName.Enabled = rbIsMainMemberNo.Checked;
+            rfvMainMemberSurname.Enabled = rbIsMainMemberNo.Checked;
+            rfvMainMemberID.Enabled = rbIsMainMemberNo.Checked;
+            revMainMemberName.Enabled = rbIsMainMemberNo.Checked;
+            revMainMemberSurname.Enabled = rbIsMainMemberNo.Checked;
+            revMainMemberID.Enabled = rbIsMainMemberNo.Checked;
+        }
+
         protected void ValidateDateOfBirth(object source, ServerValidateEventArgs args)
         {
             if (string.IsNullOrEmpty(args.Value))
@@ -353,6 +364,10 @@ namespace Emonti_Optometrist_Website.Account
 
         private bool ValidateMedicalInfo()
         {
+            // Skip medical validation if no medical aid info provided
+            if (string.IsNullOrWhiteSpace(txtMedicalAid.Text) && string.IsNullOrWhiteSpace(txtMedicalAidNumber.Text))
+                return true;
+
             if (rbIsMainMemberNo.Checked)
             {
                 if (string.IsNullOrWhiteSpace(txtMainMemberName.Text) || !Regex.IsMatch(txtMainMemberName.Text, @"^[a-zA-Z\s\-']{2,50}$"))

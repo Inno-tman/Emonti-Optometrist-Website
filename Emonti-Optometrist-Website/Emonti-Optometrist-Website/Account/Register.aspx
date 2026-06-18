@@ -342,11 +342,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Medical Aid Provider</label>
-                        <asp:TextBox ID="txtMedicalAid" runat="server" placeholder="e.g., Discovery Health" />
+                        <asp:TextBox ID="txtMedicalAid" runat="server" placeholder="e.g., Discovery Health" onkeyup="toggleMedicalAidSection();" onchange="toggleMedicalAidSection();" />
                     </div>
                     <div class="form-group">
                         <label>Medical Aid Number</label>
-                        <asp:TextBox ID="txtMedicalAidNumber" runat="server" placeholder="Enter your medical aid number" />
+                        <asp:TextBox ID="txtMedicalAidNumber" runat="server" placeholder="Enter your medical aid number" onkeyup="toggleMedicalAidSection();" onchange="toggleMedicalAidSection();" />
                         <asp:RegularExpressionValidator ID="revMedicalAidNumber" runat="server" 
                             ControlToValidate="txtMedicalAidNumber" 
                             ValidationExpression="^[a-zA-Z0-9\s\-_\.]{3,50}$" 
@@ -356,7 +356,8 @@
                     </div>
                 </div>
                 
-                <!-- Main Member Question -->
+                <!-- Main Member Section (shown only when medical aid info is entered) -->
+                <div id="medicalAidSection" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Are you the main member on this medical aid? <span class="required">*</span></label>
@@ -438,6 +439,25 @@
                     </div>
                 </div>
             </div>
+
+            <script>
+                function toggleMedicalAidSection() {
+                    var provider = document.getElementById('<%= txtMedicalAid.ClientID %>');
+                    var number = document.getElementById('<%= txtMedicalAidNumber.ClientID %>');
+                    var section = document.getElementById('medicalAidSection');
+                    if (provider.value.trim() !== '' || number.value.trim() !== '') {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                        document.getElementById('<%= rbIsMainMemberYes.ClientID %>').checked = true;
+                        document.getElementById('<%= rbIsMainMemberNo.ClientID %>').checked = false;
+                        document.getElementById('<%= mainMemberDetails.ClientID %>').style.display = 'none';
+                    }
+                }
+                window.onload = function() {
+                    toggleMedicalAidSection();
+                };
+            </script>
 
             <!-- Address Information Section -->
             <div class="form-section">
