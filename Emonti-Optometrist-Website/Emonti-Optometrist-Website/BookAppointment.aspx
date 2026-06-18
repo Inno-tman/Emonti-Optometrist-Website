@@ -1219,7 +1219,7 @@
             <!-- Form Actions -->
             <div class="form-actions">
                 <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-cancel" OnClick="btnCancel_Click" CausesValidation="false" />
-                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book disabled" OnClick="btnBookAppointment_Click" UseSubmitBehavior="false" />
+                <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-book disabled" OnClick="btnBookAppointment_Click" UseSubmitBehavior="false" OnClientClick="return !this.classList.contains('disabled');" />
             </div>
         </div>
     </div>
@@ -1227,29 +1227,23 @@
     <script type="text/javascript">
         // ===== BOOK BUTTON STATE MANAGER =====
         function setBookButtonState() {
-            var btn = document.getElementById('<%= btnBookAppointment.ClientID %>');
-            var ddl = document.getElementById('<%= ddlOptometrist.ClientID %>');
-            var hf = document.getElementById('<%= hfSelectedTime.ClientID %>');
+            var btn = document.querySelector('[id$="_btnBookAppointment"]');
+            var ddl = document.querySelector('[id$="_ddlOptometrist"]');
+            var hf = document.querySelector('[id$="_hfSelectedTime"]');
             var optSelected = ddl && ddl.value !== '';
-            var dateSelected = true;
             var timeSelected = hf && hf.value !== '';
             
-            // Check if date is selected via calendar
-            var calTables = document.querySelectorAll('.appointment-calendar table');
-            if (calTables.length > 0) {
-                var selectedCells = document.querySelectorAll('.appointment-calendar .selected');
-                dateSelected = selectedCells.length > 0;
-            }
+            // Check if date is selected via calendar (look for .selected or today class)
+            var selectedCell = document.querySelector('.appointment-calendar .selected, .appointment-calendar .today');
+            var dateSelected = !!selectedCell;
             
             var canBook = optSelected && dateSelected && timeSelected;
             
             if (btn) {
                 if (canBook) {
                     btn.classList.remove('disabled');
-                    btn.disabled = false;
                 } else {
                     btn.classList.add('disabled');
-                    btn.disabled = true;
                 }
             }
             
