@@ -222,7 +222,29 @@ namespace Emonti_Optometrist_Website
 			btnRegister.Visible = !hideAuthButtons;
 			btnMyAccount.Visible = isLoggedIn; // Only show for customer login, not staff
 
-		
+			// Update My Account button text with user's name (like .NET 8)
+			if (isLoggedIn && btnMyAccount.Visible)
+			{
+				string firstName = Session["FirstName"]?.ToString() ?? "";
+				string lastName = Session["LastName"]?.ToString() ?? "";
+				string email = Session["UserEmail"]?.ToString() ?? "";
+				string displayName = !string.IsNullOrEmpty(firstName)
+					? $"{firstName} {lastName}".Trim()
+					: email;
+				string initial = firstName.Length > 0 ? firstName[0].ToString().ToUpper() : "?";
+				btnMyAccount.Text = $"<span class=\"user-avatar\">{initial}</span> {displayName} <i class=\"fas fa-chevron-down\"></i>";
+
+				// Populate dropdown header with user info
+				string dropdownScript = $@"
+					var ddAvatar = document.getElementById('dropdownUserAvatar');
+					var ddName = document.getElementById('dropdownUserName');
+					var ddEmail = document.getElementById('dropdownUserEmail');
+					if (ddAvatar) ddAvatar.textContent = '{initial}';
+					if (ddName) ddName.textContent = '{displayName.Replace("'", "\\'")}';
+					if (ddEmail) ddEmail.textContent = '{email.Replace("'", "\\'")}';
+				";
+				ScriptManager.RegisterStartupScript(this, GetType(), "DropdownUserInfo", dropdownScript, true);
+			}
 		}
 
 		public bool IsUserLoggedIn()

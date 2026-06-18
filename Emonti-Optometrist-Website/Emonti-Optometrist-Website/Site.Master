@@ -134,7 +134,90 @@
         .staff-nav { list-style: none; margin: 0; padding: 0; display: flex; gap: 1rem; align-items: center; }
         .staff-nav li a { display: inline-block; padding: 0.5rem 0.75rem; border-radius: 12px; background: transparent; color: #333; text-decoration: none; }
         .staff-nav li a:hover { background: rgba(0,0,0,0.05); }
+        
+        /* User avatar circle (navbar button) */
+        .user-avatar {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; font-size: 0.75rem; font-weight: 700;
+            margin-right: 0.4rem; vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .auth-button.dropdown-toggle .user-avatar {
+            display: inline-flex;
+        }
+        
+        /* Dropdown header (user info) */
+        .dropdown-header {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #f8f9ff, #f0f2ff);
+            border-radius: 8px 8px 0 0;
+        }
+        .dropdown-user-avatar {
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; font-size: 1.1rem; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .dropdown-user-info {
+            display: flex; flex-direction: column; min-width: 0;
+        }
+        .dropdown-user-name {
+            font-weight: 600; font-size: 0.9rem; color: #333;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .dropdown-user-email {
+            font-size: 0.75rem; color: #888;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        /* ===== Global form polish (ported from .NET 8) ===== */
+        .form-group input:hover, .form-group select:hover, .form-group textarea:hover {
+            border-color: #b0b8e0;
+            background-color: #f8f9ff;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+            background-color: #fff;
+        }
+        
+        /* Pill-shaped primary buttons */
+        .btn-primary, input[type="submit"], .btn-login, .btn-register, .btn-save, .btn-book {
+            border-radius: 50px !important;
+        }
+        
+        /* ===== Scroll reveal animation (ported from .NET 8) ===== */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
+    <script type="text/javascript">
+        // Scroll reveal IntersectionObserver (ported from .NET 8)
+        document.addEventListener('DOMContentLoaded', function() {
+            var revealElements = document.querySelectorAll('.scroll-reveal');
+            if (revealElements.length > 0 && 'IntersectionObserver' in window) {
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                revealElements.forEach(function(el) { observer.observe(el); });
+            }
+        });
+    </script>
     
     <asp:ContentPlaceHolder ID="HeadContent" runat="server">
     </asp:ContentPlaceHolder>
@@ -193,11 +276,18 @@
                         <!-- My Account Dropdown (shown when logged in) -->
                         <div class="dropdown" style="position: relative; display: inline-block;">
                             <asp:LinkButton ID="btnMyAccount" runat="server" CssClass="auth-button dropdown-toggle" OnClientClick="toggleMyAccountDropdown(event); return false;" Visible="false">
-                                <i class="fas fa-user-circle"></i> My Account <i class="fas fa-chevron-down"></i>
                             </asp:LinkButton>
                             
                             <!-- Dropdown Menu -->
                             <div id="myAccountDropdown" class="dropdown-menu" style="display: none;">
+                                <div class="dropdown-header" id="dropdownUserHeader">
+                                    <span class="dropdown-user-avatar" id="dropdownUserAvatar"></span>
+                                    <div class="dropdown-user-info">
+                                        <span class="dropdown-user-name" id="dropdownUserName">My Account</span>
+                                        <span class="dropdown-user-email" id="dropdownUserEmail"></span>
+                                    </div>
+                                </div>
+                                <div class="dropdown-divider"></div>
                                 <asp:LinkButton ID="btnPersonalDetails" runat="server" CssClass="dropdown-item" OnClick="btnPersonalDetails_Click">
                                     <i class="fas fa-user"></i> Personal Details
                                 </asp:LinkButton>
