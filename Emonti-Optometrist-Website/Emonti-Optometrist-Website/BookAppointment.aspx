@@ -173,7 +173,6 @@
         .custom-dd-options::-webkit-scrollbar-thumb:hover { background: #b0b8d0; }
 
         /* ===== CUSTOM DATE PICKER ===== */
-        input#inputDate { display: none !important; }
         .custom-dp { position: relative; width: 100%; }
         .custom-dp-trigger {
             display: flex; align-items: center; justify-content: space-between;
@@ -328,11 +327,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
-                        <input type="date" id="inputDate" runat="server" class="form-control" min="" />
+                        <input type="date" id="inputDate" runat="server" class="form-control" min="" style="display:none" />
                         <div class="custom-dp" id="customDp">
                             <div class="custom-dp-trigger" tabindex="0">
                                 <span class="custom-dp-text">Select Date</span>
-                                <span class="custom-dp-icon">📅</span>
+                                <i class="fas fa-calendar-alt custom-dp-icon"></i>
                             </div>
                             <div class="custom-dp-popup" id="dpPopup"></div>
                         </div>
