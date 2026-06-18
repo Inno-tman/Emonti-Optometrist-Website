@@ -76,7 +76,6 @@ tr:hover td { background: rgba(102,126,234,0.02); }
     <main class="admin-main">
         <div class="admin-header">
             <h1><i class="fas fa-users"></i> Manage Staff</h1>
-            <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('show'); return false;"><i class="fas fa-plus"></i> Add Staff</button>
         </div>
         <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert" style="padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.85rem;"></asp:Panel>
         <div class="section-card">
@@ -92,34 +91,100 @@ tr:hover td { background: rgba(102,126,234,0.02); }
                     </asp:TemplateField>
                     <asp:TemplateField HeaderText="Actions">
                         <ItemTemplate>
-                            <asp:Button ID="btnPromote" runat="server" Text="Promote" CommandName="Promote" CommandArgument='<%# Eval("Staff_ID") %>' CssClass="btn btn-success btn-sm" OnClick="btnPromote_Click" Visible='<%# Eval("Staff_Role").ToString() != "Admin" %>' />
-                            <asp:Button ID="btnDelete" runat="server" Text="Delete" CommandName="Delete" CssClass="btn btn-danger btn-sm" Visible='<%# Eval("Staff_Role").ToString() != "Admin" %>' OnClientClick="return confirm('Are you sure you want to delete this staff member?');" />
+                            <button type="button" class="btn btn-primary btn-sm" onclick="openEditModal(<%# Eval("Staff_ID") %>, '<%# Eval("Staff_Name") %>', '<%# Eval("Staff_Email") %>', '<%# Eval("Staff_Role") %>'); return false;">Edit</button>
                         </ItemTemplate>
                     </asp:TemplateField>
                 </Columns>
                 <EmptyDataTemplate><div class="empty-state"><i class="fas fa-users"></i><p>No staff members found.</p></div></EmptyDataTemplate>
             </asp:GridView>
         </div>
+        <div style="text-align:center;margin-top:1.5rem;margin-bottom:2rem;">
+            <button class="btn btn-primary" onclick="openAddModal(); return false;"><i class="fas fa-plus"></i> Add New Staff</button>
+        </div>
     </main>
 </div>
 
-<!-- Add Staff Modal -->
+<!-- Staff Management Modal -->
 <div id="addModal" class="modal-overlay">
     <div class="modal">
-        <h3><i class="fas fa-user-plus" style="color:#667eea;"></i> Add New Staff</h3>
+        <h3><i class="fas fa-user-plus" id="modalTitle" style="color:#667eea;"></i> <span id="modalTitleText">Add New Staff</span></h3>
         <div class="form-group"><label>Name</label><asp:TextBox ID="txtName" runat="server" /></div>
         <div class="form-group"><label>Email</label><asp:TextBox ID="txtEmail" runat="server" TextMode="Email" /></div>
         <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" Text="Staff123" /></div>
         <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
         <asp:Label ID="lblAddError" runat="server" ForeColor="Red" Visible="false" style="font-size:0.85rem;" />
+        <asp:HiddenField ID="hiddenStaffId" runat="server" Value="0" />
+        <asp:HiddenField ID="hiddenMode" runat="server" Value="add" />
         <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('show'); return false;">Cancel</button>
+            <button type="button" id="btnDeleteModal" class="btn btn-danger" onclick="if(confirm('Are you sure you want to delete this staff member?')){performDelete();} return false;" style="display:none;">Delete</button>
+            <button type="button" id="btnPromoteModal" class="btn btn-success" onclick="performPromote(); return false;" style="display:none;">Promote to Admin</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal(); return false;">Cancel</button>
             <asp:Button ID="btnAddStaff" runat="server" Text="Add Staff" CssClass="btn btn-primary" OnClick="btnAddStaff_Click" />
         </div>
     </div>
 </div>
 
-<script>if(window.location.hash=='#openModal'||('<%=Request.Form["__EVENTTARGET"]%>'||'').indexOf('btnAddStaff')>=0){document.getElementById('addModal').classList.add('show');}</script>
+<script>
+if(window.location.hash=='#openModal'||('<%=Request.Form["__EVENTTARGET"]%>'||'').indexOf('btnAddStaff')>=0){document.getElementById('addModal').classList.add('show');}
+
+function openAddModal() {
+    var staffIdField = document.getElementById('<%=hiddenStaffId.ClientID%>');
+    var modeField = document.getElementById('<%=hiddenMode.ClientID%>');
+
+    staffIdField.value = '0';
+    modeField.value = 'add';
+    document.getElementById('<%=txtName.ClientID%>').value = '';
+    document.getElementById('<%=txtEmail.ClientID%>').value = '';
+    document.getElementById('<%=txtPassword.ClientID%>').value = 'Staff123';
+    document.getElementById('<%=ddlRole.ClientID%>').value = 'Staff';
+    document.getElementById('<%=lblAddError.ClientID%>').style.display = 'none';
+    document.getElementById('btnDeleteModal').style.display = 'none';
+    document.getElementById('btnPromoteModal').style.display = 'none';
+    document.getElementById('<%=btnAddStaff.ClientID%>').value = 'Add Staff';
+    document.getElementById('modalTitleText').textContent = 'Add New Staff';
+    document.getElementById('addModal').classList.add('show');
+}
+
+function openEditModal(staffId, name, email, role) {
+    var staffIdField = document.getElementById('<%=hiddenStaffId.ClientID%>');
+    var modeField = document.getElementById('<%=hiddenMode.ClientID%>');
+
+    staffIdField.value = staffId;
+    modeField.value = 'edit';
+    document.getElementById('<%=txtName.ClientID%>').value = name;
+    document.getElementById('<%=txtEmail.ClientID%>').value = email;
+    document.getElementById('<%=txtPassword.ClientID%>').value = 'Staff123';
+    document.getElementById('<%=ddlRole.ClientID%>').value = role;
+    document.getElementById('<%=lblAddError.ClientID%>').style.display = 'none';
+    document.getElementById('<%=btnAddStaff.ClientID%>').value = 'Save Changes';
+    document.getElementById('modalTitleText').textContent = 'Edit Staff Member';
+
+    // Show/hide action buttons based on role
+    if (role !== 'Admin') {
+        document.getElementById('btnPromoteModal').style.display = 'inline-block';
+        document.getElementById('btnDeleteModal').style.display = 'inline-block';
+    } else {
+        document.getElementById('btnPromoteModal').style.display = 'none';
+        document.getElementById('btnDeleteModal').style.display = 'none';
+    }
+
+    document.getElementById('addModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('addModal').classList.remove('show');
+}
+
+function performDelete() {
+    document.getElementById('<%=hiddenMode.ClientID%>').value = 'delete';
+    document.getElementById('<%=btnAddStaff.ClientID%>').click();
+}
+
+function performPromote() {
+    document.getElementById('<%=hiddenMode.ClientID%>').value = 'promote';
+    document.getElementById('<%=btnAddStaff.ClientID%>').click();
+}
+</script>
 
 <div class="admin-footer">&copy; 2026 Emonti Optometrist Admin Panel</div>
 </asp:Content>

@@ -92,16 +92,16 @@ tr:hover td { background: rgba(102,126,234,0.02); }
         <asp:Panel ID="pnlMessage" runat="server" Visible="false" style="padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.85rem;"></asp:Panel>
         <div class="section-card">
             <div class="section-header"><i class="fas fa-box" style="color:#667eea;"></i><h2>All Products</h2></div>
-            <asp:GridView ID="gvProducts" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="ProductID" OnRowDeleting="gvProducts_RowDeleting" OnRowEditing="gvProducts_RowEditing">
+            <asp:GridView ID="gvProducts" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Product_ID" OnRowDeleting="gvProducts_RowDeleting" OnRowEditing="gvProducts_RowEditing">
                 <Columns>
                     <asp:TemplateField HeaderText="Image">
-                        <ItemTemplate><img class="product-img" src='<%# Eval("ImageURL") %>' alt='<%# Eval("ProductName") %>' onerror="this.style.display='none'" /></ItemTemplate>
+                        <ItemTemplate><img class="product-img" src='<%# Eval("Picture1") %>' alt='<%# Eval("Product_Name") %>' onerror="this.style.display='none'" /></ItemTemplate>
                     </asp:TemplateField>
-                    <asp:BoundField DataField="ProductName" HeaderText="Name" />
-                    <asp:BoundField DataField="Brand" HeaderText="Brand" />
-                    <asp:BoundField DataField="Price" HeaderText="Price" DataFormatString="R {0:N2}" />
-                    <asp:BoundField DataField="Stock" HeaderText="Stock" />
-                    <asp:BoundField DataField="Category" HeaderText="Category" />
+                    <asp:BoundField DataField="Product_Name" HeaderText="Name" />
+                    <asp:BoundField DataField="Product_Brand" HeaderText="Brand" />
+                    <asp:BoundField DataField="Product_Price" HeaderText="Price" DataFormatString="R {0:N2}" />
+                    <asp:BoundField DataField="QuantityOnHand" HeaderText="Stock" />
+                    <asp:BoundField DataField="Product_Category" HeaderText="Category" />
                     <asp:TemplateField HeaderText="Actions">
                         <ItemTemplate>
                             <asp:Button ID="btnEdit" runat="server" Text="Edit" CommandName="Edit" CssClass="btn btn-warning btn-sm" />

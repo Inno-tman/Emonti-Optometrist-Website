@@ -42,6 +42,24 @@ namespace Emonti_Optometrist_Website.Admin
 
         protected void btnAddStaff_Click(object sender, EventArgs e)
         {
+            string mode = Request.Form["__VIEWSTATE"] != null ? (Request.Form["ctl00$MainContent$hiddenMode"] ?? "add") : "add";
+            string staffIdStr = Request.Form["ctl00$MainContent$hiddenStaffId"] ?? "0";
+            int staffId = 0;
+            int.TryParse(staffIdStr, out staffId);
+
+            // Handle different operations based on mode
+            if (mode == "delete")
+            {
+                DeleteStaff(staffId);
+                return;
+            }
+            else if (mode == "promote")
+            {
+                PromoteStaff(staffId);
+                return;
+            }
+
+            // Handle Add or Edit
             string name = txtName.Text.Trim();
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
@@ -55,6 +73,19 @@ namespace Emonti_Optometrist_Website.Admin
             }
 
             string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+
+            if (mode == "add")
+            {
+                AddNewStaff(connStr, name, email, password, role);
+            }
+            else if (mode == "edit")
+            {
+                UpdateStaff(connStr, staffId, name, email, password, role);
+            }
+        }
+
+        private void AddNewStaff(string connStr, string name, string email, string password, string role)
+        {
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
@@ -81,29 +112,55 @@ namespace Emonti_Optometrist_Website.Admin
                 }
             }
 
-            Response.Redirect("ManageStaff.aspx");
+            LoadStaff();
+            ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
         }
 
-        protected void btnPromote_Click(object sender, EventArgs e)
+        private void UpdateStaff(string connStr, int staffId, string name, string email, string password, string role)
         {
-            Button btn = (Button)sender;
-            int staffId = Convert.ToInt32(btn.CommandArgument);
-            string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
             using (var conn = new SqlConnection(connStr))
             {
                 conn.Open();
-                using (var cmd = new SqlCommand("UPDATE Staff SET Staff_Role = 'Admin' WHERE Staff_ID = @Id", conn))
+
+                // Check if email is already taken by another user
+                using (var check = new SqlCommand("SELECT COUNT(*) FROM Staff WHERE Staff_Email = @Email AND Staff_ID != @Id", conn))
                 {
+                    check.Parameters.AddWithValue("@Email", email);
+                    check.Parameters.AddWithValue("@Id", staffId);
+                    int exists = (int)check.ExecuteScalar();
+                    if (exists > 0)
+                    {
+                        lblAddError.Text = "A staff member with this email already exists.";
+                        lblAddError.Visible = true;
+                        return;
+                    }
+                }
+
+                // Update staff information
+                string updateQuery = string.IsNullOrEmpty(password) || password == "Staff123"
+                    ? "UPDATE Staff SET Staff_Name = @Name, Staff_Email = @Email, Staff_Role = @Role WHERE Staff_ID = @Id"
+                    : "UPDATE Staff SET Staff_Name = @Name, Staff_Email = @Email, Staff_Password = @Password, Staff_Role = @Role WHERE Staff_ID = @Id";
+
+                using (var cmd = new SqlCommand(updateQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    if (!string.IsNullOrEmpty(password) && password != "Staff123")
+                    {
+                        cmd.Parameters.AddWithValue("@Password", password);
+                    }
+                    cmd.Parameters.AddWithValue("@Role", role);
                     cmd.Parameters.AddWithValue("@Id", staffId);
                     cmd.ExecuteNonQuery();
                 }
             }
-            Response.Redirect("ManageStaff.aspx");
+
+            LoadStaff();
+            ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
         }
 
-        protected void gvStaff_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        private void DeleteStaff(int staffId)
         {
-            int staffId = Convert.ToInt32(gvStaff.DataKeys[e.RowIndex].Value);
             string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
             using (var conn = new SqlConnection(connStr))
             {
@@ -116,11 +173,8 @@ namespace Emonti_Optometrist_Website.Admin
                 }
                 if (currentRole == "Admin")
                 {
-                    pnlMessage.Visible = true;
-                    pnlMessage.CssClass = "alert alert-danger";
-                    pnlMessage.Controls.Clear();
-                    pnlMessage.Controls.Add(new LiteralControl("Cannot delete another admin."));
-                    LoadStaff();
+                    lblAddError.Text = "Cannot delete another admin.";
+                    lblAddError.Visible = true;
                     return;
                 }
                 using (var cmd = new SqlCommand("DELETE FROM Staff WHERE Staff_ID = @Id", conn))
@@ -129,7 +183,26 @@ namespace Emonti_Optometrist_Website.Admin
                     cmd.ExecuteNonQuery();
                 }
             }
-            Response.Redirect("ManageStaff.aspx");
+
+            LoadStaff();
+            ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
+        }
+
+        private void PromoteStaff(int staffId)
+        {
+            string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+            using (var conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = new SqlCommand("UPDATE Staff SET Staff_Role = 'Admin' WHERE Staff_ID = @Id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", staffId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            LoadStaff();
+            ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
         }
     }
 }
