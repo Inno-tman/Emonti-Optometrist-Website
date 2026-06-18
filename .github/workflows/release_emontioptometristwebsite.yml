@@ -106,8 +106,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host "FTPS upload complete."
           # Extract via .NET (Expand-Archive fails in Kudu sandbox - no console handle)
-          $extractCmd = 'Add-Type -AssemblyName System.IO.Compression.FileSystem; Get-ChildItem D:\home\site\wwwroot -Exclude deploy.zip | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 3; [System.IO.Compression.ZipFile]::ExtractToDirectory(''D:\home\site\wwwroot\deploy.zip'', ''D:\home\site\wwwroot''); Write-Output ''Extraction OK'''
-          $body = @{command = $extractCmd; dir = 'site\wwwroot'} | ConvertTo-Json
+          # Write script to file first to avoid cmd.exe interfering with PowerShell commands
+          $scriptContent = @"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+Get-ChildItem D:\home\site\wwwroot -Exclude deploy.zip | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 3
+[System.IO.Compression.ZipFile]::ExtractToDirectory('D:\home\site\wwwroot\deploy.zip', 'D:\home\site\wwwroot')
+Write-Output 'Extraction OK'
+"@
+          Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/extract.ps1" -Method PUT -Body $scriptContent -ContentType "text/plain" -Headers $headers -UseBasicParsing
+          $runCmd = 'powershell -ExecutionPolicy Bypass -File D:\home\site\wwwroot\extract.ps1'
+          $body = @{command = $runCmd; dir = 'site\wwwroot'} | ConvertTo-Json
           $extracted = $false
           for ($i = 0; $i -lt 3; $i++) {
             try {
@@ -117,6 +126,8 @@ jobs:
               else { Write-Host "Extraction issue (exit $($rjson.ExitCode)): $($rjson.Error)"; Start-Sleep -Seconds 5 }
             } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
           }
+          # Clean up script file
+          try { $delBody = @{command = 'del D:\home\site\wwwroot\extract.ps1'; dir = 'site\wwwroot'} | ConvertTo-Json; Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $delBody -ContentType "application/json" -Headers $headers -UseBasicParsing } catch {}
           if (-not $extracted) { Write-Host "ERROR: Extraction failed after 3 retries"; exit 1 }
           # Clean up zip
           try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing } catch {
