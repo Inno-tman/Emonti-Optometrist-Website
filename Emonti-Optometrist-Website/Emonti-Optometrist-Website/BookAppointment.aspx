@@ -176,84 +176,82 @@
                     <span><strong>Rebooking:</strong> You are rebooking a missed appointment. The same optometrist has been pre-selected.</span>
                 </div>
 
-                <form method="post" runat="server" id="bookingForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-stethoscope"></i> Appointment Type <span class="required">*</span></label>
-                            <div class="select-wrapper">
-                                <asp:DropDownList ID="ddlAppointmentType" runat="server">
-                                    <asp:ListItem Text="-- Select Type --" Value=""></asp:ListItem>
-                                    <asp:ListItem Text="Eye Exam" Value="Eye Exam"></asp:ListItem>
-                                    <asp:ListItem Text="Contact Lens Fitting" Value="Contact Lens Fitting"></asp:ListItem>
-                                    <asp:ListItem Text="Follow-up" Value="Follow-up"></asp:ListItem>
-                                    <asp:ListItem Text="Other" Value="Other"></asp:ListItem>
-                                </asp:DropDownList>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-user-md"></i> Optometrist <span class="required">*</span></label>
-                            <div class="select-wrapper">
-                                <asp:DropDownList ID="ddlOptometrist" runat="server">
-                                    <asp:ListItem Text="-- Select Optometrist --" Value=""></asp:ListItem>
-                                </asp:DropDownList>
-                            </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-stethoscope"></i> Appointment Type <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <asp:DropDownList ID="ddlAppointmentType" runat="server">
+                                <asp:ListItem Text="-- Select Type --" Value=""></asp:ListItem>
+                                <asp:ListItem Text="Eye Exam" Value="Eye Exam"></asp:ListItem>
+                                <asp:ListItem Text="Contact Lens Fitting" Value="Contact Lens Fitting"></asp:ListItem>
+                                <asp:ListItem Text="Follow-up" Value="Follow-up"></asp:ListItem>
+                                <asp:ListItem Text="Other" Value="Other"></asp:ListItem>
+                            </asp:DropDownList>
                         </div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
-                            <input type="date" id="inputDate" runat="server" class="form-control" min="" />
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
-                            <div class="select-wrapper">
-                                <select id="ddlTimeSlot">
-                                    <option value="">-- Select Time --</option>
-                                    <optgroup label="Morning">
-                                        <option value="1">08:00 - 09:00</option>
-                                        <option value="2">09:00 - 10:00</option>
-                                        <option value="3">10:00 - 11:00</option>
-                                        <option value="4">11:00 - 12:00</option>
-                                    </optgroup>
-                                    <optgroup label="Afternoon">
-                                        <option value="5">13:00 - 14:00</option>
-                                        <option value="6">14:00 - 15:00</option>
-                                        <option value="7">15:00 - 16:00</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div id="availabilityStatus" class="availability-status"></div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user-md"></i> Optometrist <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <asp:DropDownList ID="ddlOptometrist" runat="server">
+                                <asp:ListItem Text="-- Select Optometrist --" Value=""></asp:ListItem>
+                            </asp:DropDownList>
                         </div>
                     </div>
+                </div>
 
-                    <div class="customer-info-box" id="customerInfoBox">
-                        <h4><i class="fas fa-user"></i> Your Details</h4>
-                        <div class="customer-info-row">
-                            <span class="info-label"><i class="fas fa-user-circle"></i> Name:</span>
-                            <span class="info-value" id="infoName">Loading...</span>
-                        </div>
-                        <div class="customer-info-row">
-                            <span class="info-label"><i class="fas fa-envelope"></i> Email:</span>
-                            <span class="info-value" id="infoEmail">Loading...</span>
-                        </div>
-                        <div class="customer-info-row">
-                            <span class="info-label"><i class="fas fa-phone"></i> Phone:</span>
-                            <span class="info-value" id="infoPhone">Loading...</span>
-                        </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Preferred Date <span class="required">*</span></label>
+                        <input type="date" id="inputDate" runat="server" class="form-control" min="" />
                     </div>
-
-                    <div class="form-actions">
-                        <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-cancel" OnClick="btnCancel_Click" CausesValidation="false" />
-                        <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-submit" OnClick="btnBookAppointment_Click" disabled="disabled" />
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
+                        <div class="select-wrapper">
+                            <select id="ddlTimeSlot">
+                                <option value="">-- Select Time --</option>
+                                <optgroup label="Morning">
+                                    <option value="1">08:00 - 09:00</option>
+                                    <option value="2">09:00 - 10:00</option>
+                                    <option value="3">10:00 - 11:00</option>
+                                    <option value="4">11:00 - 12:00</option>
+                                </optgroup>
+                                <optgroup label="Afternoon">
+                                    <option value="5">13:00 - 14:00</option>
+                                    <option value="6">14:00 - 15:00</option>
+                                    <option value="7">15:00 - 16:00</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div id="availabilityStatus" class="availability-status"></div>
                     </div>
+                </div>
 
-                    <asp:HiddenField ID="hfCustomerName" runat="server" />
-                    <asp:HiddenField ID="hfCustomerEmail" runat="server" />
-                    <asp:HiddenField ID="hfCustomerPhone" runat="server" />
-                    <asp:HiddenField ID="hfSelectedTime" runat="server" />
-                    <asp:HiddenField ID="hfRebooking" runat="server" />
-                </form>
+                <div class="customer-info-box" id="customerInfoBox">
+                    <h4><i class="fas fa-user"></i> Your Details</h4>
+                    <div class="customer-info-row">
+                        <span class="info-label"><i class="fas fa-user-circle"></i> Name:</span>
+                        <span class="info-value" id="infoName">Loading...</span>
+                    </div>
+                    <div class="customer-info-row">
+                        <span class="info-label"><i class="fas fa-envelope"></i> Email:</span>
+                        <span class="info-value" id="infoEmail">Loading...</span>
+                    </div>
+                    <div class="customer-info-row">
+                        <span class="info-label"><i class="fas fa-phone"></i> Phone:</span>
+                        <span class="info-value" id="infoPhone">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-cancel" OnClick="btnCancel_Click" CausesValidation="false" />
+                    <asp:Button ID="btnBookAppointment" runat="server" Text="Book Appointment" CssClass="btn-submit" OnClick="btnBookAppointment_Click" disabled="disabled" />
+                </div>
+
+                <asp:HiddenField ID="hfCustomerName" runat="server" />
+                <asp:HiddenField ID="hfCustomerEmail" runat="server" />
+                <asp:HiddenField ID="hfCustomerPhone" runat="server" />
+                <asp:HiddenField ID="hfSelectedTime" runat="server" />
+                <asp:HiddenField ID="hfRebooking" runat="server" />
             </div>
         </div>
     </section>
