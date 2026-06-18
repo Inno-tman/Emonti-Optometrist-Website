@@ -8,8 +8,8 @@ window.ChatbotConfig = {
     apiEndpoint: '/ChatbotAPI.ashx',
     
     // UI Configuration
-    enableTypingIndicator: true,
-    typingDelay: 1000,
+    enableTypingIndicator: false,
+    typingDelay: 0,
     maxMessageLength: 500,
     enableSuggestions: true,
     enableSound: false,

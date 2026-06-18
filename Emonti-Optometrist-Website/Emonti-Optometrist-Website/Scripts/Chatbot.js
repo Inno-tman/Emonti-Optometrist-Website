@@ -391,65 +391,23 @@ class FAQChatbot {
         const message = this.elements.input.value.trim();
         if (!message || this.isTyping) return;
 
-        // Add loading state
-        this.elements.container.classList.add('chatbot-loading');
-
-        // Add user message
         this.addMessage('user', message);
         this.messageHistory.push({ type: 'user', content: message, timestamp: new Date() });
 
-        // Clear input with animation
-        this.elements.input.style.transform = 'scale(0.98)';
-        setTimeout(() => {
-            this.elements.input.value = '';
-            this.elements.input.style.transform = '';
-        }, 100);
-        
+        this.elements.input.value = '';
         this.elements.send.disabled = true;
-        
-        // Animate send button
-        this.elements.send.style.transform = 'scale(0.9) rotate(-10deg)';
-        setTimeout(() => {
-            this.elements.send.style.transform = '';
-        }, 200);
-
-        // Show typing indicator
-        if (this.config.enableTypingIndicator) {
-            setTimeout(() => {
-                this.showTypingIndicator();
-            }, 300);
-        }
 
         try {
-            // Get response with delay for better UX
-            const delay = this.config.typingDelay || 1000;
-            const [response] = await Promise.all([
-                this.getResponse(message),
-                new Promise(resolve => setTimeout(resolve, delay))
-            ]);
+            const response = await this.getResponse(message);
             
-            // Hide typing indicator
-            this.hideTypingIndicator();
-            
-            // Add bot response with slight delay
-            setTimeout(() => {
-                const botText = typeof response === 'object' ? response.message : response;
-                const aiPowered = typeof response === 'object' ? response.aiPowered : false;
-                this.addMessage('bot', botText, aiPowered);
-                this.messageHistory.push({ type: 'bot', content: botText, timestamp: new Date() });
-                
-                // Remove loading state
-                this.elements.container.classList.remove('chatbot-loading');
-            }, 200);
+            const botText = typeof response === 'object' ? response.message : response;
+            const aiPowered = typeof response === 'object' ? response.aiPowered : false;
+            this.addMessage('bot', botText, aiPowered);
+            this.messageHistory.push({ type: 'bot', content: botText, timestamp: new Date() });
 
         } catch (error) {
             console.error('Chatbot error:', error);
-            this.hideTypingIndicator();
-            this.elements.container.classList.remove('chatbot-loading');
-            
-            setTimeout(() => {
-                this.addMessage('bot', 'Sorry, I encountered an error. Please try again.');
-            }, 200);
+            this.addMessage('bot', 'Sorry, I encountered an error. Please try again.');
         }
 
         this.elements.input.focus();
