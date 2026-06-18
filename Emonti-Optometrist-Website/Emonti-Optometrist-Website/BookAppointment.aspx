@@ -121,6 +121,56 @@
             border-radius: 6px; margin: 1px 4px;
         }
         optgroup option:hover { background: #f0f2ff; }
+
+        /* ===== CUSTOM DROPDOWN OVERRIDE ===== */
+        select.booking-dropdown { display: none !important; }
+        .custom-dd {
+            position: relative; width: 100%;
+        }
+        .custom-dd-trigger {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px;
+            font-size: 0.95rem; font-family: inherit; cursor: pointer;
+            background: #fafbff; color: #aaa; min-height: 48px;
+            transition: all 0.25s ease; box-sizing: border-box;
+            user-select: none; -webkit-user-select: none;
+        }
+        .custom-dd-trigger.has-val { color: #2c3e50; }
+        .custom-dd-trigger:hover { border-color: #b0b8e0; background: #f0f2ff; }
+        .custom-dd.open .custom-dd-trigger,
+        .custom-dd-trigger:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); background: #fff; }
+        .custom-dd-arrow {
+            font-size: 0.6rem; color: #667eea; transition: transform 0.25s ease;
+            flex-shrink: 0; margin-left: 0.5rem;
+        }
+        .custom-dd.open .custom-dd-arrow { transform: rotate(180deg); }
+        .custom-dd-options {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: #fff; border: 1px solid #e0e5f0;
+            border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            max-height: 260px; overflow-y: auto; padding: 0.35rem;
+            display: none;
+        }
+        .custom-dd.open .custom-dd-options { display: block; }
+        .custom-dd-opt {
+            padding: 0.65rem 1rem; border-radius: 10px; cursor: pointer;
+            color: #2c3e50; font-size: 0.9rem; transition: all 0.15s ease;
+        }
+        .custom-dd-opt:hover { background: #f0f2ff; }
+        .custom-dd-opt.sel {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+            font-weight: 600;
+        }
+        .custom-dd-group {
+            padding: 0.5rem 1rem 0.25rem; font-size: 0.75rem; font-weight: 700;
+            color: #667eea; text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid #e8ecf4; margin-bottom: 0.2rem;
+        }
+        .custom-dd-group:not(:first-child) { margin-top: 0.3rem; }
+        .custom-dd-options::-webkit-scrollbar { width: 5px; }
+        .custom-dd-options::-webkit-scrollbar-track { background: transparent; }
+        .custom-dd-options::-webkit-scrollbar-thumb { background: #d0d5e0; border-radius: 3px; }
+        .custom-dd-options::-webkit-scrollbar-thumb:hover { background: #b0b8d0; }
         
         .availability-status {
             margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px;
@@ -218,7 +268,7 @@
                     <div class="form-group">
                         <label><i class="fas fa-stethoscope"></i> Appointment Type <span class="required">*</span></label>
                         <div class="select-wrapper">
-                            <asp:DropDownList ID="ddlAppointmentType" runat="server">
+                                <asp:DropDownList ID="ddlAppointmentType" runat="server" CssClass="booking-dropdown">
                                 <asp:ListItem Text="-- Select Type --" Value=""></asp:ListItem>
                                 <asp:ListItem Text="Eye Exam" Value="Eye Exam"></asp:ListItem>
                                 <asp:ListItem Text="Contact Lens Fitting" Value="Contact Lens Fitting"></asp:ListItem>
@@ -230,8 +280,8 @@
                     <div class="form-group">
                         <label><i class="fas fa-user-md"></i> Optometrist <span class="required">*</span></label>
                         <div class="select-wrapper">
-                            <asp:DropDownList ID="ddlOptometrist" runat="server">
-                                <asp:ListItem Text="-- Select Optometrist --" Value=""></asp:ListItem>
+                                <asp:DropDownList ID="ddlOptometrist" runat="server" CssClass="booking-dropdown">
+                                    <asp:ListItem Text="-- Select Optometrist --" Value=""></asp:ListItem>
                             </asp:DropDownList>
                         </div>
                     </div>
@@ -245,7 +295,7 @@
                     <div class="form-group">
                         <label><i class="fas fa-clock"></i> Preferred Time <span class="required">*</span></label>
                         <div class="select-wrapper">
-                                <select id="ddlTimeSlot" name="ddlTimeSlot">
+                                <select id="ddlTimeSlot" name="ddlTimeSlot" class="booking-dropdown">
                                 <option value="">-- Select Time --</option>
                                 <optgroup label="Morning">
                                     <option value="1">08:00 - 09:00</option>
@@ -397,9 +447,105 @@
             if (timeSelect) timeSelect.addEventListener('input', checkAvailability);
             if (timeSelect) timeSelect.addEventListener('click', checkAvailability);
 
+            // Initialize custom dropdowns (replaces native select with styled version)
+            initCustomDropdowns();
+
             // Safety check after all handlers are set
             setTimeout(checkAvailability, 1000);
             console.log('Event handlers wired up, safety timeout set');
+        });
+
+        function initCustomDropdowns() {
+            console.log('initCustomDropdowns: STARTING');
+            var selects = document.querySelectorAll('select.booking-dropdown');
+            console.log('initCustomDropdowns: found ' + selects.length + ' select(s)');
+            if (selects.length === 0) {
+                var all = document.querySelectorAll('select');
+                console.log('All selects in page:', all.length);
+                all.forEach(function(s) { console.log('  id=' + s.id + ' class="' + s.className + '"'); });
+                return;
+            }
+            selects.forEach(function(select) {
+                if (select.dataset.customDropdown) return;
+                select.dataset.customDropdown = 'true';
+                var parent = select.parentNode;
+                if (!parent) { console.log('ERROR: select has no parentNode'); return; }
+
+                var wrapper = document.createElement('div');
+                wrapper.className = 'custom-dd';
+
+                var trigger = document.createElement('div');
+                trigger.className = 'custom-dd-trigger';
+                trigger.tabIndex = 0;
+
+                var textSpan = document.createElement('span');
+                textSpan.className = 'custom-dd-text';
+
+                var arrowSpan = document.createElement('span');
+                arrowSpan.className = 'custom-dd-arrow';
+                arrowSpan.textContent = '▼';
+
+                trigger.appendChild(textSpan);
+                trigger.appendChild(arrowSpan);
+                wrapper.appendChild(trigger);
+
+                var optDiv = document.createElement('div');
+                optDiv.className = 'custom-dd-options';
+                wrapper.appendChild(optDiv);
+
+                var selText = '';
+                Array.prototype.forEach.call(select.options, function(opt) {
+                    if (opt.tagName === 'OPTGROUP') {
+                        var gl = document.createElement('div');
+                        gl.className = 'custom-dd-group';
+                        gl.textContent = opt.label;
+                        optDiv.appendChild(gl);
+                        Array.prototype.forEach.call(opt.children, function(co) { addOpt(co); });
+                    } else {
+                        addOpt(opt);
+                    }
+                });
+
+                function addOpt(opt) {
+                    var el = document.createElement('div');
+                    el.className = 'custom-dd-opt';
+                    el.textContent = opt.text;
+                    if (opt.selected) { el.classList.add('sel'); selText = opt.text; }
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        select.value = opt.value;
+                        textSpan.textContent = opt.text;
+                        trigger.classList.add('has-val');
+                        optDiv.querySelectorAll('.custom-dd-opt').forEach(function(o) { o.classList.remove('sel'); });
+                        el.classList.add('sel');
+                        wrapper.classList.remove('open');
+                        var ev = document.createEvent('HTMLEvents');
+                        ev.initEvent('change', true, false);
+                        select.dispatchEvent(ev);
+                    });
+                    optDiv.appendChild(el);
+                }
+
+                textSpan.textContent = selText || (select.options[0] ? select.options[0].text : '-- Select --');
+                if (selText) trigger.classList.add('has-val');
+
+                trigger.onclick = function(e) {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-dd.open').forEach(function(d) {
+                        if (d !== wrapper) d.classList.remove('open');
+                    });
+                    wrapper.classList.toggle('open');
+                };
+
+                parent.insertBefore(wrapper, select.nextSibling);
+                console.log('Custom dropdown created for select id=' + select.id);
+            });
+        }
+        // Close custom dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.custom-dd.open').forEach(function(d) {
+                d.classList.remove('open');
+            });
         });
 
         // Backup: also check on window load (in case DOMContentLoaded missed something)
