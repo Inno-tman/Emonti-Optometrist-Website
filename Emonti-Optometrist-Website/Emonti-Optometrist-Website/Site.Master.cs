@@ -407,9 +407,11 @@ namespace Emonti_Optometrist_Website
 			var adminDashboardLink = FindControl("adminDashboardLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
 			var adminStaffLink = FindControl("adminStaffLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
 			var adminCustomersLink = FindControl("adminCustomersLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			var adminReportsLink = FindControl("adminReportsLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
 			if (adminDashboardLink != null) adminDashboardLink.Visible = isAdmin;
 			if (adminStaffLink != null) adminStaffLink.Visible = isAdmin;
 			if (adminCustomersLink != null) adminCustomersLink.Visible = isAdmin;
+			if (adminReportsLink != null) adminReportsLink.Visible = isAdmin;
 		}
 	}
 }

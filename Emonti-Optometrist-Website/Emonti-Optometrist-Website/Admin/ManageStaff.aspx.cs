@@ -21,8 +21,7 @@ namespace Emonti_Optometrist_Website.Admin
                 Response.Redirect("~/Staff/Dashboard.aspx");
                 return;
             }
-            if (!IsPostBack)
-                LoadStaff();
+            if (!IsPostBack) LoadStaff();
         }
 
         private void LoadStaff()
@@ -30,82 +29,109 @@ namespace Emonti_Optometrist_Website.Admin
             string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
             using (var conn = new SqlConnection(connStr))
             {
-                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Surname, Staff_Email, Staff_Role FROM Staff ORDER BY Staff_Name", conn))
+                conn.Open();
+                using (var cmd = new SqlCommand("SELECT Staff_ID, Staff_Name, Staff_Email, Staff_Role, Can_Mark_Attendance FROM Staff ORDER BY Staff_Name", conn))
                 {
-                    using (var da = new SqlDataAdapter(cmd))
-                    {
-                        DataTable dt = new DataTable();
-                        da.Fill(dt);
-                        gvStaff.DataSource = dt;
-                        gvStaff.DataBind();
-                    }
+                    var dt = new DataTable();
+                    new SqlDataAdapter(cmd).Fill(dt);
+                    gvStaff.DataSource = dt;
+                    gvStaff.DataBind();
                 }
             }
         }
 
-        protected void gvStaff_RowCommand(object sender, GridViewCommandEventArgs e)
+        protected void btnAddStaff_Click(object sender, EventArgs e)
         {
-            if (e.CommandName == "DeleteStaff")
-            {
-                DeleteStaff(e.CommandArgument.ToString());
-                LoadStaff();
-            }
-        }
+            string name = txtName.Text.Trim();
+            string email = txtEmail.Text.Trim();
+            string password = txtPassword.Text.Trim();
+            string role = ddlRole.SelectedValue;
+            bool canMark = chkAttendance.Checked;
 
-        private void DeleteStaff(string staffId)
-        {
-            string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
-            using (var conn = new SqlConnection(connStr))
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email))
             {
-                using (var cmd = new SqlCommand("DELETE FROM Staff WHERE Staff_ID = @Id", conn))
-                {
-                    cmd.Parameters.AddWithValue("@Id", staffId);
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
-                }
-            }
-            ShowMessage("Staff member deleted successfully.", "alert-success");
-        }
-
-        protected void btnSaveStaff_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtFirstName.Text) || string.IsNullOrWhiteSpace(txtSurname.Text) ||
-                string.IsNullOrWhiteSpace(txtEmail.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
-            {
-                ShowMessage("Please fill in all fields.", "alert-danger");
+                lblAddError.Text = "Name and email are required.";
+                lblAddError.Visible = true;
                 return;
             }
 
             string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
             using (var conn = new SqlConnection(connStr))
             {
-                using (var cmd = new SqlCommand(
-                    "INSERT INTO Staff (Staff_Name, Staff_Surname, Staff_Email, Staff_Password, Staff_Role) VALUES (@Name, @Surname, @Email, @Password, @Role)", conn))
+                conn.Open();
+
+                using (var check = new SqlCommand("SELECT COUNT(*) FROM Staff WHERE Staff_Email = @Email", conn))
                 {
-                    cmd.Parameters.AddWithValue("@Name", txtFirstName.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Surname", txtSurname.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Password", txtPassword.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Role", ddlRole.SelectedValue);
-                    conn.Open();
+                    check.Parameters.AddWithValue("@Email", email);
+                    int exists = (int)check.ExecuteScalar();
+                    if (exists > 0)
+                    {
+                        lblAddError.Text = "A staff member with this email already exists.";
+                        lblAddError.Visible = true;
+                        return;
+                    }
+                }
+
+                using (var cmd = new SqlCommand(@"INSERT INTO Staff (Staff_Name, Staff_Email, Staff_Password, Staff_Role, Can_Mark_Attendance) VALUES (@Name, @Email, @Password, @Role, @CanMark)", conn))
+                {
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    cmd.Parameters.AddWithValue("@Password", password);
+                    cmd.Parameters.AddWithValue("@Role", role);
+                    cmd.Parameters.AddWithValue("@CanMark", canMark);
                     cmd.ExecuteNonQuery();
                 }
             }
 
-            ShowMessage("Staff member added successfully.", "alert-success");
-            LoadStaff();
-            txtFirstName.Text = "";
-            txtSurname.Text = "";
-            txtEmail.Text = "";
-            txtPassword.Text = "";
-            ddlRole.SelectedIndex = 0;
+            Response.Redirect("ManageStaff.aspx");
         }
 
-        private void ShowMessage(string message, string cssClass)
+        protected void btnPromote_Click(object sender, EventArgs e)
         {
-            lblMessage.Text = message;
-            lblMessage.CssClass = "alert " + cssClass;
-            lblMessage.Visible = true;
+            Button btn = (Button)sender;
+            int staffId = Convert.ToInt32(btn.CommandArgument);
+            string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+            using (var conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+                using (var cmd = new SqlCommand("UPDATE Staff SET Staff_Role = 'Admin' WHERE Staff_ID = @Id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", staffId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            Response.Redirect("ManageStaff.aspx");
+        }
+
+        protected void gvStaff_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            int staffId = Convert.ToInt32(gvStaff.DataKeys[e.RowIndex].Value);
+            string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+            using (var conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+                string currentRole = null;
+                using (var getRole = new SqlCommand("SELECT Staff_Role FROM Staff WHERE Staff_ID = @Id", conn))
+                {
+                    getRole.Parameters.AddWithValue("@Id", staffId);
+                    currentRole = getRole.ExecuteScalar()?.ToString();
+                }
+                if (currentRole == "Admin")
+                {
+                    pnlMessage.Visible = true;
+                    pnlMessage.CssClass = "alert alert-danger";
+                    pnlMessage.Controls.Clear();
+                    pnlMessage.Controls.Add(new LiteralControl("Cannot delete another admin."));
+                    LoadStaff();
+                    return;
+                }
+                using (var cmd = new SqlCommand("DELETE FROM Staff WHERE Staff_ID = @Id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@Id", staffId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            Response.Redirect("ManageStaff.aspx");
         }
     }
 }

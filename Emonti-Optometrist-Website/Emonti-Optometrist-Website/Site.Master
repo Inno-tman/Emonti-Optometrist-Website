@@ -255,9 +255,10 @@
                     <li><a href="~/Shop.aspx"><i class="fas fa-shopping-bag"></i> Shop</a></li>
                     <li><a href="~/AppointmentStart.aspx"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
                     <li><a href="~/Reports.aspx"><i class="fas fa-chart-bar"></i> View Report</a></li>
-                    <li id="adminDashboardLink" runat="server" visible="false"><a href="~/Admin/Dashboard.aspx"><i class="fas fa-tachometer-alt"></i> Admin Dashboard</a></li>
-                    <li id="adminStaffLink" runat="server" visible="false"><a href="~/Admin/ManageStaff.aspx"><i class="fas fa-users-cog"></i> Manage Staff</a></li>
+                    <li id="adminDashboardLink" runat="server" visible="false"><a href="~/Admin/Dashboard.aspx"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li id="adminStaffLink" runat="server" visible="false"><a href="~/Admin/ManageStaff.aspx"><i class="fas fa-users-cog"></i> Staff</a></li>
                     <li id="adminCustomersLink" runat="server" visible="false"><a href="~/Admin/ManageCustomers.aspx"><i class="fas fa-user-friends"></i> Customers</a></li>
+                    <li id="adminReportsLink" runat="server" visible="false"><a href="~/Reports.aspx"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 </ul>
 
                 <div class="navbar-pill_menu-right">

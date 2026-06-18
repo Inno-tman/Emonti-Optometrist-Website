@@ -1,4 +1,4 @@
-<%@ Page Title="Manage Customers" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ManageCustomers.aspx.cs" Inherits="Emonti_Optometrist_Website.Admin.ManageCustomers" %>
+<%@ Page Title="Query DB" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="QueryDb.aspx.cs" Inherits="Emonti_Optometrist_Website.Admin.QueryDb" %>
 
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
 <style>
@@ -17,24 +17,25 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
 .sidebar-nav .divider { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem; }
 .sidebar-nav .logout { color: #ff6b6b !important; }
 .admin-main { margin-left: 250px; flex: 1; padding: 2rem; min-height: 100vh; }
-.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-.admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
+.admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; margin-bottom: 2rem; }
 .admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
 .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
 .btn-primary { background: #667eea; color: #fff; }
 .btn-primary:hover { background: #5a67d8; transform: translateY(-1px); }
-.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
-.search-bar { display: flex; gap: 0.5rem; }
-.search-bar input { padding: 0.5rem 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; width: 250px; }
-.search-bar input:focus { outline: none; border-color: #667eea; }
-.section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
-.section-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.btn-danger { background: #fc8181; color: #fff; }
+.btn-danger:hover { background: #f56565; }
+.section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 1.5rem; }
+.section-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem; }
 .section-header h2 { font-size: 1rem; font-weight: 700; color: #1a1d23; }
 .section-header h2 i { color: #667eea; }
+.query-input { width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; resize: vertical; min-height: 100px; margin-bottom: 1rem; }
+.query-input:focus { outline: none; border-color: #667eea; }
+.query-actions { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+.query-info { font-size: 0.8rem; color: #888; padding: 0.5rem 1rem; }
 table { width: 100%; border-collapse: collapse; }
 thead { background: #f8f9fa; }
-th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
-td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; white-space: nowrap; }
+td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px solid #f5f5f5; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 tr:hover td { background: rgba(102,126,234,0.02); }
 .empty-state { text-align: center; padding: 3rem 1rem; color: #999; }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
@@ -51,35 +52,35 @@ tr:hover td { background: rgba(102,126,234,0.02); }
             <li><a href="Dashboard.aspx"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
             <li><a href="ManageOrders.aspx"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
             <li><a href="ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
-            <li><a href="ManageCustomers.aspx" class="active"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <li><a href="ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
             <li><a href="ManageStaff.aspx"><i class="fas fa-users"></i><span>Staff</span></a></li>
-            <li><a href="QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
+            <li><a href="QueryDb.aspx" class="active"><i class="fas fa-database"></i><span>Query DB</span></a></li>
             <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
             <li class="divider"><a href="../Default.aspx"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a></li>
             <li><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
     </aside>
     <main class="admin-main">
-        <div class="admin-header">
-            <h1><i class="fas fa-address-book"></i> Manage Customers</h1>
-            <div class="search-bar">
-                <asp:TextBox ID="txtSearch" runat="server" placeholder="Search by name or email..." />
-                <asp:Button ID="btnSearch" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSearch_Click" />
+        <div class="admin-header"><h1><i class="fas fa-database"></i> Query Database</h1></div>
+        <div class="section-card">
+            <div class="section-header"><i class="fas fa-terminal" style="color:#667eea;"></i><h2>Run SQL Query</h2></div>
+            <div style="padding:1rem 1.25rem;">
+                <asp:TextBox ID="txtQuery" runat="server" TextMode="MultiLine" CssClass="query-input" placeholder="SELECT * FROM [Order]" />
+                <div class="query-actions">
+                    <asp:Button ID="btnRun" runat="server" Text="Run Query" CssClass="btn btn-primary" OnClick="btnRun_Click" />
+                    <asp:Button ID="btnClear" runat="server" Text="Clear" CssClass="btn btn-danger" OnClick="btnClear_Click" />
+                </div>
+                <asp:Label ID="lblResult" runat="server" Visible="false" style="font-size:0.85rem;padding:0.5rem 0;display:block;" />
             </div>
         </div>
-        <div class="section-card">
-            <div class="section-header"><i class="fas fa-address-book" style="color:#667eea;"></i><h2>All Customers</h2></div>
-            <asp:GridView ID="gvCustomers" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Cust_ID">
-                <Columns>
-                    <asp:BoundField DataField="Customer_Name" HeaderText="Name" />
-                    <asp:BoundField DataField="Customer_Surname" HeaderText="Surname" />
-                    <asp:BoundField DataField="Customer_Email" HeaderText="Email" />
-                    <asp:BoundField DataField="Customer_Phone" HeaderText="Phone" />
-                    <asp:BoundField DataField="OrderCount" HeaderText="Orders" />
-                </Columns>
-                <EmptyDataTemplate><div class="empty-state"><i class="fas fa-users"></i><p>No customers found.</p></div></EmptyDataTemplate>
-            </asp:GridView>
-        </div>
+        <asp:Panel ID="pnlResults" runat="server" Visible="false">
+            <div class="section-card">
+                <div class="section-header"><i class="fas fa-table" style="color:#667eea;"></i><h2>Results</h2></div>
+                <asp:GridView ID="gvResults" runat="server" AutoGenerateColumns="true" GridLines="None" ShowHeaderWhenEmpty="true">
+                    <EmptyDataTemplate><div class="empty-state"><i class="fas fa-table"></i><p>No results.</p></div></EmptyDataTemplate>
+                </asp:GridView>
+            </div>
+        </asp:Panel>
     </main>
 </div>
 <div class="admin-footer">&copy; 2026 Emonti Optometrist Admin Panel</div>

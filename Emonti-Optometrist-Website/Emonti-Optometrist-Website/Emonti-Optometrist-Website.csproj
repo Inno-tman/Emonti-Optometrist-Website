@@ -367,6 +367,7 @@
     <Content Include="Checkout.aspx" />
     <Content Include="OrderConfirmation.aspx" />
     <Content Include="Staff\Dashboard.aspx" />
+    <Content Include="Admin\QueryDb.aspx" />
     <Content Include="Admin\Dashboard.aspx" />
     <Content Include="Admin\ManageStaff.aspx" />
     <Content Include="Admin\ManageCustomers.aspx" />
@@ -650,6 +651,27 @@
     </Compile>
     <Compile Include="Admin\ManageCustomers.aspx.designer.cs">
       <DependentUpon>ManageCustomers.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\ManageOrders.aspx.cs">
+      <DependentUpon>ManageOrders.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\ManageOrders.aspx.designer.cs">
+      <DependentUpon>ManageOrders.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\ManageProducts.aspx.cs">
+      <DependentUpon>ManageProducts.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\ManageProducts.aspx.designer.cs">
+      <DependentUpon>ManageProducts.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Admin\QueryDb.aspx.cs">
+      <DependentUpon>QueryDb.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Admin\QueryDb.aspx.designer.cs">
+      <DependentUpon>QueryDb.aspx</DependentUpon>
     </Compile>
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>

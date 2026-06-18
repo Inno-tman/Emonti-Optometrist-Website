@@ -1,116 +1,130 @@
 ﻿<%@ Page Title="Manage Staff" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="ManageStaff.aspx.cs" Inherits="Emonti_Optometrist_Website.Admin.ManageStaff" %>
 
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
-    <style>
-        .admin-section { padding: 2rem; max-width: 1200px; margin: 0 auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .page-header h1 { margin: 0; font-size: 1.5rem; }
-        .btn { padding: 0.6rem 1.5rem; border-radius: 50px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-sm { padding: 0.35rem 1rem; font-size: 0.8rem; }
-        .btn-danger { background: #dc3545; color: #fff; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-success { background: #28a745; color: #fff; }
-        .btn-success:hover { background: #218838; }
-        .staff-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .staff-table th { background: #f8f9fa; padding: 1rem; text-align: left; font-weight: 600; color: #555; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .staff-table td { padding: 1rem; border-top: 1px solid #f0f0f0; color: #333; }
-        .staff-table tr:hover td { background: #f8f9ff; }
-        .role-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
-        .role-admin { background: #e8f4fd; color: #2196F3; }
-        .role-staff { background: #f0f0f0; color: #666; }
-        .role-optometrist { background: #e8f8e8; color: #28a745; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal { background: #fff; border-radius: 20px; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .modal h2 { margin: 0 0 1.5rem; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-weight: 600; color: #555; margin-bottom: 0.3rem; font-size: 0.85rem; }
-        .form-group input, .form-group select { width: 100%; padding: 0.7rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 0.9rem; transition: border-color 0.2s; }
-        .form-group input:focus, .form-group select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); }
-        .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
-        .modal-actions .btn { min-width: 100px; }
-        .alert { padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 500; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .action-cell { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #667eea; text-decoration: none; margin-bottom: 1rem; font-weight: 500; }
-        .back-link:hover { text-decoration: underline; }
-    </style>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
+.admin-wrapper { display: flex; min-height: 100vh; }
+.admin-sidebar { width: 250px; background: #1a1d23; color: #fff; padding: 1.5rem 0; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100; }
+.sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem; }
+.sidebar-brand h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+.sidebar-brand small { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+.sidebar-nav { list-style: none; padding: 0; }
+.sidebar-nav li a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; border-left: 3px solid transparent; }
+.sidebar-nav li a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.sidebar-nav li a.active { background: rgba(102,126,234,0.15); color: #667eea; border-left-color: #667eea; }
+.sidebar-nav li a i { width: 20px; text-align: center; }
+.sidebar-nav .divider { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem; }
+.sidebar-nav .logout { color: #ff6b6b !important; }
+.admin-main { margin-left: 250px; flex: 1; padding: 2rem; min-height: 100vh; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
+.admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
+.btn-primary { background: #667eea; color: #fff; }
+.btn-primary:hover { background: #5a67d8; transform: translateY(-1px); }
+.btn-success { background: #48bb78; color: #fff; }
+.btn-success:hover { background: #38a169; }
+.btn-danger { background: #fc8181; color: #fff; }
+.btn-danger:hover { background: #f56565; }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+.section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+.section-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.section-header h2 { font-size: 1rem; font-weight: 700; color: #1a1d23; }
+.section-header h2 i { color: #667eea; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: #f8f9fa; }
+th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+tr:hover td { background: rgba(102,126,234,0.02); }
+.role-badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.role-badge.admin { background: #cce5ff; color: #004085; }
+.role-badge.staff { background: #d4edda; color: #155724; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #999; }
+.empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.modal h3 { font-size: 1.15rem; margin-bottom: 1.25rem; color: #1a1d23; }
+.modal .form-group { margin-bottom: 1rem; }
+.modal .form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 0.3rem; }
+.modal .form-group input, .modal .form-group select { width: 100%; padding: 0.6rem 0.8rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; transition: border-color 0.2s; }
+.modal .form-group input:focus, .modal .form-group select:focus { outline: none; border-color: #667eea; }
+.modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end; }
+.modal-actions .btn-secondary { background: #e2e8f0; color: #4a5568; }
+.modal-actions .btn-secondary:hover { background: #cbd5e0; }
+.admin-footer { text-align: center; padding: 1.5rem; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+@media (max-width: 768px) { .admin-sidebar { width: 60px; } .sidebar-brand h2, .sidebar-brand small, .sidebar-nav li a span { display: none; } .sidebar-nav li a { justify-content: center; padding: 0.75rem; } .admin-main { margin-left: 60px; padding: 1rem; } }
+</style>
 </asp:Content>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
-    <div class="admin-section">
-        <a href="Dashboard.aspx" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-        <div class="page-header">
-            <h1>Manage Staff</h1>
-            <button type="button" class="btn btn-primary" onclick="showAddModal()"><i class="fas fa-plus"></i> Add Staff</button>
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand"><h2>EMONTI</h2><small>Admin Panel</small></div>
+        <ul class="sidebar-nav">
+            <li><a href="Dashboard.aspx"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <li><a href="ManageOrders.aspx"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
+            <li><a href="ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <li><a href="ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <li><a href="ManageStaff.aspx" class="active"><i class="fas fa-users"></i><span>Staff</span></a></li>
+            <li><a href="QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
+            <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+            <li class="divider"><a href="../Default.aspx"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a></li>
+            <li><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+        </ul>
+    </aside>
+    <main class="admin-main">
+        <div class="admin-header">
+            <h1><i class="fas fa-users"></i> Manage Staff</h1>
+            <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('show'); return false;"><i class="fas fa-plus"></i> Add Staff</button>
         </div>
-        <asp:Label ID="lblMessage" runat="server" CssClass="alert" Visible="false" />
-        <asp:GridView ID="gvStaff" runat="server" CssClass="staff-table" AutoGenerateColumns="False" GridLines="None" OnRowCommand="gvStaff_RowCommand">
-            <Columns>
-                <asp:BoundField DataField="Staff_ID" HeaderText="ID" />
-                <asp:BoundField DataField="Staff_Name" HeaderText="Name" />
-                <asp:BoundField DataField="Staff_Surname" HeaderText="Surname" />
-                <asp:BoundField DataField="Staff_Email" HeaderText="Email" />
-                <asp:TemplateField HeaderText="Role">
-                    <ItemTemplate>
-                        <asp:Label ID="lblRoleBadge" runat="server" CssClass='<%# "role-badge role-" + Eval("Staff_Role").ToString().ToLower() %>' Text='<%# Eval("Staff_Role") %>' />
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="Actions">
-                    <ItemTemplate>
-                        <div class="action-cell">
-                            <asp:LinkButton ID="btnEdit" runat="server" CssClass="btn btn-sm btn-primary" CommandName="EditStaff" CommandArgument='<%# Eval("Staff_ID") %>'><i class="fas fa-edit"></i> Edit</asp:LinkButton>
-                            <asp:LinkButton ID="btnDelete" runat="server" CssClass="btn btn-sm btn-danger" CommandName="DeleteStaff" CommandArgument='<%# Eval("Staff_ID") %>' OnClientClick="return confirm('Are you sure you want to delete this staff member?');"><i class="fas fa-trash"></i> Delete</asp:LinkButton>
-                        </div>
-                    </ItemTemplate>
-                </asp:TemplateField>
-            </Columns>
-            <EmptyDataTemplate>
-                <div style="text-align:center;padding:2rem;color:#888;">No staff members found.</div>
-            </EmptyDataTemplate>
-        </asp:GridView>
-    </div>
+        <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert" style="padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.85rem;"></asp:Panel>
+        <div class="section-card">
+            <div class="section-header"><i class="fas fa-users" style="color:#667eea;"></i><h2>All Staff Members</h2></div>
+            <asp:GridView ID="gvStaff" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" OnRowDeleting="gvStaff_RowDeleting" DataKeyNames="Staff_ID">
+                <Columns>
+                    <asp:BoundField DataField="Staff_Name" HeaderText="Name" />
+                    <asp:BoundField DataField="Staff_Email" HeaderText="Email" />
+                    <asp:TemplateField HeaderText="Role">
+                        <ItemTemplate>
+                            <span class='role-badge <%# Eval("Staff_Role").ToString().ToLower() %>'><%# Eval("Staff_Role") %></span>
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:CheckBoxField DataField="Can_Mark_Attendance" HeaderText="Attendance" ReadOnly="true" />
+                    <asp:TemplateField HeaderText="Actions">
+                        <ItemTemplate>
+                            <asp:Button ID="btnPromote" runat="server" Text="Promote" CommandName="Promote" CommandArgument='<%# Eval("Staff_ID") %>' CssClass="btn btn-success btn-sm" OnClick="btnPromote_Click" Visible='<%# Eval("Staff_Role").ToString() != "Admin" %>' />
+                            <asp:Button ID="btnDelete" runat="server" Text="Delete" CommandName="Delete" CssClass="btn btn-danger btn-sm" Visible='<%# Eval("Staff_Role").ToString() != "Admin" %>' OnClientClick="return confirm('Are you sure you want to delete this staff member?');" />
+                        </ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+                <EmptyDataTemplate><div class="empty-state"><i class="fas fa-users"></i><p>No staff members found.</p></div></EmptyDataTemplate>
+            </asp:GridView>
+        </div>
+    </main>
+</div>
 
-    <div id="addStaffModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)hideAddModal()">
-        <div class="modal">
-            <h2>Add Staff Member</h2>
-            <asp:Panel ID="pnlAddStaff" runat="server" DefaultButton="btnSaveStaff">
-                <div class="form-group">
-                    <label for="txtFirstName">First Name</label>
-                    <asp:TextBox ID="txtFirstName" runat="server" placeholder="First name" />
-                </div>
-                <div class="form-group">
-                    <label for="txtSurname">Surname</label>
-                    <asp:TextBox ID="txtSurname" runat="server" placeholder="Surname" />
-                </div>
-                <div class="form-group">
-                    <label for="txtEmail">Email</label>
-                    <asp:TextBox ID="txtEmail" runat="server" placeholder="Email address" TextMode="Email" />
-                </div>
-                <div class="form-group">
-                    <label for="txtPassword">Password</label>
-                    <asp:TextBox ID="txtPassword" runat="server" placeholder="Password" TextMode="Password" />
-                </div>
-                <div class="form-group">
-                    <label for="ddlRole">Role</label>
-                    <asp:DropDownList ID="ddlRole" runat="server">
-                        <asp:ListItem Text="Staff" Value="Staff" />
-                        <asp:ListItem Text="Optometrist" Value="Optometrist" />
-                        <asp:ListItem Text="Admin" Value="Admin" />
-                    </asp:DropDownList>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="hideAddModal()" style="background:#e0e0e0;color:#555;">Cancel</button>
-                    <asp:Button ID="btnSaveStaff" runat="server" CssClass="btn btn-success" Text="Save" OnClick="btnSaveStaff_Click" />
-                </div>
-            </asp:Panel>
+<!-- Add Staff Modal -->
+<div id="addModal" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fas fa-user-plus" style="color:#667eea;"></i> Add New Staff</h3>
+        <div class="form-group"><label>Name</label><asp:TextBox ID="txtName" runat="server" /></div>
+        <div class="form-group"><label>Email</label><asp:TextBox ID="txtEmail" runat="server" TextMode="Email" /></div>
+        <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" Text="Staff123" /></div>
+        <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
+        <div class="form-group">
+            <asp:CheckBox ID="chkAttendance" runat="server" Text="Can mark attendance" Checked="true" style="display:flex;align-items:center;gap:0.5rem;" />
+        </div>
+        <asp:Label ID="lblAddError" runat="server" ForeColor="Red" Visible="false" style="font-size:0.85rem;" />
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('show'); return false;">Cancel</button>
+            <asp:Button ID="btnAddStaff" runat="server" Text="Add Staff" CssClass="btn btn-primary" OnClick="btnAddStaff_Click" />
         </div>
     </div>
+</div>
 
-    <script>
-        function showAddModal() { document.getElementById('addStaffModal').style.display = 'flex'; }
-        function hideAddModal() { document.getElementById('addStaffModal').style.display = 'none'; }
-    </script>
+<script>if(window.location.hash=='#openModal'||('<%=Request.Form["__EVENTTARGET"]%>'||'').indexOf('btnAddStaff')>=0){document.getElementById('addModal').classList.add('show');}</script>
+
+<div class="admin-footer">&copy; 2026 Emonti Optometrist Admin Panel</div>
 </asp:Content>
