@@ -1,106 +1,112 @@
 ﻿<%@ Page Title="Admin Dashboard" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="Emonti_Optometrist_Website.Admin.Dashboard" %>
 
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
-    <style>
-        .admin-dash { padding: 2rem 2rem 3rem; max-width: 1100px; margin: 0 auto; }
-        .admin-welcome { margin-bottom: 2.5rem; }
-        .admin-welcome h1 { font-size: 1.75rem; font-weight: 700; color: #1a2332; margin: 0; }
-        .admin-welcome p { color: #6b7a8a; margin: 0.3rem 0 0; font-size: 0.95rem; }
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
-        .stat-card { background: #fff; border-radius: 14px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 1rem; }
-        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
-        .stat-icon.blue { background: #eef2ff; color: #4f6ef7; }
-        .stat-icon.green { background: #e8f8ee; color: #22a45a; }
-        .stat-icon.purple { background: #f3eeff; color: #7c5cfc; }
-        .stat-icon.orange { background: #fef3e8; color: #e68a2e; }
-        .stat-info h3 { font-size: 1.6rem; font-weight: 700; margin: 0; color: #1a2332; line-height: 1.2; }
-        .stat-info p { margin: 0.15rem 0 0; font-size: 0.8rem; color: #8a9aaa; text-transform: uppercase; letter-spacing: 0.3px; }
-        .section-title { font-size: 1.05rem; font-weight: 600; color: #1a2332; margin: 0 0 1rem; }
-        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .nav-card { background: #fff; border-radius: 14px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: all 0.25s; text-decoration: none; display: block; }
-        .nav-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.1); }
-        .nav-card .nc-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.75rem; }
-        .nav-card .nc-icon.blue { background: #eef2ff; color: #4f6ef7; }
-        .nav-card .nc-icon.green { background: #e8f8ee; color: #22a45a; }
-        .nav-card .nc-icon.purple { background: #f3eeff; color: #7c5cfc; }
-        .nav-card .nc-icon.orange { background: #fef3e8; color: #e68a2e; }
-        .nav-card .nc-icon.teal { background: #e8f8f8; color: #14a3a3; }
-        .nav-card .nc-icon.red { background: #fef0ee; color: #d95a4a; }
-        .nav-card h3 { margin: 0 0 0.35rem; font-size: 0.95rem; font-weight: 600; color: #1a2332; }
-        .nav-card p { margin: 0; font-size: 0.8rem; color: #8a9aaa; line-height: 1.4; }
-    </style>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
+.admin-wrapper { display: flex; min-height: 100vh; }
+.admin-sidebar { width: 250px; background: #1a1d23; color: #fff; padding: 1.5rem 0; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 100; }
+.sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem; }
+.sidebar-brand h2 { font-size: 1.1rem; font-weight: 700; color: #fff; }
+.sidebar-brand small { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+.sidebar-nav { list-style: none; padding: 0; }
+.sidebar-nav li a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; border-left: 3px solid transparent; }
+.sidebar-nav li a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.sidebar-nav li a.active { background: rgba(102,126,234,0.15); color: #667eea; border-left-color: #667eea; }
+.sidebar-nav li a i { width: 20px; text-align: center; }
+.sidebar-nav .divider { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem; }
+.sidebar-nav .logout { color: #ff6b6b !important; }
+.admin-main { margin-left: 250px; flex: 1; padding: 2rem; min-height: 100vh; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
+.admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: #fff; padding: 1.25rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.04); }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.stat-card .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; margin-bottom: 0.75rem; }
+.stat-card .stat-icon.teal { background: linear-gradient(135deg, #20c997, #0ca678); }
+.stat-card .stat-icon.blue { background: linear-gradient(135deg, #667eea, #5a67d8); }
+.stat-card .stat-icon.orange { background: linear-gradient(135deg, #f6ad55, #ed8936); }
+.stat-card .stat-icon.green { background: linear-gradient(135deg, #48bb78, #38a169); }
+.stat-card .stat-icon.purple { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
+.stat-card .stat-icon.pink { background: linear-gradient(135deg, #f472b6, #ec4899); }
+.stat-card .stat-icon.red { background: linear-gradient(135deg, #fc8181, #f56565); }
+.stat-card h3 { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem; }
+.stat-card .stat-value { font-size: 1.75rem; font-weight: 700; color: #1a1d23; }
+.stat-card .stat-value.revenue { color: #38a169; }
+.quick-links { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.quick-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.25rem; background: #fff; border-radius: 10px; text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #1a1d23; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease; border: 1px solid rgba(0,0,0,0.04); }
+.quick-link:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); color: #667eea; }
+.section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 1.5rem; }
+.section-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem; }
+.section-header h2 { font-size: 1rem; font-weight: 700; color: #1a1d23; }
+.section-header h2 i { color: #667eea; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: #f8f9fa; }
+th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px solid #f5f5f5; }
+tr:hover td { background: rgba(102,126,234,0.02); }
+.status-badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+.status-badge.pending, .status-badge.processing { background: #fff3cd; color: #856404; }
+.status-badge.shipped { background: #cce5ff; color: #004085; }
+.status-badge.delivered, .status-badge.completed { background: #d4edda; color: #155724; }
+.status-badge.cancelled { background: #f8d7da; color: #721c24; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #999; }
+.empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
+.admin-footer { text-align: center; padding: 1.5rem; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+@media (max-width: 768px) { .admin-sidebar { width: 60px; } .sidebar-brand h2, .sidebar-brand small, .sidebar-nav li a span { display: none; } .sidebar-nav li a { justify-content: center; padding: 0.75rem; } .admin-main { margin-left: 60px; padding: 1rem; } .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; } }
+@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
+</style>
 </asp:Content>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
-    <div class="admin-dash">
-        <div class="admin-welcome">
-            <h1>Welcome back, <asp:Label ID="lblAdminName" runat="server" /></h1>
-            <p>Here is what is happening at Emonti Optometrist today.</p>
+<div class="admin-wrapper">
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand"><h2>EMONTI</h2><small>Admin Panel</small></div>
+        <ul class="sidebar-nav">
+            <li><a href="Dashboard.aspx" class="active"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <li><a href="ManageOrders.aspx"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
+            <li><a href="ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <li><a href="ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <li><a href="ManageStaff.aspx"><i class="fas fa-users"></i><span>Staff</span></a></li>
+            <li><a href="QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
+            <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+            <li class="divider"><a href="../Default.aspx"><i class="fas fa-arrow-left"></i><span>Back to Site</span></a></li>
+            <li><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+        </ul>
+    </aside>
+    <main class="admin-main">
+        <div class="admin-header"><h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1></div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon teal"><i class="fas fa-calendar-day"></i></div><h3>Orders Today</h3><div class="stat-value"><asp:Label ID="lblOrdersToday" runat="server" Text="0" /></div></div>
+            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-wallet"></i></div><h3>Total Revenue</h3><div class="stat-value revenue">R <asp:Label ID="lblTotalRevenue" runat="server" Text="0.00" /></div></div>
+            <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-clock"></i></div><h3>Pending Orders</h3><div class="stat-value"><asp:Label ID="lblPendingOrders" runat="server" Text="0" /></div></div>
+            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-box"></i></div><h3>Products</h3><div class="stat-value"><asp:Label ID="lblTotalProducts" runat="server" Text="0" /></div></div>
+            <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-users"></i></div><h3>Staff</h3><div class="stat-value"><asp:Label ID="lblTotalStaff" runat="server" Text="0" /></div></div>
+            <div class="stat-card"><div class="stat-icon red"><i class="fas fa-calendar-check"></i></div><h3>Today's Appointments</h3><div class="stat-value"><asp:Label ID="lblTodayAppointments" runat="server" Text="0" /></div></div>
+            <div class="stat-card"><div class="stat-icon pink"><i class="fas fa-user-plus"></i></div><h3>New Customers (Month)</h3><div class="stat-value"><asp:Label ID="lblNewCustomers" runat="server" Text="0" /></div></div>
         </div>
-
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
-                <div class="stat-info">
-                    <h3><asp:Label ID="lblStaffCount" runat="server" Text="0" /></h3>
-                    <p>Staff Members</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-user-friends"></i></div>
-                <div class="stat-info">
-                    <h3><asp:Label ID="lblCustomerCount" runat="server" Text="0" /></h3>
-                    <p>Customers</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
-                <div class="stat-info">
-                    <h3><asp:Label ID="lblAppointmentCount" runat="server" Text="0" /></h3>
-                    <p>Appointments</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-info">
-                    <h3><asp:Label ID="lblProductCount" runat="server" Text="0" /></h3>
-                    <p>Products</p>
-                </div>
-            </div>
+        <div class="quick-links">
+            <a href="ManageOrders.aspx" class="quick-link"><i class="fas fa-shopping-cart"></i> Manage Orders</a>
+            <a href="ManageProducts.aspx" class="quick-link"><i class="fas fa-box"></i> Manage Products</a>
+            <a href="ManageCustomers.aspx" class="quick-link"><i class="fas fa-address-book"></i> Manage Customers</a>
+            <a href="ManageStaff.aspx" class="quick-link"><i class="fas fa-users"></i> Manage Staff</a>
         </div>
-
-        <h2 class="section-title">Quick Actions</h2>
-        <div class="nav-grid">
-            <a href="ManageStaff.aspx" class="nav-card">
-                <div class="nc-icon blue"><i class="fas fa-users-cog"></i></div>
-                <h3>Manage Staff</h3>
-                <p>Add, edit, or remove staff members and change roles</p>
-            </a>
-            <a href="ManageCustomers.aspx" class="nav-card">
-                <div class="nc-icon green"><i class="fas fa-user-friends"></i></div>
-                <h3>Manage Customers</h3>
-                <p>View and manage all customer information</p>
-            </a>
-            <a href="../Reports.aspx" class="nav-card">
-                <div class="nc-icon purple"><i class="fas fa-chart-bar"></i></div>
-                <h3>BI Reports</h3>
-                <p>View business intelligence reports and analytics</p>
-            </a>
-            <a href="ManageOrders.aspx" class="nav-card">
-                <div class="nc-icon orange"><i class="fas fa-shopping-cart"></i></div>
-                <h3>Manage Orders</h3>
-                <p>View and manage customer orders</p>
-            </a>
-            <a href="ManageProducts.aspx" class="nav-card">
-                <div class="nc-icon teal"><i class="fas fa-glasses"></i></div>
-                <h3>Manage Products</h3>
-                <p>Add and update eyewear products</p>
-            </a>
-            <a href="../Default.aspx" class="nav-card">
-                <div class="nc-icon red"><i class="fas fa-external-link-alt"></i></div>
-                <h3>View Site</h3>
-                <p>Return to the public website</p>
-            </a>
+        <div class="section-card">
+            <div class="section-header"><i class="fas fa-clock" style="color:#667eea;"></i><h2>Recent Orders</h2></div>
+            <asp:GridView ID="gvRecentOrders" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true">
+                <Columns>
+                    <asp:BoundField DataField="CustomerName" HeaderText="Customer" />
+                    <asp:BoundField DataField="OrderDate" HeaderText="Date" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
+                    <asp:BoundField DataField="Total" HeaderText="Total" DataFormatString="R {0:N2}" />
+                    <asp:TemplateField HeaderText="Status">
+                        <ItemTemplate><span class='status-badge <%# Eval("Status").ToString().ToLower() %>'><%# Eval("Status") %></span></ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+                <EmptyDataTemplate><div class="empty-state"><i class="fas fa-inbox"></i><p>No orders yet.</p></div></EmptyDataTemplate>
+            </asp:GridView>
         </div>
-    </div>
+        <div class="admin-footer">&copy; 2026 Emonti Optometrist Admin Panel</div>
+    </main>
+</div>
 </asp:Content>

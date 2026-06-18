@@ -412,31 +412,6 @@ namespace Emonti_Optometrist_Website
 			if (adminStaffLink != null) adminStaffLink.Visible = isAdmin;
 			if (adminCustomersLink != null) adminCustomersLink.Visible = isAdmin;
 			if (adminReportsLink != null) adminReportsLink.Visible = isAdmin;
-
-			// Admin sub-navigation
-			bool isAdminPath = Request != null && Request.Path != null && Request.Path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase);
-			var adminSubNav = FindControl("adminSubNav") as System.Web.UI.HtmlControls.HtmlGenericControl;
-			if (adminSubNav != null)
-				adminSubNav.Visible = isAdmin && isAdminPath;
-
-			// Set active state for sub-nav links
-			if (isAdmin && isAdminPath)
-			{
-				string currentPath = Request.Path.ToLowerInvariant();
-				SetSubNavActive("snDashboard", currentPath.Contains("dashboard"));
-				SetSubNavActive("snStaff", currentPath.Contains("managestaff"));
-				SetSubNavActive("snCustomers", currentPath.Contains("managecustomers"));
-				SetSubNavActive("snReports", currentPath.Contains("/reports.aspx"));
-				SetSubNavActive("snOrders", currentPath.Contains("manageorders"));
-				SetSubNavActive("snProducts", currentPath.Contains("manageproducts"));
-			}
-		}
-
-		private void SetSubNavActive(string controlId, bool isActive)
-		{
-			var ctrl = FindControl(controlId) as System.Web.UI.HtmlControls.HtmlAnchor;
-			if (ctrl != null && isActive)
-				ctrl.Attributes["class"] = (ctrl.Attributes["class"] ?? "") + " active";
 		}
 	}
 }
