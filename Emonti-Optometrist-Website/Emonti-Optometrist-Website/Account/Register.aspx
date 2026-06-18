@@ -341,12 +341,29 @@
                 <h3 class="section-title">Medical Information</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Medical Aid Provider</label>
-                        <asp:TextBox ID="txtMedicalAid" runat="server" placeholder="e.g., Discovery Health" onkeyup="toggleMedicalAidSection();" onchange="toggleMedicalAidSection();" />
+                        <label>Do you have medical aid? <span class="required">*</span></label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; font-weight: normal;">
+                                <asp:RadioButton ID="rbHasMedicalAidYes" runat="server" GroupName="HasMedicalAid" 
+                                    Text="Yes" AutoPostBack="true" OnCheckedChanged="rbHasMedicalAid_Changed" />
+                            </label>
+                            <label style="display: flex; align-items: center; font-weight: normal;">
+                                <asp:RadioButton ID="rbHasMedicalAidNo" runat="server" GroupName="HasMedicalAid" 
+                                    Text="No" AutoPostBack="true" OnCheckedChanged="rbHasMedicalAid_Changed" />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="medicalAidDetails" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Medical Aid Provider <span class="required">*</span></label>
+                        <asp:TextBox ID="txtMedicalAid" runat="server" placeholder="e.g., Discovery Health" />
                     </div>
                     <div class="form-group">
-                        <label>Medical Aid Number</label>
-                        <asp:TextBox ID="txtMedicalAidNumber" runat="server" placeholder="Enter your medical aid number" onkeyup="toggleMedicalAidSection();" onchange="toggleMedicalAidSection();" />
+                        <label>Medical Aid Number <span class="required">*</span></label>
+                        <asp:TextBox ID="txtMedicalAidNumber" runat="server" placeholder="Enter your medical aid number" />
                         <asp:RegularExpressionValidator ID="revMedicalAidNumber" runat="server" 
                             ControlToValidate="txtMedicalAidNumber" 
                             ValidationExpression="^[a-zA-Z0-9\s\-_\.]{3,50}$" 
@@ -356,8 +373,6 @@
                     </div>
                 </div>
                 
-                <!-- Main Member Section (shown only when medical aid info is entered) -->
-                <div id="medicalAidSection" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Are you the main member on this medical aid? <span class="required">*</span></label>
@@ -439,22 +454,6 @@
                     </div>
                 </div>
             </div>
-
-            <script>
-                function toggleMedicalAidSection() {
-                    var provider = document.getElementById('<%= txtMedicalAid.ClientID %>');
-                    var number = document.getElementById('<%= txtMedicalAidNumber.ClientID %>');
-                    var section = document.getElementById('medicalAidSection');
-                    if (provider.value.trim() !== '' || number.value.trim() !== '') {
-                        section.style.display = 'block';
-                    } else {
-                        section.style.display = 'none';
-                        document.getElementById('<%= rbIsMainMemberYes.ClientID %>').checked = true;
-                        document.getElementById('<%= rbIsMainMemberNo.ClientID %>').checked = false;
-                        document.getElementById('<%= mainMemberDetails.ClientID %>').style.display = 'none';
-                    }
-                }
-            </script>
 
             <!-- Address Information Section -->
             <div class="form-section">
@@ -620,9 +619,20 @@
             return true;
         }
 
+        function toggleMedicalAidDetails() {
+            var yesChecked = document.getElementById('<%= rbHasMedicalAidYes.ClientID %>').checked;
+            var details = document.getElementById('medicalAidDetails');
+            details.style.display = yesChecked ? 'block' : 'none';
+            if (!yesChecked) {
+                document.getElementById('<%= rbIsMainMemberYes.ClientID %>').checked = true;
+                document.getElementById('<%= rbIsMainMemberNo.ClientID %>').checked = false;
+                document.getElementById('<%= mainMemberDetails.ClientID %>').style.display = 'none';
+            }
+        }
+
         window.onload = function() {
             trackChanges();
-            toggleMedicalAidSection();
+            toggleMedicalAidDetails();
         };
 
         window.addEventListener('beforeunload', function(e) {

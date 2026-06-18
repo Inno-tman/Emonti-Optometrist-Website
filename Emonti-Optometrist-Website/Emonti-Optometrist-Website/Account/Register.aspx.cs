@@ -23,6 +23,8 @@ namespace Emonti_Optometrist_Website.Account
         {
             if (!IsPostBack)
             {
+                rbHasMedicalAidNo.Checked = true;
+                rbHasMedicalAidYes.Checked = false;
                 rbIsMainMemberYes.Checked = true;
                 rbIsMainMemberNo.Checked = false;
                 mainMemberDetails.Style["display"] = "none";
@@ -31,13 +33,26 @@ namespace Emonti_Optometrist_Website.Account
 
         protected void Page_PreRender(object sender, EventArgs e)
         {
-            // Keep validators consistent with main member visibility on postback
-            rfvMainMemberName.Enabled = rbIsMainMemberNo.Checked;
-            rfvMainMemberSurname.Enabled = rbIsMainMemberNo.Checked;
-            rfvMainMemberID.Enabled = rbIsMainMemberNo.Checked;
-            revMainMemberName.Enabled = rbIsMainMemberNo.Checked;
-            revMainMemberSurname.Enabled = rbIsMainMemberNo.Checked;
-            revMainMemberID.Enabled = rbIsMainMemberNo.Checked;
+            bool hasMedicalAid = rbHasMedicalAidYes.Checked;
+            bool isNotMainMember = rbIsMainMemberNo.Checked;
+            bool showMainMemberFields = hasMedicalAid && isNotMainMember;
+
+            rfvMainMemberName.Enabled = showMainMemberFields;
+            rfvMainMemberSurname.Enabled = showMainMemberFields;
+            rfvMainMemberID.Enabled = showMainMemberFields;
+            revMainMemberName.Enabled = showMainMemberFields;
+            revMainMemberSurname.Enabled = showMainMemberFields;
+            revMainMemberID.Enabled = showMainMemberFields;
+        }
+
+        protected void rbHasMedicalAid_Changed(object sender, EventArgs e)
+        {
+            if (rbHasMedicalAidNo.Checked)
+            {
+                rbIsMainMemberYes.Checked = true;
+                rbIsMainMemberNo.Checked = false;
+                mainMemberDetails.Style["display"] = "none";
+            }
         }
 
         protected void ValidateDateOfBirth(object source, ServerValidateEventArgs args)
@@ -169,11 +184,17 @@ namespace Emonti_Optometrist_Website.Account
                             string address = BuildAddress();
                             cmd.Parameters.AddWithValue("@Customer_Address", address);
 
-                            // Medical Aid fields - optional
-                            cmd.Parameters.AddWithValue("@Medical_Aid", 
-                                string.IsNullOrWhiteSpace(txtMedicalAid.Text) ? (object)DBNull.Value : txtMedicalAid.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Medical_Aid_Number", 
-                                string.IsNullOrWhiteSpace(txtMedicalAidNumber.Text) ? (object)DBNull.Value : txtMedicalAidNumber.Text.Trim());
+                            // Medical Aid fields - conditional
+                            if (rbHasMedicalAidNo.Checked)
+                            {
+                                cmd.Parameters.AddWithValue("@Medical_Aid", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Medical_Aid_Number", DBNull.Value);
+                            }
+                            else
+                            {
+                                cmd.Parameters.AddWithValue("@Medical_Aid", txtMedicalAid.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Medical_Aid_Number", txtMedicalAidNumber.Text.Trim());
+                            }
 
                             // Address components - optional
                             cmd.Parameters.AddWithValue("@Street_Number", 
@@ -192,7 +213,7 @@ namespace Emonti_Optometrist_Website.Account
                                 string.IsNullOrWhiteSpace(txtPostalCode.Text) ? (object)DBNull.Value : txtPostalCode.Text.Trim());
 
                             // Main Member fields - conditional
-                            if (rbIsMainMemberYes.Checked)
+                            if (rbHasMedicalAidNo.Checked || rbIsMainMemberYes.Checked)
                             {
                                 cmd.Parameters.AddWithValue("@Main_Member_Name", DBNull.Value);
                                 cmd.Parameters.AddWithValue("@Main_Member_Surname", DBNull.Value);
@@ -364,9 +385,25 @@ namespace Emonti_Optometrist_Website.Account
 
         private bool ValidateMedicalInfo()
         {
-            // Skip medical validation if no medical aid info provided
-            if (string.IsNullOrWhiteSpace(txtMedicalAid.Text) && string.IsNullOrWhiteSpace(txtMedicalAidNumber.Text))
+            // Skip all medical validation if user does not have medical aid
+            if (rbHasMedicalAidNo.Checked)
                 return true;
+
+            // Validate medical aid provider
+            if (string.IsNullOrWhiteSpace(txtMedicalAid.Text))
+            {
+                ErrorMessage.Text = "Please enter your medical aid provider.";
+                ErrorMessage.Visible = true;
+                return false;
+            }
+
+            // Validate medical aid number
+            if (string.IsNullOrWhiteSpace(txtMedicalAidNumber.Text) || !Regex.IsMatch(txtMedicalAidNumber.Text, @"^[a-zA-Z0-9\s\-_\.]{3,50}$"))
+            {
+                ErrorMessage.Text = "Please enter a valid medical aid number.";
+                ErrorMessage.Visible = true;
+                return false;
+            }
 
             if (rbIsMainMemberNo.Checked)
             {
