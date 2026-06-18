@@ -62,6 +62,7 @@
             pointer-events: none; transition: transform 0.2s ease;
         }
         .form-group .select-wrapper:focus-within::after { transform: translateY(-50%) rotate(180deg); }
+        .select-wrapper.has-custom-dd::after { display: none; }
         
         .form-group input, .form-group select, .form-group textarea {
             padding: 0.85rem 1rem; border: 2px solid #e0e0e0; border-radius: 12px;
@@ -140,8 +141,9 @@
         .custom-dd.open .custom-dd-trigger,
         .custom-dd-trigger:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); background: #fff; }
         .custom-dd-arrow {
-            font-size: 0.6rem; color: #667eea; transition: transform 0.25s ease;
-            flex-shrink: 0; margin-left: 0.5rem;
+            flex-shrink: 0; margin-left: 0.5rem; width: 0; height: 0;
+            border-left: 5px solid transparent; border-right: 5px solid transparent;
+            border-top: 6px solid #667eea; transition: transform 0.25s ease;
         }
         .custom-dd.open .custom-dd-arrow { transform: rotate(180deg); }
         .custom-dd-options, .custom-dp-popup {
@@ -528,7 +530,6 @@
 
                 var arrowSpan = document.createElement('span');
                 arrowSpan.className = 'custom-dd-arrow';
-                arrowSpan.textContent = '▼';
 
                 trigger.appendChild(textSpan);
                 trigger.appendChild(arrowSpan);
@@ -582,6 +583,7 @@
                     wrapper.classList.toggle('open');
                 };
 
+                parent.classList.add('has-custom-dd');
                 parent.insertBefore(wrapper, select.nextSibling);
                 console.log('Custom dropdown created for select id=' + select.id);
             });
