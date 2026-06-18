@@ -78,11 +78,49 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             border-color: #667eea; outline: none; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); background: #fff;
         }
-        .form-group select option { padding: 0.6rem; background: #fff; color: #2c3e50; }
-        .form-group select option:disabled { color: #aaa; }
-        
-        optgroup { font-weight: 700; color: #667eea; background: #f8f9ff; padding: 0.4rem 0.5rem; font-size: 0.85rem; letter-spacing: 0.3px; }
-        optgroup option { font-weight: 400; color: #2c3e50; padding-left: 1.5rem; }
+        /* Custom dropdown list styling */
+        .form-group select option {
+            padding: 0.7rem 1rem; background: #fff; color: #2c3e50;
+            border-radius: 8px; margin: 2px 4px;
+        }
+        .form-group select option:disabled { color: #bbb; }
+        .form-group select option:hover { background: #f0f2ff; }
+        .form-group select option:checked { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+        /* Scrollbar for dropdown list */
+        .form-group select::-webkit-scrollbar { width: 6px; }
+        .form-group select::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .form-group select::-webkit-scrollbar-thumb { background: #c0c0d0; border-radius: 3px; }
+        .form-group select::-webkit-scrollbar-thumb:hover { background: #a0a0b8; }
+        /* Date input custom styling */
+        .form-group input[type="date"] {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            padding-right: 0.5rem; min-height: 48px;
+            background: #fafbff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E") no-repeat right 14px center;
+            background-size: 18px;
+        }
+        .form-group input[type="date"]:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+        }
+        /* Hide default calendar picker icon in some browsers */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0; position: absolute; right: 0; top: 0;
+            width: 100%; height: 100%; cursor: pointer;
+        }
+        /* Date input on focus - subtle inner glow */
+        .form-group input[type="date"]:focus-within {
+            border-color: #667eea;
+        }
+        /* Optgroup styling */
+        optgroup {
+            font-weight: 700; color: #667eea; background: #f8f9ff;
+            padding: 0.5rem 0.75rem; font-size: 0.82rem; letter-spacing: 0.5px;
+            border-bottom: 1px solid #e8ecf4;
+        }
+        optgroup option {
+            font-weight: 400; color: #2c3e50; padding: 0.5rem 1rem 0.5rem 1.8rem;
+            border-radius: 6px; margin: 1px 4px;
+        }
+        optgroup option:hover { background: #f0f2ff; }
         
         .availability-status {
             margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px;
