@@ -303,6 +303,7 @@ namespace Emonti_Optometrist_Website
                         if (rowsAffected > 0)
                         {
                             SendConfirmationEmail(selectedDate);
+                            SendOptometristNotification(selectedDate);
                             return true;
                         }
                         return false;
@@ -402,6 +403,94 @@ namespace Emonti_Optometrist_Website
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error sending email: {ex.Message}");
+            }
+        }
+
+        private void SendOptometristNotification(DateTime appointmentDate)
+        {
+            try
+            {
+                string optometristId = ddlOptometrist.SelectedValue;
+                if (string.IsNullOrEmpty(optometristId)) return;
+
+                string connStr = ConfigurationManager.ConnectionStrings["ProductConnection"].ConnectionString;
+                using (var conn = new SqlConnection(connStr))
+                {
+                    string query = "SELECT Staff_Name, Staff_Surname, Staff_Email FROM Staff WHERE Staff_ID = @Id";
+                    using (var cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", optometristId);
+                        conn.Open();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read()) return;
+                            string staffEmail = reader["Staff_Email"]?.ToString() ?? "";
+                            if (string.IsNullOrEmpty(staffEmail)) return;
+                            string staffName = $"{reader["Staff_Name"]} {reader["Staff_Surname"]}";
+
+                            string customerName = Session["FirstName"]?.ToString() + " " + Session["LastName"]?.ToString();
+                            string customerPhone = Session["Cellphone"]?.ToString() ?? "";
+                            string timeSlot = GetTimeSlotText(Request.Form["ddlTimeSlot"] ?? "");
+
+                            string body = $@"<!DOCTYPE html>
+<html><head><meta charset=""utf-8""></head>
+<body style=""margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#f5f5f5;padding:20px;"">
+<tr><td align=""center"">
+<table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
+<tr><td style=""background-color:#28a745;padding:25px;text-align:center;"">
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">New Appointment Booking</h1>
+</td></tr>
+<tr><td style=""padding:30px;"">
+<p style=""margin:0 0 20px 0;color:#333;font-size:16px;"">Dear {staffName},</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">A new appointment has been booked with you.</p>
+<div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #28a745;"">
+<table width=""100%"" cellpadding=""0"" cellspacing=""0"">
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Patient:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{customerName}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Phone:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{customerPhone}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Date:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{appointmentDate:dddd, MMMM dd, yyyy}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Time:</strong></td><td style=""padding:8px 0;color:#28a745;font-size:14px;font-weight:600;"">{timeSlot}</td></tr>
+<tr><td style=""padding:8px 0;color:#666;font-size:14px;""><strong>Status:</strong></td><td style=""padding:8px 0;color:#ffc107;font-size:14px;font-weight:600;"">Pending</td></tr>
+</table></div>
+<p style=""margin:25px 0 0 0;color:#555;font-size:15px;"">Please review this appointment at your earliest convenience.</p>
+</td></tr>
+<tr><td style=""background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;"">
+<p style=""margin:0 0 5px 0;color:#666;font-size:13px;font-weight:600;"">Emonti Optometrist</p>
+<p style=""margin:0;color:#888;font-size:12px;"">Shop 7 New Colonnade, Devereaux Ave, Vincent, East London 5247</p>
+</td></tr>
+</table></td></tr></table></body></html>";
+
+                            string smtpHost = ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
+                            int smtpPort = int.Parse(ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
+                            string smtpEmail = ConfigurationManager.AppSettings["SmtpEmail"];
+                            string smtpPassword = ConfigurationManager.AppSettings["SmtpPassword"];
+                            string smtpFromName = ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
+                            bool enableSsl = bool.Parse(ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+
+                            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword)) return;
+
+                            using (var smtp = new SmtpClient(smtpHost, smtpPort))
+                            {
+                                smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
+                                smtp.EnableSsl = enableSsl;
+                                smtp.Timeout = 30000;
+                                using (var message = new MailMessage())
+                                {
+                                    message.From = new MailAddress(smtpEmail, smtpFromName);
+                                    message.To.Add(staffEmail);
+                                    message.Subject = "New Appointment Booking - Emonti Optometrist";
+                                    message.Body = body;
+                                    message.IsBodyHtml = true;
+                                    smtp.Send(message);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error sending optometrist notification: {ex.Message}");
             }
         }
 

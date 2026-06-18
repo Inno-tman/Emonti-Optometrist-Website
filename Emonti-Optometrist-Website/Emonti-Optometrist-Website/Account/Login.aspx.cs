@@ -135,8 +135,13 @@ namespace Emonti_Optometrist_Website.Account
                                         Session["IsStaffLoggedIn"] = true;
                                         Session["Staff_ID"] = staffReader["Staff_ID"].ToString();
                                         Session["StaffName"] = staffReader["Staff_Name"]?.ToString() ?? "";
+                                        string staffRole = staffReader["Staff_Role"]?.ToString() ?? "";
+                                        Session["StaffRole"] = staffRole;
 
-                                        Response.Redirect("~/Staff/Dashboard.aspx");
+                                        if (staffRole == "Admin")
+                                            Response.Redirect("~/Admin/Dashboard.aspx");
+                                        else
+                                            Response.Redirect("~/Staff/Dashboard.aspx");
                                     }
                                     else
                                     {

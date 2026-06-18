@@ -31,10 +31,11 @@ namespace Emonti_Optometrist_Website
 				UpdateCartCount();
 				UpdateLoginState();
 
-			// Determine staff context: either session indicates staff or current URL is under /Staff/
+			// Determine staff context: session indicates staff or URL under /Staff/ or /Admin/
 			bool isStaffLoggedIn = Session["IsStaffLoggedIn"] != null && (bool)Session["IsStaffLoggedIn"];
-			bool isStaffPath = Request != null && Request.Path != null && Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase);
+			bool isStaffPath = Request != null && Request.Path != null && (Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase) || Request.Path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase));
 			bool showStaffNav = isStaffLoggedIn || isStaffPath;
+			bool isAdmin = Session["StaffRole"]?.ToString() == "Admin";
 
 			// Toggle main nav and auth buttons when in staff context
 			navMenu.Visible = !showStaffNav;
@@ -47,6 +48,9 @@ namespace Emonti_Optometrist_Website
 			{
 				staffNav.Visible = showStaffNav;
 			}
+
+			// Show admin-only navigation links
+			SetAdminLinksVisible(isAdmin);
 
 			// Hide footer when staff is logged in
 			if (mainFooter != null)
@@ -69,8 +73,9 @@ namespace Emonti_Optometrist_Website
 
 	// Re-evaluate staff context each render
 	bool isStaffLoggedIn = Session["IsStaffLoggedIn"] != null && (bool)Session["IsStaffLoggedIn"];
-	bool isStaffPath = Request != null && Request.Path != null && Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase);
+	bool isStaffPath = Request != null && Request.Path != null && (Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase) || Request.Path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase));
 	bool showStaffNav = isStaffLoggedIn || isStaffPath;
+	bool isAdmin = Session["StaffRole"]?.ToString() == "Admin";
 
 	if (staffNav != null)
 	{
@@ -86,6 +91,9 @@ namespace Emonti_Optometrist_Website
 	{
 		mainFooter.Visible = !isStaffLoggedIn;
 	}
+	
+	// Show admin-only navigation links
+	SetAdminLinksVisible(isAdmin);
 	
 	// Hide auth buttons when staff is logged in
 	bool isLoggedIn = IsUserLoggedIn();
@@ -392,6 +400,16 @@ namespace Emonti_Optometrist_Website
 		{
 			// Redirect to staff portal login
 			Response.Redirect("~/Staff/Login.aspx");
+		}
+
+		private void SetAdminLinksVisible(bool isAdmin)
+		{
+			var adminDashboardLink = FindControl("adminDashboardLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			var adminStaffLink = FindControl("adminStaffLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			var adminCustomersLink = FindControl("adminCustomersLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
+			if (adminDashboardLink != null) adminDashboardLink.Visible = isAdmin;
+			if (adminStaffLink != null) adminStaffLink.Visible = isAdmin;
+			if (adminCustomersLink != null) adminCustomersLink.Visible = isAdmin;
 		}
 	}
 }
