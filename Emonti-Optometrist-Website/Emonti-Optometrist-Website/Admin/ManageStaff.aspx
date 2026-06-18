@@ -39,6 +39,7 @@ td { padding: 0.7rem 1rem; font-size: 0.85rem; color: #333; border-bottom: 1px s
 tr:hover td { background: rgba(102,126,234,0.02); }
 .role-badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 .role-badge.admin { background: #cce5ff; color: #004085; }
+.role-badge.optometrist { background: #fde68a; color: #92400e; }
 .role-badge.staff { background: #d4edda; color: #155724; }
 .empty-state { text-align: center; padding: 3rem 1rem; color: #999; }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #ddd; }
@@ -112,7 +113,7 @@ tr:hover td { background: rgba(102,126,234,0.02); }
         <div class="form-group"><label>Surname</label><asp:TextBox ID="txtSurname" runat="server" /></div>
         <div class="form-group"><label>Email</label><asp:TextBox ID="txtEmail" runat="server" TextMode="Email" /></div>
         <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" Text="Staff123" /></div>
-        <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
+        <div class="form-group"><label>Role</label><asp:DropDownList ID="ddlRole" runat="server"><asp:ListItem Text="Staff" Value="Staff" /><asp:ListItem Text="Optometrist" Value="Optometrist" /><asp:ListItem Text="Admin" Value="Admin" /></asp:DropDownList></div>
         <asp:Label ID="lblAddError" runat="server" ForeColor="Red" Visible="false" style="font-size:0.85rem;" />
         <asp:HiddenField ID="hiddenStaffId" runat="server" Value="0" />
         <asp:HiddenField ID="hiddenMode" runat="server" Value="add" />
