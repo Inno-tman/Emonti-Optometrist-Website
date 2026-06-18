@@ -286,8 +286,8 @@ namespace Emonti_Optometrist_Website
                 {
                     string query = @"
                         INSERT INTO Appointment
-                        (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status, Appointment_Type)
-                        VALUES (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status, @Type)";
+                        (Cust_ID, Staff_ID, Appointment_Date, AppointmentTimeID, Appoinment_Status)
+                        VALUES (@CustId, @StaffId, @AppointmentDate, @AppointmentTimeId, @Status)";
 
                     using (var cmd = new SqlCommand(query, conn))
                     {
@@ -296,7 +296,6 @@ namespace Emonti_Optometrist_Website
                         cmd.Parameters.AddWithValue("@AppointmentDate", selectedDate);
                         cmd.Parameters.AddWithValue("@AppointmentTimeId", Request.Form["ddlTimeSlot"] ?? "");
                         cmd.Parameters.AddWithValue("@Status", "Pending");
-                        cmd.Parameters.AddWithValue("@Type", ddlAppointmentType.SelectedValue);
 
                         conn.Open();
                         int rowsAffected = cmd.ExecuteNonQuery();

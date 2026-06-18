@@ -689,6 +689,26 @@ BEGIN
         END CATCH
     END
 
+    -- Migration 21: Add Appointment_Type column
+    IF NOT EXISTS (SELECT 1 FROM SchemaVersion WHERE Version = 21)
+    BEGIN
+        BEGIN TRY
+            IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Appointment' AND COLUMN_NAME = 'Appointment_Type')
+            BEGIN
+                ALTER TABLE Appointment ADD Appointment_Type NVARCHAR(100) NULL;
+            END
+
+            INSERT INTO SchemaVersion (Version, Description) VALUES (21, 'Add Appointment_Type column to Appointment table');
+            SET @AppliedCount = @AppliedCount + 1;
+        END TRY
+        BEGIN CATCH
+            ROLLBACK TRANSACTION;
+            SET @ErrMsg = ERROR_MESSAGE();
+            RAISERROR('Migration 21 failed: %s', 16, 1, @ErrMsg);
+            RETURN;
+        END CATCH
+    END
+
     -- Return summary of applied migrations
     SELECT Version, Description, AppliedDate
     FROM SchemaVersion
