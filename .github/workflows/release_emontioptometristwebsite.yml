@@ -82,55 +82,52 @@ jobs:
     needs: build
     
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: ASP-app
-          path: publish
-      
-      - name: Deploy via FTPS + .NET server-side extraction
+      - name: Deploy via Kudu Zip Deploy API
         shell: pwsh
         run: |
           $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
-          $headers = @{Authorization = "Basic $encodedCreds"}
-          # Upload zip via FTPS
+          $headers = @{
+            Authorization  = "Basic $encodedCreds"
+            "Content-Type" = "application/zip"
+          }
+
+          # Zip the published output
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath $zipPath -Force
-          $ftpUrl = "ftps://waws-prod-jnb21-011.ftp.azurewebsites.windows.net/site/wwwroot/deploy.zip"
-          $ftpUser = "EmontiOptometristWebsite" + [char]92 + '$EmontiOptometristWebsite'
-          $ftpPass = $env:AZURE_KUDU_PASSWORD
-          Write-Host "Uploading $((Get-Item $zipPath).Length) bytes via FTPS..."
-          curl.exe -T "$zipPath" "$ftpUrl" --user "${ftpUser}:${ftpPass}" --ssl --insecure
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Write-Host "FTPS upload complete."
-          # Extract via .NET (Expand-Archive and PowerShell commands fail in Kudu sandbox cmd.exe)
-          $runCmd = 'powershell -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; Get-ChildItem D:\home\site\wwwroot -Exclude deploy.zip | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 3; [System.IO.Compression.ZipFile]::ExtractToDirectory(''D:\home\site\wwwroot\deploy.zip'', ''D:\home\site\wwwroot''); Write-Output ''Extraction OK''"'
-          $body = @{command = $runCmd; dir = 'site\wwwroot'} | ConvertTo-Json
-          $extracted = $false
-          for ($i = 0; $i -lt 3; $i++) {
-            try {
-              $r = Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $body -ContentType "application/json" -Headers $headers -UseBasicParsing
-              $rjson = $r.Content | ConvertFrom-Json
-              if ($rjson.ExitCode -eq 0 -and $rjson.Output -match 'Extraction OK') { Write-Host 'Extraction succeeded'; $extracted = $true; break }
-              else { Write-Host "Extraction issue (exit $($rjson.ExitCode)): $($rjson.Error)"; Start-Sleep -Seconds 5 }
-            } catch { Write-Host "Retry $i after 503..."; Start-Sleep -Seconds 10 }
+          Write-Host "Zip size: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 2)) MB"
+
+          # POST to zipdeploy — Azure handles extraction server-side
+          Write-Host "Deploying via zipdeploy API..."
+          $response = Invoke-WebRequest `
+            -Uri "$scmUrl/api/zipdeploy?isAsync=true" `
+            -Method POST `
+            -Headers $headers `
+            -InFile $zipPath `
+            -UseBasicParsing
+          
+          Write-Host "Accepted: $($response.StatusCode)"
+
+          # Poll deployment status until complete
+          $statusUrl = $response.Headers.Location
+          if (-not $statusUrl) { $statusUrl = "$scmUrl/api/deployments/latest" }
+
+          for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 10
+            $status = Invoke-WebRequest -Uri $statusUrl -Headers @{Authorization = "Basic $encodedCreds"} -UseBasicParsing
+            $json = $status.Content | ConvertFrom-Json
+            Write-Host "Status: $($json.status) - $($json.status_text)"
+            if ($json.status -eq 4) { Write-Host "Deployment SUCCESS"; break }
+            if ($json.status -eq 3) { Write-Host "ERROR: Deployment FAILED"; exit 1 }
           }
-          if (-not $extracted) { Write-Host "ERROR: Extraction failed after 3 retries"; exit 1 }
-          # Clean up zip
-          try { Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/deploy.zip" -Method DELETE -Headers $headers -UseBasicParsing } catch {
-            # Fallback: delete via command API (VFS ETag issues)
-            $delBody = @{command = 'del D:\home\site\wwwroot\deploy.zip'; dir = 'site\wwwroot'} | ConvertTo-Json
-            Invoke-WebRequest -Uri "$scmUrl/api/command" -Method POST -Body $delBody -ContentType "application/json" -Headers $headers -UseBasicParsing | Out-Null
-          }
-          # Verify Web.config
-          Start-Sleep -Seconds 3
-          try {
-            $check = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" -Method GET -Headers $headers -UseBasicParsing
-            Write-Host "Web.config VERIFIED on server: $($check.StatusCode)"
-          } catch { Write-Host "WARNING: Web.config NOT FOUND on server after deploy!" }
-          Write-Host "Deployment complete!"
+
+          # Verify Web.config landed
+          $check = Invoke-WebRequest `
+            -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" `
+            -Headers @{Authorization = "Basic $encodedCreds"} `
+            -UseBasicParsing
+          Write-Host "Web.config verified: $($check.StatusCode)"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
           AZURE_KUDU_PASSWORD: ${{ secrets.AZURE_KUDU_PASSWORD }}
