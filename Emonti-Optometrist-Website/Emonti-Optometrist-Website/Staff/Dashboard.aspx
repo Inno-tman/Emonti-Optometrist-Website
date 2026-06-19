@@ -619,6 +619,30 @@
             transform: none;
         }
 
+        .btn-accept-appointment {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.75rem;
+        }
+
+        .btn-accept-appointment:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-accept-appointment:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .no-appointments-message {
             text-align: center;
             padding: 3rem;
@@ -983,6 +1007,11 @@
                 </asp:Panel>
                 <div style="margin-top: 2rem; text-align: right;">
                     <input type="hidden" name="cancelReasonAll" id="cancelReasonAll" value="" />
+                    <asp:Button ID="btnAcceptAllAppointment" runat="server" 
+                        CssClass="btn-accept-appointment" 
+                        Text="Accept Selected Appointment" 
+                        OnClick="btnAcceptAllAppointment_Click" 
+                        OnClientClick="return confirmAcceptAll();" />
                     <asp:Button ID="btnCancelAllAppointment" runat="server" 
                         CssClass="btn-cancel-appointment" 
                         Text="Cancel Selected Appointment" 
@@ -1040,6 +1069,11 @@
                 </asp:Panel>
                 <div style="margin-top: 2rem; text-align: right;">
                     <input type="hidden" name="cancelReason" id="cancelReason" value="" />
+                    <asp:Button ID="btnAcceptAppointment" runat="server" 
+                        CssClass="btn-accept-appointment" 
+                        Text="Accept Selected Appointment" 
+                        OnClick="btnAcceptAppointment_Click" 
+                        OnClientClick="return confirmAccept();" />
                     <asp:Button ID="btnCancelAppointment" runat="server" 
                         CssClass="btn-cancel-appointment" 
                         Text="Cancel Selected Appointment" 
@@ -1119,6 +1153,15 @@
             return true;
         }
 
+        function confirmAccept() {
+            var selected = document.querySelector('input[name="selectedAppointment"]:checked');
+            if (!selected) {
+                alert('Please select an appointment to accept.');
+                return false;
+            }
+            return confirm('Accept the selected appointment?');
+        }
+
         function confirmCancelAll() {
             var selected = document.querySelector('input[name="selectedAllAppointment"]:checked');
             if (!selected) {
@@ -1129,6 +1172,15 @@
             if (reason === null) return false;
             document.getElementById('cancelReasonAll').value = reason;
             return true;
+        }
+
+        function confirmAcceptAll() {
+            var selected = document.querySelector('input[name="selectedAllAppointment"]:checked');
+            if (!selected) {
+                alert('Please select an appointment to accept.');
+                return false;
+            }
+            return confirm('Accept the selected appointment?');
         }
 
         // Close modal when clicking outside of it

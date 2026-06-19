@@ -343,11 +343,11 @@ namespace Emonti_Optometrist_Website
 <table width=""600"" cellpadding=""0"" cellspacing=""0"" style=""background-color:#ffffff;border-radius:8px;overflow:hidden;"">
 <tr><td style=""background-color:#667eea;padding:25px;text-align:center;"">
 <img src=""{logoBase64}"" alt=""Emonti Optometrist"" style=""max-width:350px;height:auto;display:block;margin:0 auto 15px;"" />
-<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">Appointment Confirmed</h1>
+<h1 style=""margin:0;color:#ffffff;font-size:24px;font-weight:600;"">Appointment Booking Received</h1>
 </td></tr>
 <tr><td style=""padding:30px;"">
 <p style=""margin:0 0 20px 0;color:#333;font-size:16px;line-height:1.6;"">Dear {HttpUtility.HtmlEncode(customerName)},</p>
-<p style=""margin:0 0 25px 0;color:#555;font-size:15px;line-height:1.6;"">Your appointment has been successfully confirmed. We're looking forward to seeing you!</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;line-height:1.6;"">Your booking has been received successfully and is now pending optometrist approval.</p>
 <div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #667eea;"">
 <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
 <tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Type:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{HttpUtility.HtmlEncode(ddlAppointmentType.SelectedItem?.Text ?? "Eye Exam")}</td></tr>
@@ -374,26 +374,21 @@ namespace Emonti_Optometrist_Website
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                string smtpHost = ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                int smtpPort = int.Parse(ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                string smtpEmail = ConfigurationManager.AppSettings["SmtpEmail"];
-                string smtpPassword = ConfigurationManager.AppSettings["SmtpPassword"];
-                string smtpFromName = ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                bool enableSsl = bool.Parse(ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                var smtpSettings = Emonti_Optometrist_Website.SmtpSettings.Load();
 
-                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword)) return;
+                if (string.IsNullOrEmpty(smtpSettings.Username) || string.IsNullOrEmpty(smtpSettings.Password)) return;
 
-                using (var smtp = new SmtpClient(smtpHost, smtpPort))
+                using (var smtp = new SmtpClient(smtpSettings.Host, smtpSettings.Port))
                 {
-                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                    smtp.EnableSsl = enableSsl;
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpSettings.Username, smtpSettings.Password);
+                    smtp.EnableSsl = smtpSettings.EnableSsl;
                     smtp.Timeout = 30000;
 
                     using (var message = new MailMessage())
                     {
-                        message.From = new MailAddress(smtpEmail, smtpFromName);
+                        message.From = new MailAddress(string.IsNullOrEmpty(smtpSettings.Email) ? smtpSettings.Username : smtpSettings.Email, smtpSettings.FromName);
                         message.To.Add(customerEmail);
-                        message.Subject = "Appointment Confirmation - Emonti Optometrist";
+                        message.Subject = "Appointment Booking Received - Emonti Optometrist";
                         message.Body = body;
                         message.IsBodyHtml = true;
                         smtp.Send(message);
@@ -443,7 +438,7 @@ namespace Emonti_Optometrist_Website
 </td></tr>
 <tr><td style=""padding:30px;"">
 <p style=""margin:0 0 20px 0;color:#333;font-size:16px;"">Dear {staffName},</p>
-<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">A new appointment has been booked with you.</p>
+<p style=""margin:0 0 25px 0;color:#555;font-size:15px;"">A new appointment has been booked with you. Please log in to the staff dashboard to accept or manage this booking.</p>
 <div style=""background-color:#f8f9fa;padding:20px;margin:20px 0;border-radius:4px;border-left:4px solid #28a745;"">
 <table width=""100%"" cellpadding=""0"" cellspacing=""0"">
 <tr><td style=""padding:8px 0;color:#666;font-size:14px;width:120px;""><strong>Patient:</strong></td><td style=""padding:8px 0;color:#333;font-size:14px;"">{customerName}</td></tr>
@@ -460,23 +455,18 @@ namespace Emonti_Optometrist_Website
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                            string smtpHost = ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                            int smtpPort = int.Parse(ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                            string smtpEmail = ConfigurationManager.AppSettings["SmtpEmail"];
-                            string smtpPassword = ConfigurationManager.AppSettings["SmtpPassword"];
-                            string smtpFromName = ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                            bool enableSsl = bool.Parse(ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                            var smtpSettings = Emonti_Optometrist_Website.SmtpSettings.Load();
 
-                            if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword)) return;
+                            if (string.IsNullOrEmpty(smtpSettings.Username) || string.IsNullOrEmpty(smtpSettings.Password)) return;
 
-                            using (var smtp = new SmtpClient(smtpHost, smtpPort))
+                            using (var smtp = new SmtpClient(smtpSettings.Host, smtpSettings.Port))
                             {
-                                smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                                smtp.EnableSsl = enableSsl;
+                                smtp.Credentials = new System.Net.NetworkCredential(smtpSettings.Username, smtpSettings.Password);
+                                smtp.EnableSsl = smtpSettings.EnableSsl;
                                 smtp.Timeout = 30000;
                                 using (var message = new MailMessage())
                                 {
-                                    message.From = new MailAddress(smtpEmail, smtpFromName);
+                                    message.From = new MailAddress(string.IsNullOrEmpty(smtpSettings.Email) ? smtpSettings.Username : smtpSettings.Email, smtpSettings.FromName);
                                     message.To.Add(staffEmail);
                                     message.Subject = "New Appointment Booking - Emonti Optometrist";
                                     message.Body = body;
@@ -521,7 +511,7 @@ namespace Emonti_Optometrist_Website
         {
             DateTime appointmentDate = DateTime.Parse(inputDate.Value);
             string timeSlot = GetTimeSlotText(Request.Form["ddlTimeSlot"] ?? "");
-            string message = $"Appointment booked successfully! Confirmation details have been sent to your email. We look forward to seeing you on {appointmentDate:MMMM dd, yyyy} at {timeSlot}.";
+            string message = $"Appointment booked successfully! Your booking is pending optometrist approval and a confirmation email has been sent to your email for {appointmentDate:MMMM dd, yyyy} at {timeSlot}.";
 
             pnlMessage.Visible = true;
             pnlMessage.CssClass = "alert alert-success";

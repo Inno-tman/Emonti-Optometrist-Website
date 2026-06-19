@@ -159,6 +159,15 @@ namespace Emonti_Optometrist_Website
         protected global::System.Web.UI.WebControls.Button btnCancelAllAppointment;
 
         /// <summary>
+        /// btnAcceptAllAppointment control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnAcceptAllAppointment;
+
+        /// <summary>
         /// rptManageAppointments control.
         /// </summary>
         /// <remarks>
@@ -184,6 +193,15 @@ namespace Emonti_Optometrist_Website
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnCancelAppointment;
+
+        /// <summary>
+        /// btnAcceptAppointment control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnAcceptAppointment;
 
         /// <summary>
         /// updTimeslots control.

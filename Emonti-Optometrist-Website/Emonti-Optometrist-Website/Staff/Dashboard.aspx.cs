@@ -194,18 +194,20 @@ namespace Emonti_Optometrist_Website
                 if (appointments.Count > 0)
                 {
                     rptManageAppointments.DataSource = appointments;
-                    rptManageAppointments.DataBind();
-                    rptManageAppointments.Visible = true;
-                    pnlNoManageAppointments.Visible = false;
-                    btnCancelAppointment.Enabled = true;
-                }
-                else
-                {
-                    rptManageAppointments.Visible = false;
-                    pnlNoManageAppointments.Visible = true;
-                    btnCancelAppointment.Enabled = false;
-                }
+                rptManageAppointments.DataBind();
+                rptManageAppointments.Visible = true;
+                pnlNoManageAppointments.Visible = false;
+                btnCancelAppointment.Enabled = true;
+                btnAcceptAppointment.Enabled = true;
             }
+            else
+            {
+                rptManageAppointments.Visible = false;
+                pnlNoManageAppointments.Visible = true;
+                btnCancelAppointment.Enabled = false;
+                btnAcceptAppointment.Enabled = false;
+            }
+        }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading manage appointments: {ex.Message}");
@@ -346,6 +348,70 @@ namespace Emonti_Optometrist_Website
             }
         }
 
+        protected void btnAcceptAppointment_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string selectedAppointmentId = Request.Form["selectedAppointment"];
+
+                if (string.IsNullOrEmpty(selectedAppointmentId))
+                {
+                    ShowMessage("Please select an appointment to accept.", false);
+                    return;
+                }
+
+                AcceptAppointment(selectedAppointmentId);
+                LoadManageAppointments();
+                LoadDashboardStats();
+                ShowMessage("Appointment accepted successfully.", true);
+
+                string script = "openModal('manageModal');";
+                ScriptManager.RegisterStartupScript(this, GetType(), "RefreshManageModalAccept", script, true);
+            }
+            catch (InvalidOperationException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Validation error accepting appointment: {ex.Message}");
+                ShowMessage(ex.Message, false);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error accepting appointment: {ex.Message}");
+                ShowMessage("An error occurred while accepting the appointment. " + ex.Message, false);
+            }
+        }
+
+        protected void btnAcceptAllAppointment_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string selectedAppointmentId = Request.Form["selectedAllAppointment"];
+
+                if (string.IsNullOrEmpty(selectedAppointmentId))
+                {
+                    ShowMessage("Please select an appointment to accept.", false);
+                    return;
+                }
+
+                AcceptAppointment(selectedAppointmentId);
+                LoadManageAllAppointments();
+                LoadDashboardStats();
+                ShowMessage("Appointment accepted successfully.", true);
+
+                string script = "openModal('manageAllModal');";
+                ScriptManager.RegisterStartupScript(this, GetType(), "RefreshManageAllModalAccept", script, true);
+            }
+            catch (InvalidOperationException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Validation error accepting appointment: {ex.Message}");
+                ShowMessage(ex.Message, false);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error accepting appointment: {ex.Message}");
+                ShowMessage("An error occurred while accepting the appointment. " + ex.Message, false);
+            }
+        }
+
         private bool CanCancelAppointment(string appointmentId)
         {
             try
@@ -424,6 +490,42 @@ namespace Emonti_Optometrist_Website
             }
             
             return false;
+        }
+
+        private void AcceptAppointment(string appointmentId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        UPDATE Appointment
+                        SET Appoinment_Status = 'Confirmed'
+                        WHERE Appointment_ID = @AppointmentId
+                        AND Staff_ID = @StaffId
+                        AND Appoinment_Status = 'Pending'", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@AppointmentId", appointmentId);
+                        cmd.Parameters.AddWithValue("@StaffId", Session["Staff_ID"]?.ToString());
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected == 0)
+                        {
+                            throw new InvalidOperationException("Cannot accept this appointment. It may already be confirmed or cancelled.");
+                        }
+                    }
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unable to accept appointment: " + ex.Message, ex);
+            }
         }
 
         private void CancelAppointment(string appointmentId, string reason)
@@ -553,28 +655,23 @@ namespace Emonti_Optometrist_Website
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
-                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
-                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                var smtpSettings = Emonti_Optometrist_Website.SmtpSettings.Load();
 
-                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+                if (string.IsNullOrEmpty(smtpSettings.Username) || string.IsNullOrEmpty(smtpSettings.Password))
                 {
                     System.Diagnostics.Debug.WriteLine("SMTP credentials not configured");
                     return;
                 }
 
-                using (System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(smtpHost, smtpPort))
+                using (System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(smtpSettings.Host, smtpSettings.Port))
                 {
-                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                    smtp.EnableSsl = enableSsl;
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpSettings.Username, smtpSettings.Password);
+                    smtp.EnableSsl = smtpSettings.EnableSsl;
                     smtp.Timeout = 30000;
 
                     using (System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage())
                     {
-                        message.From = new System.Net.Mail.MailAddress(smtpEmail, smtpFromName);
+                        message.From = new System.Net.Mail.MailAddress(string.IsNullOrEmpty(smtpSettings.Email) ? smtpSettings.Username : smtpSettings.Email, smtpSettings.FromName);
                         message.To.Add(customerEmail);
                         message.Subject = "Appointment Cancelled - Emonti Optometrist";
                         message.Body = body;
@@ -599,18 +696,20 @@ namespace Emonti_Optometrist_Website
                 if (appointments.Count > 0)
                 {
                     rptManageAllAppointments.DataSource = appointments;
-                    rptManageAllAppointments.DataBind();
-                    rptManageAllAppointments.Visible = true;
-                    pnlNoManageAllAppointments.Visible = false;
-                    btnCancelAllAppointment.Enabled = true;
-                }
-                else
-                {
-                    rptManageAllAppointments.Visible = false;
-                    pnlNoManageAllAppointments.Visible = true;
-                    btnCancelAllAppointment.Enabled = false;
-                }
+                rptManageAllAppointments.DataBind();
+                rptManageAllAppointments.Visible = true;
+                pnlNoManageAllAppointments.Visible = false;
+                btnCancelAllAppointment.Enabled = true;
+                btnAcceptAllAppointment.Enabled = true;
             }
+            else
+            {
+                rptManageAllAppointments.Visible = false;
+                pnlNoManageAllAppointments.Visible = true;
+                btnCancelAllAppointment.Enabled = false;
+                btnAcceptAllAppointment.Enabled = false;
+            }
+        }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading manage all appointments: {ex.Message}");

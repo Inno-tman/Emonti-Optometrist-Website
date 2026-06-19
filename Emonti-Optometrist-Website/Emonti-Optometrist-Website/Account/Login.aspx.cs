@@ -367,16 +367,10 @@ namespace Emonti_Optometrist_Website.Account
         {
             try
             {
-                // Get SMTP configuration from web.config
-                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
-                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
-                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                var smtpSettings = Emonti_Optometrist_Website.SmtpSettings.Load();
 
                 // Validate SMTP credentials are configured
-                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+                if (string.IsNullOrEmpty(smtpSettings.Username) || string.IsNullOrEmpty(smtpSettings.Password))
                 {
                     System.Diagnostics.Debug.WriteLine("ERROR: SMTP credentials not configured in web.config");
                     throw new Exception("Email service not configured");
@@ -418,15 +412,15 @@ namespace Emonti_Optometrist_Website.Account
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                using (SmtpClient smtp = new SmtpClient(smtpHost, smtpPort))
+                using (SmtpClient smtp = new SmtpClient(smtpSettings.Host, smtpSettings.Port))
                 {
-                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                    smtp.EnableSsl = enableSsl;
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpSettings.Username, smtpSettings.Password);
+                    smtp.EnableSsl = smtpSettings.EnableSsl;
                     smtp.Timeout = 30000; // 30 seconds timeout
 
                     using (MailMessage message = new MailMessage())
                     {
-                        message.From = new MailAddress(smtpEmail, smtpFromName);
+                        message.From = new MailAddress(string.IsNullOrEmpty(smtpSettings.Email) ? smtpSettings.Username : smtpSettings.Email, smtpSettings.FromName);
                         message.To.Add(email);
                         message.Subject = "Password Reset Code - Emonti Optometrist";
                         message.Body = body;

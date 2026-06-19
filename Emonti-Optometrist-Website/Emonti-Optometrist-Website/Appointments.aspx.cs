@@ -549,29 +549,23 @@ namespace Emonti_Optometrist_Website
 </td></tr>
 </table></td></tr></table></body></html>";
 
-                // Get SMTP configuration from web.config
-                string smtpHost = System.Configuration.ConfigurationManager.AppSettings["SmtpHost"] ?? "smtp.gmail.com";
-                int smtpPort = int.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpPort"] ?? "587");
-                string smtpEmail = System.Configuration.ConfigurationManager.AppSettings["SmtpEmail"];
-                string smtpPassword = System.Configuration.ConfigurationManager.AppSettings["SmtpPassword"];
-                string smtpFromName = System.Configuration.ConfigurationManager.AppSettings["SmtpFromName"] ?? "Emonti Optometrist";
-                bool enableSsl = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["SmtpEnableSsl"] ?? "true");
+                var smtpSettings = Emonti_Optometrist_Website.SmtpSettings.Load();
 
-                if (string.IsNullOrEmpty(smtpEmail) || string.IsNullOrEmpty(smtpPassword))
+                if (string.IsNullOrEmpty(smtpSettings.Username) || string.IsNullOrEmpty(smtpSettings.Password))
                 {
                     System.Diagnostics.Debug.WriteLine("SMTP credentials not configured");
                     return;
                 }
 
-                using (System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(smtpHost, smtpPort))
+                using (System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient(smtpSettings.Host, smtpSettings.Port))
                 {
-                    smtp.Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword);
-                    smtp.EnableSsl = enableSsl;
+                    smtp.Credentials = new System.Net.NetworkCredential(smtpSettings.Username, smtpSettings.Password);
+                    smtp.EnableSsl = smtpSettings.EnableSsl;
                     smtp.Timeout = 30000;
 
                     using (System.Net.Mail.MailMessage message = new System.Net.Mail.MailMessage())
                     {
-                        message.From = new System.Net.Mail.MailAddress(smtpEmail, smtpFromName);
+                        message.From = new System.Net.Mail.MailAddress(string.IsNullOrEmpty(smtpSettings.Email) ? smtpSettings.Username : smtpSettings.Email, smtpSettings.FromName);
                         message.To.Add(customerEmail);
                         message.Subject = "Appointment Cancellation Confirmation - Emonti Optometrist";
                         message.Body = body;
