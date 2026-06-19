@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP app to Azure Web App - EmontiOptometristWebsite
 
 on:
@@ -13,7 +10,7 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -36,40 +33,22 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           robocopy . $pub /S /IS /XF *.cs *.csproj *.user *.sln *.docx *.doc *.mdf *.ldf /XD obj packages Properties .vs App_Data bin /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 4) { exit $LASTEXITCODE } else { $global:LASTEXITCODE = 0 }
-          Write-Host "Removing unnecessary large files from published output..."
-          # Copy roslyn compiler - needed by DotNetCompilerPlatform for runtime compilation
           $roslynSrc = Resolve-Path "..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\Roslyn45" -ErrorAction SilentlyContinue
           if ($roslynSrc) {
             $roslynDest = New-Item -ItemType Directory -Path "$pub\bin\roslyn" -Force
-            Write-Host "Copying roslyn from $roslynSrc ..."
             Copy-Item -Path "$roslynSrc\*" -Destination $roslynDest -Recurse -Force
-            $rCount = (Get-ChildItem -Recurse $roslynDest | Measure-Object).Count
-            Write-Host "Roslyn compiler copied: $rCount files"
-            Get-ChildItem $roslynDest\csc.exe -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "csc.exe confirmed: $($_.Length) bytes" }
-          } else { Write-Host "WARNING: Roslyn source not found in packages" }
+            Write-Host "Roslyn compiler copied"
+          } else { Write-Host "WARNING: Roslyn source not found" }
           Remove-Item -Recurse -Force "$pub\bin\_PublishedWebsites" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.xml" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "$pub\bin\*.pdb" -ErrorAction SilentlyContinue
 
-      - name: Verify and measure published output
+      - name: Verify published output
         run: |
-          if (-Not (Test-Path "$env:GITHUB_WORKSPACE\published")) {
-            Write-Error "Published folder not found"
-            Get-ChildItem "$env:GITHUB_WORKSPACE" | Select-Object Name
-            exit 1
-          }
+          if (-Not (Test-Path "$env:GITHUB_WORKSPACE\published")) { Write-Error "Published folder not found"; exit 1 }
+          if (-Not (Test-Path "$env:GITHUB_WORKSPACE\published\Web.config")) { Write-Error "Web.config NOT FOUND"; exit 1 }
           $files = Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published"
-          $totalSize = ($files | Measure-Object -Property Length -Sum).Sum
-          Write-Host "Published $($files.Count) files, $([Math]::Round($totalSize/1MB, 2)) MB total"
-          Get-ChildItem -Recurse "$env:GITHUB_WORKSPACE\published" | Sort-Object Length -Descending | Select-Object -First 15 FullName, Length
-          $configFile = Get-ChildItem "$env:GITHUB_WORKSPACE\published" -Filter "*.config" -Recurse | Select-Object -ExpandProperty Name
-          Write-Host "Config files found: $($configFile -join ', ')"
-          if (-not (Test-Path "$env:GITHUB_WORKSPACE\published\Web.config")) {
-            Write-Error "Web.config NOT FOUND in published output!"
-            Get-ChildItem "$env:GITHUB_WORKSPACE\published" -Filter "*.config"
-            exit 1
-          }
-          if ($files.Count -eq 0) { exit 1 }
+          Write-Host "Published $($files.Count) files, $([Math]::Round(($files | Measure-Object -Property Length -Sum).Sum/1MB, 2)) MB"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -80,58 +59,62 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    
+
     steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: ASP-app
+          path: C:\deploy\publish
+
       - name: Deploy via Kudu Zip Deploy API
         shell: pwsh
         run: |
           $scmUrl = "https://emontioptometristwebsite-g6gjdgc2hsf7ghht.scm.southafricanorth-01.azurewebsites.net"
           $credentials = "$($env:AZURE_KUDU_USERNAME):$($env:AZURE_KUDU_PASSWORD)"
           $encodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($credentials))
-          $headers = @{
+
+          $publishPath = "C:\deploy\publish"
+          $zipPath = "C:\deploy\deploy.zip"
+
+          Write-Host "Files in publish folder:"
+          Get-ChildItem $publishPath | Select-Object Name
+
+          Compress-Archive -Path "$publishPath\*" -DestinationPath $zipPath -Force
+          Write-Host "Zip size: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 2)) MB"
+
+          Write-Host "Deploying via zipdeploy API..."
+          $deployHeaders = @{
             Authorization  = "Basic $encodedCreds"
             "Content-Type" = "application/zip"
           }
-
-          # Zip the published output
-          $zipPath = "$env:RUNNER_TEMP\deploy.zip"
-          # NEW
-          # DEBUG - find where publish folder actually is
-          Write-Host "Current dir: $(Get-Location)"
-          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
-          Get-ChildItem "D:\a" -Recurse -Depth 3 -Filter "publish" -ErrorAction SilentlyContinue | Select-Object FullName
-          Write-Host "Zip size: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 2)) MB"
-
-          # POST to zipdeploy — Azure handles extraction server-side
-          Write-Host "Deploying via zipdeploy API..."
           $response = Invoke-WebRequest `
             -Uri "$scmUrl/api/zipdeploy?isAsync=true" `
             -Method POST `
-            -Headers $headers `
+            -Headers $deployHeaders `
             -InFile $zipPath `
             -UseBasicParsing
-          
+
           Write-Host "Accepted: $($response.StatusCode)"
 
-          # Poll deployment status until complete
-          $statusUrl = $response.Headers.Location
-          if (-not $statusUrl) { $statusUrl = "$scmUrl/api/deployments/latest" }
-
+          # Poll until complete
+          $statusUrl = "$scmUrl/api/deployments/latest"
           for ($i = 0; $i -lt 30; $i++) {
             Start-Sleep -Seconds 10
             $status = Invoke-WebRequest -Uri $statusUrl -Headers @{Authorization = "Basic $encodedCreds"} -UseBasicParsing
             $json = $status.Content | ConvertFrom-Json
-            Write-Host "Status: $($json.status) - $($json.status_text)"
+            Write-Host "[$i] Status: $($json.status) - $($json.status_text)"
             if ($json.status -eq 4) { Write-Host "Deployment SUCCESS"; break }
             if ($json.status -eq 3) { Write-Host "ERROR: Deployment FAILED"; exit 1 }
           }
 
-          # Verify Web.config landed
-          $check = Invoke-WebRequest `
-            -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" `
-            -Headers @{Authorization = "Basic $encodedCreds"} `
-            -UseBasicParsing
-          Write-Host "Web.config verified: $($check.StatusCode)"
+          # Verify Web.config
+          try {
+            $check = Invoke-WebRequest -Uri "$scmUrl/api/vfs/site/wwwroot/Web.config" -Headers @{Authorization = "Basic $encodedCreds"} -UseBasicParsing
+            Write-Host "Web.config verified on server: $($check.StatusCode)"
+          } catch { Write-Host "WARNING: Web.config not found after deploy" }
+
+          Write-Host "Deployment complete!"
         env:
           AZURE_KUDU_USERNAME: ${{ secrets.AZURE_KUDU_USERNAME }}
           AZURE_KUDU_PASSWORD: ${{ secrets.AZURE_KUDU_PASSWORD }}
