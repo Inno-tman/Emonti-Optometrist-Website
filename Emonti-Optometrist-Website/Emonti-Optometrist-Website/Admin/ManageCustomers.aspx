@@ -20,6 +20,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
 .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
 .admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
 .admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+.access-note { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; background: #eef2ff; color: #4338ca; font-size: 0.85rem; font-weight: 600; }
 .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
 .btn-primary { background: #667eea; color: #fff; }
 .btn-primary:hover { background: #5a67d8; transform: translateY(-1px); }
@@ -48,11 +49,17 @@ tr:hover td { background: rgba(102,126,234,0.02); }
     <aside class="admin-sidebar">
         <div class="sidebar-brand"><h2>EMONTI</h2><small>Admin Panel</small></div>
         <ul class="sidebar-nav">
-            <li><a href="Dashboard.aspx"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <% if (Session["StaffRole"] != null) { %>
+            <li><a href="<%= Session["StaffRole"].ToString() == "Admin" ? "Dashboard.aspx" : "../Staff/Dashboard.aspx" %>"><i class="fas fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+            <% } %>
+            <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() == "Admin") { %>
             <li><a href="ManageOrders.aspx"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
             <li><a href="ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <% } %>
             <li><a href="ManageCustomers.aspx" class="active"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() == "Admin") { %>
             <li><a href="ManageStaff.aspx"><i class="fas fa-users"></i><span>Staff</span></a></li>
+            <% } %>
             <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
             <li class="divider"><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
@@ -65,6 +72,9 @@ tr:hover td { background: rgba(102,126,234,0.02); }
                 <asp:Button ID="btnSearch" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSearch_Click" />
             </div>
         </div>
+        <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() != "Admin") { %>
+        <div class="access-note"><i class="fas fa-eye"></i> View-only access for staff members.</div>
+        <% } %>
         <div class="section-card">
             <div class="section-header"><i class="fas fa-address-book" style="color:#667eea;"></i><h2>All Customers</h2></div>
             <asp:GridView ID="gvCustomers" runat="server" AutoGenerateColumns="False" GridLines="None" ShowHeaderWhenEmpty="true" DataKeyNames="Cust_ID">

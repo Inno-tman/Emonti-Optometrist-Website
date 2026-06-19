@@ -7,7 +7,11 @@ namespace Emonti_Optometrist_Website
  {
  protected void Page_Load(object sender, EventArgs e)
  {
- // No specific logic needed for now
+     if (Session["IsStaffLoggedIn"] == null || !(bool)Session["IsStaffLoggedIn"])
+     {
+         Response.Redirect("~/Account/Login.aspx");
+         return;
+     }
  }
  }
 }

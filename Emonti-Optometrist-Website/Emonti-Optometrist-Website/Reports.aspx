@@ -20,6 +20,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
 .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
 .admin-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1d23; }
 .admin-header h1 i { color: #667eea; margin-right: 0.5rem; }
+.staff-note { margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: #eef2ff; color: #4338ca; font-size: 0.85rem; font-weight: 600; }
 .section-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 1.5rem; }
 .section-header { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem; }
 .section-header h2 { font-size: 1rem; font-weight: 700; color: #1a1d23; }
@@ -36,12 +37,18 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
     <aside class="admin-sidebar">
         <div class="sidebar-brand"><h2>EMONTI</h2><small>Admin Panel</small></div>
         <ul class="sidebar-nav">
-            <li><a href="Admin/Dashboard.aspx"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+            <% if (Session["StaffRole"] != null) { %>
+            <li><a href="<%= Session["StaffRole"].ToString() == "Admin" ? "Admin/Dashboard.aspx" : "Staff/Dashboard.aspx" %>"><i class="fas fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+            <% } %>
+            <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() == "Admin") { %>
             <li><a href="Admin/ManageOrders.aspx"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
             <li><a href="Admin/ManageProducts.aspx"><i class="fas fa-box"></i><span>Products</span></a></li>
+            <% } %>
             <li><a href="Admin/ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+            <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() == "Admin") { %>
             <li><a href="Admin/ManageStaff.aspx"><i class="fas fa-users"></i><span>Staff</span></a></li>
             <li><a href="Admin/QueryDb.aspx"><i class="fas fa-database"></i><span>Query DB</span></a></li>
+            <% } %>
             <li><a href="Reports.aspx" class="active"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
             <li class="divider"><a href="Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
@@ -50,6 +57,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; }
         <div class="admin-header">
             <h1><i class="fas fa-chart-bar"></i> Business Intelligence Reports</h1>
         </div>
+        <% if (Session["StaffRole"] != null && Session["StaffRole"].ToString() != "Admin") { %>
+        <div class="staff-note"><i class="fas fa-eye"></i> Staff access: use the sidebar to move between your dashboard, customers, and reports.</div>
+        <% } %>
         <div class="section-card">
             <div class="section-header"><i class="fas fa-bar-chart" style="color:#667eea;"></i><h2>Power BI Analytics Dashboard</h2></div>
             <div class="reports-container">

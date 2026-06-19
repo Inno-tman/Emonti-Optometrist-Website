@@ -15,11 +15,6 @@ namespace Emonti_Optometrist_Website.Admin
                 Response.Redirect("~/Account/Login.aspx");
                 return;
             }
-            if (Session["StaffRole"]?.ToString() != "Admin")
-            {
-                Response.Redirect("~/Staff/Dashboard.aspx");
-                return;
-            }
             if (!IsPostBack) LoadCustomers(null);
         }
 

@@ -37,6 +37,7 @@ namespace Emonti_Optometrist_Website
 			bool isStaffPath = Request != null && Request.Path != null && (Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase) || Request.Path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase));
 			bool showStaffNav = isStaffLoggedIn || isStaffPath;
 			bool isAdmin = Session["StaffRole"]?.ToString() == "Admin";
+			bool isStaffMember = isStaffLoggedIn || isStaffPath;
 
 			// Toggle main nav and auth buttons when in staff context
 			navMenu.Visible = !showStaffNav;
@@ -51,7 +52,7 @@ namespace Emonti_Optometrist_Website
 			}
 
 			// Show admin-only navigation links
-			SetAdminLinksVisible(isAdmin);
+			SetAdminLinksVisible(isAdmin, isStaffMember);
 
 			// Hide footer when staff is logged in
 			if (mainFooter != null)
@@ -83,6 +84,7 @@ namespace Emonti_Optometrist_Website
 	bool isStaffPath = Request != null && Request.Path != null && (Request.Path.StartsWith("/Staff/", StringComparison.OrdinalIgnoreCase) || Request.Path.StartsWith("/Admin/", StringComparison.OrdinalIgnoreCase));
 	bool showStaffNav = isStaffLoggedIn || isStaffPath;
 	bool isAdmin = Session["StaffRole"]?.ToString() == "Admin";
+	bool isStaffMember = isStaffLoggedIn || isStaffPath;
 
 	if (staffNav != null)
 	{
@@ -106,7 +108,7 @@ namespace Emonti_Optometrist_Website
 	}
 	
 	// Show admin-only navigation links
-	SetAdminLinksVisible(isAdmin);
+	SetAdminLinksVisible(isAdmin, isStaffMember);
 	
 	// Hide auth buttons when staff is logged in
 	bool isLoggedIn = IsUserLoggedIn();
@@ -415,7 +417,7 @@ namespace Emonti_Optometrist_Website
 			Response.Redirect("~/Staff/Login.aspx");
 		}
 
-		private void SetAdminLinksVisible(bool isAdmin)
+		private void SetAdminLinksVisible(bool isAdmin, bool isStaffMember)
 		{
 			var adminDashboardLink = FindControl("adminDashboardLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
 			var adminStaffLink = FindControl("adminStaffLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
@@ -423,8 +425,8 @@ namespace Emonti_Optometrist_Website
 			var adminReportsLink = FindControl("adminReportsLink") as System.Web.UI.HtmlControls.HtmlGenericControl;
 			if (adminDashboardLink != null) adminDashboardLink.Visible = isAdmin;
 			if (adminStaffLink != null) adminStaffLink.Visible = isAdmin;
-			if (adminCustomersLink != null) adminCustomersLink.Visible = isAdmin;
-			if (adminReportsLink != null) adminReportsLink.Visible = isAdmin;
+			if (adminCustomersLink != null) adminCustomersLink.Visible = isAdmin || isStaffMember;
+			if (adminReportsLink != null) adminReportsLink.Visible = isAdmin || isStaffMember;
 		}
 	}
 }

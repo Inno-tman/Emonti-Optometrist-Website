@@ -283,6 +283,10 @@
         .icon-patients {
             background: linear-gradient(135deg, #17a2b8, #6f42c1);
         }
+
+        .icon-customers {
+            background: linear-gradient(135deg, #667eea, #5a67d8);
+        }
         
         .icon-reports {
             background: linear-gradient(135deg, #dc3545, #e83e8c);
@@ -767,7 +771,114 @@
             letter-spacing: 0.5px;
         }
 
+        .staff-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .staff-sidebar {
+            width: 250px;
+            background: #1a1d23;
+            color: #fff;
+            padding: 1.5rem 0;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .staff-sidebar .sidebar-brand {
+            padding: 0 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 1rem;
+        }
+
+        .staff-sidebar .sidebar-brand h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .staff-sidebar .sidebar-brand small {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .staff-sidebar .sidebar-nav {
+            list-style: none;
+            padding: 0;
+        }
+
+        .staff-sidebar .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .staff-sidebar .sidebar-nav li a:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+
+        .staff-sidebar .sidebar-nav li a.active {
+            background: rgba(102,126,234,0.15);
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .staff-sidebar .sidebar-nav li a i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .staff-sidebar .sidebar-nav .divider {
+            margin-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 0.5rem;
+        }
+
+        .staff-sidebar .sidebar-nav .logout {
+            color: #ff6b6b !important;
+        }
+
+        .staff-main {
+            margin-left: 250px;
+            flex: 1;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
         @media (max-width: 768px) {
+            .staff-sidebar {
+                width: 60px;
+            }
+
+            .staff-sidebar .sidebar-brand h2,
+            .staff-sidebar .sidebar-brand small,
+            .staff-sidebar .sidebar-nav li a span {
+                display: none;
+            }
+
+            .staff-sidebar .sidebar-nav li a {
+                justify-content: center;
+                padding: 0.75rem;
+            }
+
+            .staff-main {
+                margin-left: 60px;
+                padding: 1rem;
+            }
+
             .welcome-message-section h2 {
                 font-size: 1.5rem;
             }
@@ -793,7 +904,21 @@
 
     <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
     <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true"></asp:ScriptManager>
-    <div class="staff-dashboard">
+    <div class="staff-layout">
+        <aside class="staff-sidebar">
+            <div class="sidebar-brand">
+                <h2>EMONTI</h2>
+                <small>Staff Portal</small>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="Dashboard.aspx" class="active"><i class="fas fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+                <li><a href="../Admin/ManageCustomers.aspx"><i class="fas fa-address-book"></i><span>Customers</span></a></li>
+                <li><a href="../Reports.aspx"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+                <li class="divider"><a href="../Account/Logout.aspx" class="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </aside>
+        <main class="staff-main">
+        <div class="staff-dashboard">
         <div class="dashboard-container">
             <!-- Logo -->
             <div class="dashboard-logo">
@@ -877,6 +1002,24 @@
                     </div>
                     <div class="card-actions">
                         <a href="../Reports.aspx" class="btn-primary"><i class="fas fa-chart-bar"></i> View Reports</a>
+                    </div>
+                </div>
+
+                <!-- Customers -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon icon-customers">
+                            <i class="fas fa-address-book"></i>
+                        </div>
+                        <h3 class="card-title">Customers</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="stat-label" style="font-size: 1rem; line-height: 1.6;">
+                            View customer details in a read-only format
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="../Admin/ManageCustomers.aspx" class="btn-primary"><i class="fas fa-address-book"></i> View Customers</a>
                     </div>
                 </div>
             </div>
@@ -1130,6 +1273,9 @@
                 </asp:UpdatePanel>
             </div>
         </div>
+        </div>
+        </div>
+        </main>
     </div>
 
     <script>
