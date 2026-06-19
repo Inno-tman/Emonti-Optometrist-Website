@@ -96,7 +96,10 @@ jobs:
           # Zip the published output
           $zipPath = "$env:RUNNER_TEMP\deploy.zip"
           # NEW
-          Compress-Archive -Path "publish\*" -DestinationPath $zipPath -Force
+          # DEBUG - find where publish folder actually is
+          Write-Host "Current dir: $(Get-Location)"
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          Get-ChildItem "D:\a" -Recurse -Depth 3 -Filter "publish" -ErrorAction SilentlyContinue | Select-Object FullName
           Write-Host "Zip size: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 2)) MB"
 
           # POST to zipdeploy — Azure handles extraction server-side
